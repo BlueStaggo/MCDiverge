@@ -1,0 +1,28 @@
+--- a/net/minecraft/src/EntityOtherPlayerMP.java
++++ b/net/minecraft/src/EntityOtherPlayerMP.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import java.util.regex.Pattern;
++
+ public class EntityOtherPlayerMP extends EntityPlayer {
+     private int otherPlayerMPPosRotationIncrements;
+     private double otherPlayerMPX;
+@@ -14,9 +16,14 @@
+         this.username = username;
+         this.yOffset = 0.0F;
+         this.stepHeight = 0.0F;
+-        if(username != null && username.length() > 0) {
+-            this.skinUrl = "http://www.minecraft.net/skin/" + username + ".png";
+-            System.out.println("Loading texture " + this.skinUrl);
++        if (username != null && username.length() > 0) {
++            Pattern player4DigitPattern = Pattern.compile("Player[0-9]{0,4}");
++            boolean useBlueStagSkin = player4DigitPattern.matcher(username).find();
++            if (useBlueStagSkin) {
++                this.skinUrl = "https://raw.githubusercontent.com/BlueStaggo/BlueStaggo/main/skin-mc-diverge.png";
++            } else {
++                this.skinUrl = "http://www.minecraft.net/skin/" + username + ".png";
++            }
+         }
+ 
+         this.noClip = true;

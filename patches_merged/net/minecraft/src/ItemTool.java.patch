@@ -1,0 +1,43 @@
+--- a/net/minecraft/src/ItemTool.java
++++ b/net/minecraft/src/ItemTool.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class ItemTool extends Item {
+-    private Block[] blocksEffectiveAgainst;
+-    private float efficiencyOnProperMaterial = 4.0F;
+-    private int damageVsEntity;
++    private final Block[] blocksEffectiveAgainst;
++    protected float efficiencyOnProperMaterial;
++    private final int damageVsEntity;
+     protected int toolMaterial;
+ 
+     public ItemTool(int id, int attackDmg, int strength, Block[] blocks) {
+@@ -44,5 +46,25 @@
+ 
+     public boolean isFull3D() {
+         return true;
++    }
++
++    public boolean effectiveAgainst(Block block) {
++        for (Block value : this.blocksEffectiveAgainst) {
++            if (value == block) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                "x" + this.efficiencyOnProperMaterial + " efficiency",
++                ItemTooltip.INFO_COL,
++                this.damageVsEntity + " attack damage",
++                ItemTooltip.INFO_COL,
++                this.maxDamage + " max durability",
++                ItemTooltip.INFO_COL
++        };
+     }
+ }

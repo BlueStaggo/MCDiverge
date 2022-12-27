@@ -1,0 +1,79 @@
+--- a/net/minecraft/src/BlockLog.java
++++ b/net/minecraft/src/BlockLog.java
+@@ -1,8 +1,12 @@
+ package net.minecraft.src;
+ 
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Random;
+ 
+ public class BlockLog extends Block {
++    private final List<Integer[]> leavesToUpdate = new ArrayList<>();
++
+     protected BlockLog(int id) {
+         super(id, Material.wood);
+         this.blockIndexInTexture = 20;
+@@ -12,11 +16,61 @@
+         return 1;
+     }
+ 
+-    public int idDropped(int metadata, Random rand) {
+-        return Block.wood.blockID;
++    public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
++        return metadata == 0 ? getBlockTextureFromSide(side)
++            : textureXY(14, 5 + metadata) + (side <= 1 ? 1 : 0);
+     }
+ 
+     public int getBlockTextureFromSide(int side) {
+         return side == 1 ? 21 : (side == 0 ? 21 : 20);
++    }
++
++    private boolean recursiveDestroy(World worldObj, int x, int y, int z, int ignoredMetadata, EntityPlayer player, ItemStack currentItem) {
++        for (int rx = x - 1; rx <= x + 1; rx++) {
++            for (int ry = y; ry <= y + 1; ry++) {
++                for (int rz = z - 1; rz <= z + 1; rz++) {
++                    if (worldObj.getBlockId(rx, ry, rz) == this.blockID
++                        && currentItem.itemDmg <= currentItem.getMaxDamage()
++                        && (rx != x || ry != y || rz != z)) {
++                        currentItem.onDestroyBlock(this.blockID, rx, ry, rz);
++                        if (currentItem.stackSize == 0) {
++                            currentItem.onItemDestroyedByUse(player);
++                            player.destroyCurrentEquippedItem();
++                            return false;
++                        }
++
++                        this.dropBlockAsItem(worldObj, rx, ry, rz, 0);
++                        worldObj.setBlockWithNotify(rx, ry, rz, 0);
++                        if (!this.recursiveDestroy(worldObj, rx, ry, rz, ignoredMetadata, player, currentItem)) {
++                            return false;
++                        }
++                    } else if (worldObj.getBlockId(rx, ry, rz) == Block.leaves.blockID) {
++//                        Block.leaves.fall(worldObj, rx, ry, rz);
++                        leavesToUpdate.add(new Integer[] {rx, ry, rz});
++                    }
++                }
++            }
++        }
++        return true;
++    }
++
++    public void onBlockDestroyedByPlayer(World worldObj, int x, int y, int z, int metadata) {
++        EntityPlayer player = worldObj.getClosestPlayer(x, y, z, 10);
++        ItemStack currentItem = player.inventory.getCurrentItem();
++        if (currentItem == null) {
++            return;
++        }
++        Item heldItem = currentItem.getItem();
++        if (!(heldItem instanceof ItemTool
++              && ((ItemTool) heldItem).effectiveAgainst(this)
++              && player.isSneaking())) {
++            return;
++        }
++
++        recursiveDestroy(worldObj, x, y, z, metadata, player, currentItem);
++        for (Integer[] leaf : leavesToUpdate) {
++            Block.leaves.fall(worldObj, leaf[0], leaf[1], leaf[2]);
++        }
++        leavesToUpdate.clear();
+     }
+ }

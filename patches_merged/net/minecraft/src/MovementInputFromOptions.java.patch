@@ -1,0 +1,25 @@
+--- a/net/minecraft/src/MovementInputFromOptions.java
++++ b/net/minecraft/src/MovementInputFromOptions.java
+@@ -34,6 +34,10 @@
+             b3 = 5;
+         }
+ 
++        if(key == this.gameSettings.keyBindRun.keyCode) {
++            b3 = 6;
++        }
++
+         if(b3 >= 0) {
+             this.movementKeyStates[b3] = state;
+         }
+@@ -68,10 +72,10 @@
+ 
+         this.jump = this.movementKeyStates[4];
+         this.sneak = this.movementKeyStates[5];
++        this.run = this.movementKeyStates[6];
+         if(this.sneak) {
+             this.moveStrafe = (float)((double)this.moveStrafe * 0.3D);
+             this.moveForward = (float)((double)this.moveForward * 0.3D);
+         }
+-
+     }
+ }

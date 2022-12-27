@@ -1,0 +1,135 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/GuiCreative.java
+@@ -1,0 +1,132 @@
++package io.github.bluestaggo.mcdiverge;
++
++import org.lwjgl.opengl.GL11;
++
++import net.minecraft.src.GuiButton;
++import net.minecraft.src.GuiContainer;
++import net.minecraft.src.InventoryPlayer;
++import net.minecraft.src.SlotInventory;
++import net.minecraft.client.Minecraft;
++
++import java.util.List;
++import java.util.stream.Collectors;
++
++public class GuiCreative extends GuiContainer {
++    private InventoryReadonly inventory;
++    private final InventoryPlayer inventoryPlayer;
++    private int row = 0;
++    private final Minecraft mc;
++
++    public GuiCreative(InventoryPlayer inventoryPlayer, Minecraft minecraft) {
++        this.xSize = 196;
++        this.ySize = 190;
++        this.inventoryPlayer = inventoryPlayer;
++        this.mc = minecraft;
++    }
++
++    public void initGui() {
++        this.controlList.clear();
++        this.setupItems();
++        this.setupControls();
++
++        if (this.mc.options.creativeDebug) {
++            this.controlList.add(new GuiButton(100, this.width - 150, this.height - 20, 150, 20,
++                                               (this.mc.creativeDebugEnabled ? "Disable " : "Enable ") + "Debug ;)"));
++        }
++    }
++
++    protected void drawGuiContainerBackgroundLayer(float f1) {
++        int bg = this.mc.renderEngine.getTexture("/gui/creative.png");
++        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++        this.mc.renderEngine.bindTexture(bg);
++        int posX = (this.width - this.xSize) / 2;
++        int posY = (this.height - this.ySize) / 2;
++        this.drawTexturedModalRect(posX, posY, 0, 0, this.xSize, this.ySize);
++    }
++
++    protected void drawGuiContainerForegroundLayer() {
++        this.fontRenderer.drawString(this.mc.creativeDebugEnabled ? "Cheat Menu" : "Creative Inventory", 17, 6, 0x404040);
++    }
++
++    private void setupItems() {
++//        this.inventory = this.mc.creativeDebugEnabled
++//                ? InventoryReadonly.generateCreativeInventory(true)
++//                : InventoryReadonly.getCreativeInventory();
++        this.inventory = InventoryReadonly.generateCreativeInventory(this.mc.creativeDebugEnabled);
++        this.inventory.pickOne = this.mc.thePlayer.creative;
++
++        this.inventorySlots.clear();
++        for (int i = this.row * 8; i < 64 + this.row * 8; i++) {
++            this.inventorySlots.add(new SlotInventory(this, this.inventory, i, ((i - this.row * 8) % 8) * 18 + 17,
++                    ((i - this.row * 8) / 8) * 18 + 18));
++        }
++        for (int i = 0; i < 9; i++) {
++            this.inventorySlots.add(i, new SlotInventory(this, this.inventoryPlayer, i, (i % 9) * 18 + 8, 166));
++        }
++    }
++
++    private void setupControls() {
++        int posX = (this.width - this.xSize) / 2 + 178;
++        int posY = (this.height - this.ySize) / 2 + 17;
++
++        this.controlList.add(new GuiButton(0, posX, posY, 18, 18, "^5"));
++        this.controlList.add(new GuiButton(1, posX, posY + 18, 18, 18, "^1"));
++        this.controlList.add(new GuiButton(2, posX, posY + 36, 18, 18, "v1"));
++        this.controlList.add(new GuiButton(3, posX, posY + 54, 18, 18, "v5"));
++
++        if (this.mc.creativeDebugEnabled) {
++            this.controlList.add(new GuiButton(4, posX, posY + 81, 18, 18, "FB"));
++            this.controlList.add(new GuiButton(5, posX, posY + 99, 18, 18, "NC"));
++            this.controlList.add(new GuiButton(6, posX + 20, posY + 81, 64, 18, "Day"));
++            this.controlList.add(new GuiButton(7, posX + 20, posY + 99, 64, 18, "Night"));
++        }
++    }
++
++    protected void actionPerformed(GuiButton guiButton1) {
++        switch (guiButton1.id) {
++            case 0:
++                this.row = Math.max(this.row - 5, 0);
++                break;
++
++            case 1:
++                this.row = Math.max(this.row - 1, 0);
++                break;
++
++            case 2:
++                this.row += 1;
++                break;
++
++            case 3:
++                this.row += 5;
++                break;
++
++            case 4:
++                this.mc.renderGlobal.toggleFullbright();
++                break;
++
++            case 5:
++                this.mc.thePlayer.noClip = !this.mc.thePlayer.noClip;
++                break;
++
++            case 6:
++                this.mc.theWorld.worldTime = 1000;
++                break;
++
++            case 7:
++                this.mc.theWorld.worldTime = 14000;
++                break;
++
++            case 100:
++                this.mc.creativeDebugEnabled = !this.mc.creativeDebugEnabled;
++
++                this.controlList.clear();
++                this.controlList.add(guiButton1);
++                guiButton1.displayString = (this.mc.creativeDebugEnabled ? "Disable " : "Enable ") + "Debug ;)";
++
++                this.setupItems();
++                this.setupControls();
++                break;
++        }
++        setupItems();
++    }
++}

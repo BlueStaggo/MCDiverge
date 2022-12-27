@@ -1,0 +1,190 @@
+--- a/net/minecraft/src/GuiMainMenu.java
++++ b/net/minecraft/src/GuiMainMenu.java
+@@ -7,17 +7,43 @@
+ import java.util.Date;
+ import java.util.Random;
+ 
++import io.github.bluestaggo.mcdiverge.GuiCredits;
++import net.minecraft.client.Minecraft;
+ import org.lwjgl.opengl.GL11;
+ import org.lwjgl.util.glu.GLU;
+ 
+ public class GuiMainMenu extends GuiScreen {
+     private static final Random rand = new Random();
+-    String[] logoBlockLayers = new String[]{" *   * * *   * *** *** *** *** *** ***", " ** ** * **  * *   *   * * * * *    * ", " * * * * * * * **  *   **  *** **   * ", " *   * * *  ** *   *   * * * * *    * ", " *   * * *   * *** *** * * * * *    * "};
++    private static final Block[] titleBlocks = {
++            Block.stone,
++            Block.cobblestone,
++            Block.bedrock,
++            Block.wood,
++            Block.planks,
++            Block.obsidian,
++            Block.cobblestoneMossy,
++            Block.dirt,
++            Block.gravel,
++            Block.blockClay
++    };
++    String[] logoBlockLayers = new String[]{" *   * * *   * *** *** *** *** *** ***",
++                                            " ** ** * **  * *   *   * * * * *    * ",
++                                            " * * * * * * * **  *   **  *** **   * ",
++                                            " *   * * *  ** *   *   * * * * *    * ",
++                                            " *   * * *   * *** *** * * * * *    * "};
+     private LogoEffectRandomizer[][] logoEffects;
+-    private float updateCounter = 0.0F;
+     private String splashString = "missingno";
++    private Block drawBlock;
+ 
+     public GuiMainMenu() {
++        if (rand.nextDouble() <= 0.0001F) {
++            logoBlockLayers = new String[]{" *   * * *   * *** *** *** *** *** ***",
++                                           " ** ** * **  * *   *   * * * * *    * ",
++                                           " * * * * * * * *   *** **  *** **   * ",
++                                           " *   * * *  ** *   *   * * * * *    * ",
++                                           " *   * * *   * *** *** * * * * *    * "};
++        }
++
+         try {
+             ArrayList arrayList1 = new ArrayList();
+             BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(GuiMainMenu.class.getResourceAsStream("/title/splashes.txt")));
+@@ -31,13 +57,16 @@
+             }
+ 
+             this.splashString = (String)arrayList1.get(rand.nextInt(arrayList1.size()));
++            this.drawBlock = titleBlocks[rand.nextInt(titleBlocks.length)];
+         } catch (Exception exception4) {
+         }
+ 
+     }
+ 
+     public void updateScreen() {
+-        ++this.updateCounter;
++        this.mc.sndManager.tickMusic();
++        this.mc.sndManager.playRandomTitleMusicIfReady();
++
+         if(this.logoEffects != null) {
+             for(int i1 = 0; i1 < this.logoEffects.length; ++i1) {
+                 for(int i2 = 0; i2 < this.logoEffects[i1].length; ++i2) {
+@@ -52,24 +81,30 @@
+     }
+ 
+     public void initGui() {
+-        Calendar calendar1 = Calendar.getInstance();
+-        calendar1.setTime(new Date());
+-        if(calendar1.get(2) + 1 == 11 && calendar1.get(5) == 9) {
+-            this.splashString = "Happy birthday, ez!";
+-        } else if(calendar1.get(2) + 1 == 6 && calendar1.get(5) == 1) {
+-            this.splashString = "Happy birthday, Notch!";
+-        } else if(calendar1.get(2) + 1 == 12 && calendar1.get(5) == 24) {
+-            this.splashString = "Merry X-mas!";
+-        } else if(calendar1.get(2) + 1 == 1 && calendar1.get(5) == 1) {
+-            this.splashString = "Happy new year!";
++        this.mc.sndManager.stopBackgroundMusic();
++
++        if(rand.nextInt(2) == 0) {
++            Calendar calendar1 = Calendar.getInstance();
++            calendar1.setTime(new Date());
++
++            if(calendar1.get(Calendar.MONTH) == Calendar.NOVEMBER && calendar1.get(Calendar.DATE) == 9) {
++                this.splashString = "Happy birthday, ez!";
++            } else if(calendar1.get(Calendar.MONTH) == Calendar.JUNE && calendar1.get(Calendar.DATE) == 1) {
++                this.splashString = "Happy birthday, Notch!";
++            } else if(calendar1.get(Calendar.MONTH) == Calendar.DECEMBER && (calendar1.get(Calendar.DATE) == 24 || calendar1.get(Calendar.DATE) == 25)) {
++                this.splashString = "Merry X-mas!";
++            } else if(calendar1.get(Calendar.MONTH) == Calendar.JANUARY && calendar1.get(Calendar.DATE) == 1) {
++                this.splashString = "Happy new year!";
++            } else if(calendar1.get(Calendar.MONTH) == Calendar.MAY && calendar1.get(Calendar.DATE) == 17) {
++                this.splashString = "Happy birthday, Minecraft!";
++            }
+         }
+ 
+         this.controlList.clear();
+         this.controlList.add(new GuiButton(1, this.width / 2 - 100, this.height / 4 + 48, "Singleplayer"));
+         this.controlList.add(new GuiButton(2, this.width / 2 - 100, this.height / 4 + 72, "Multiplayer"));
+-        this.controlList.add(new GuiButton(3, this.width / 2 - 100, this.height / 4 + 96, "Play tutorial level"));
+-        this.controlList.add(new GuiButton(0, this.width / 2 - 100, this.height / 4 + 120 + 12, "Options..."));
+-        ((GuiButton)this.controlList.get(2)).enabled = false;
++        this.controlList.add(new GuiButton(3, 10, this.height - 30, 60, 20, "Credits"));
++        this.controlList.add(new GuiButton(0, this.width / 2 - 100, this.height / 4 + 132, "Options..."));
+         if(this.mc.session == null) {
+             ((GuiButton)this.controlList.get(1)).enabled = false;
+         }
+@@ -77,33 +112,44 @@
+     }
+ 
+     protected void actionPerformed(GuiButton button) {
+-        if(button.id == 0) {
+-            this.mc.displayGuiScreen(new GuiOptions(this, this.mc.options));
+-        }
+-
+-        if(button.id == 1) {
+-            this.mc.displayGuiScreen(new GuiSelectWorld(this));
+-        }
+-
+-        if(button.id == 2) {
+-            this.mc.displayGuiScreen(new GuiMultiplayer(this));
+-        }
+-
++        switch (button.id) {
++            case 0:
++                this.mc.displayGuiScreen(new GuiOptions(this, this.mc.options));
++                break;
++
++            case 1:
++                this.mc.displayGuiScreen(new GuiSelectWorld(this));
++                break;
++
++            case 2:
++                this.mc.displayGuiScreen(new GuiMultiplayer(this));
++                break;
++
++            case 3:
++                this.mc.displayGuiScreen(new GuiCredits(this));
++                break;
++        }
+     }
+ 
+     public void drawScreen(int mouseX, int mouseY, float renderPartialTick) {
+         this.drawDefaultBackground();
++        this.drawString(this.fontRenderer, Minecraft.version, 2, 2, 0xFF7F7F7F);
+         Tessellator tessellator4 = Tessellator.instance;
+         this.drawLogo(renderPartialTick);
+         GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/gui/logo.png"));
+         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+         tessellator4.setColorOpaque_I(0xFFFFFF);
+         GL11.glPushMatrix();
+-        GL11.glTranslatef((float)(this.width / 2 + 90), 70.0F, 0.0F);
+-        GL11.glRotatef(-20.0F, 0.0F, 0.0F, 1.0F);
+-        float f5 = 1.8F - MathHelper.abs(MathHelper.sin((float)(System.currentTimeMillis() % 1000L) / 1000.0F * (float)Math.PI * 2.0F) * 0.1F);
+-        f5 = f5 * 100.0F / (float)(this.fontRenderer.getStringWidth(this.splashString) + 32);
+-        GL11.glScalef(f5, f5, f5);
++        GL11.glScalef(3.0F, 3.0F, 3.0F);
++        this.drawCenteredString(this.fontRenderer, "DIVERGE", this.width / 2 / 3, 80 / 3, 0xFF00FFFF);
++        GL11.glPopMatrix();
++        GL11.glPushMatrix();
++        GL11.glTranslatef((float)(this.width / 2), (float)(this.height / 4 + 124), 0.0F);
++        float f5 = MathHelper.sin((float)(System.currentTimeMillis() % 1000L) / 1000.0F * (float)Math.PI * 2.0F);
++        float f6 = (1.8F - MathHelper.abs(f5) * 0.1F) * 100.0F / (float)(this.fontRenderer.getStringWidth(this.splashString) + 32);
++        float f7 = f5 * 2.5F;
++        GL11.glScalef(f6, f6, f6);
++        GL11.glRotatef(f7, 0.0F, 0.0F, 1.0F);
+         this.drawCenteredString(this.fontRenderer, this.splashString, 0, -8, 16776960);
+         GL11.glPopMatrix();
+         String string6 = "Copyright Mojang Specifications. Do not distribute.";
+@@ -186,7 +232,6 @@
+                         float f10 = (float)(logoEffectRandomizer9.prevHeight + (logoEffectRandomizer9.height - logoEffectRandomizer9.prevHeight) * (double)renderPartialTick);
+                         float f11 = 1.0F;
+                         float f12 = 1.0F;
+-                        float f13 = 0.0F;
+                         if(i4 == 0) {
+                             f11 = f10 * 0.04F + 1.0F;
+                             f12 = 1.0F / f11;
+@@ -195,8 +240,7 @@
+ 
+                         GL11.glTranslatef((float)i7, (float)i6, f10);
+                         GL11.glScalef(f11, f11, f11);
+-                        GL11.glRotatef(f13, 0.0F, 1.0F, 0.0F);
+-                        renderBlocks5.renderBlockAsItem(Block.stone, f12);
++                        renderBlocks5.renderBlockAsItem(this.drawBlock, f12);
+                         GL11.glPopMatrix();
+                     }
+                 }

@@ -1,0 +1,47 @@
+--- a/net/minecraft/src/ItemArmor.java
++++ b/net/minecraft/src/ItemArmor.java
+@@ -1,20 +1,31 @@
+ package net.minecraft.src;
+ 
+-public class ItemArmor extends Item {
+-    private static final int[] damageReduceAmountArray = new int[]{3, 8, 6, 3};
+-    private static final int[] maxDamageArray = new int[]{11, 16, 15, 13};
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
++public class ItemArmor extends ItemEquipable {
++    private static final int[] protectionValues = new int[] { 3, 8, 6, 3 };
++    private static final int[] maxDamageArray = new int[] { 11, 16, 15, 13 };
+     public final int armorLevel;
+-    public final int armorType;
+-    public final int damageReduceAmount;
++    public final int defense;
+     public final int renderIndex;
+ 
+-    public ItemArmor(int id, int armorLevel, int renderIndex, int armorType) {
+-        super(id);
+-        this.armorLevel = armorLevel;
+-        this.armorType = armorType;
+-        this.renderIndex = renderIndex;
+-        this.damageReduceAmount = damageReduceAmountArray[armorType];
+-        this.maxDamage = maxDamageArray[armorType] * 3 << armorLevel;
+-        this.maxStackSize = 1;
++    public ItemArmor(int i1, int i2, int i3, int i4, double d5) {
++        super(i1, i4);
++        this.armorLevel = i2;
++        this.renderIndex = i3;
++        this.defense = (int) Math.round(protectionValues[i4] * d5);
++        this.maxDamage = maxDamageArray[i4] * 3 << i2;
++        if (i2 > 1) {
++            this.maxDamage *= 1 << i2 - 1;
++        }
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                Integer.toString(this.maxDamage) + " max durability",
++                ItemTooltip.INFO_COL,
++                Integer.toString(this.defense) + " defense",
++                ItemTooltip.INFO_COL
++        };
+     }
+ }

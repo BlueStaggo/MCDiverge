@@ -1,0 +1,13 @@
+--- a/net/minecraft/src/MathHelper.java
++++ b/net/minecraft/src/MathHelper.java
+@@ -49,6 +49,10 @@
+         return value1 < 0 ? -((-value1 - 1) / value2) - 1 : value1 / value2;
+     }
+ 
++    public static float clamp(float x, float min, float max) {
++        return Math.min(Math.max(x, min), max);
++    }
++
+     static {
+         for(int i0 = 0; i0 < 65536; ++i0) {
+             SIN_TABLE[i0] = (float)Math.sin((double)i0 * Math.PI * 2.0D / 65536.0D);

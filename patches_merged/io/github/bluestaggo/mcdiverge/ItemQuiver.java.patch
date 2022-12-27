@@ -1,0 +1,42 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/ItemQuiver.java
+@@ -1,0 +1,39 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.*;
++
++public class ItemQuiver extends ItemCharm {
++    public ItemQuiver(int i1) {
++        super(i1, 256, "quiver");
++        this.startingDamage = this.maxDamage;
++    }
++
++    public ItemStack onItemRightClick(ItemStack itemStack1, World world2, EntityPlayer entityPlayer3) {
++        InventoryPlayer inventory = entityPlayer3.inventory;
++
++        for (int i = 0; i < inventory.getSizeInventory(); ++i) {
++            ItemStack stack = inventory.getStackInSlot(i);
++            if (stack != null && stack.itemID == Item.arrow.shiftedIndex) {
++                while (itemStack1.itemDmg > 0 && entityPlayer3.inventory.consumeInventoryItem(Item.arrow.shiftedIndex)) {
++                    itemStack1.itemDmg--;
++                }
++                entityPlayer3.swingItem();
++                return itemStack1;
++            }
++        }
++
++        if (itemStack1.itemDmg < this.maxDamage) {
++            for (int i = this.maxDamage - itemStack1.itemDmg; i > 0; i -= 16) {
++                entityPlayer3.dropPlayerItem(new ItemStack(Item.arrow, Math.min(i, 16)));
++            }
++            itemStack1.itemDmg = this.maxDamage;
++            entityPlayer3.swingItem();
++        }
++
++        return itemStack1;
++    }
++
++    public boolean allowRepair() {
++        return false;
++    }
++}

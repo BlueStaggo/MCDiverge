@@ -1,0 +1,120 @@
+--- a/net/minecraft/src/InventoryPlayer.java
++++ b/net/minecraft/src/InventoryPlayer.java
+@@ -2,7 +2,7 @@
+ 
+ public class InventoryPlayer implements IInventory {
+     public ItemStack[] mainInventory = new ItemStack[37];
+-    public ItemStack[] armorInventory = new ItemStack[4];
++    public ItemStack[] armorInventory = new ItemStack[5];
+     public ItemStack[] craftingInventory = new ItemStack[4];
+     public int currentItem = 0;
+     private EntityPlayer player;
+@@ -27,9 +27,13 @@
+         return -1;
+     }
+ 
+-    private int storeItemStack(int i1) {
++    private int storeItemStack(int i1, int metadata) {
+         for(int i2 = 0; i2 < this.mainInventory.length; ++i2) {
+-            if(this.mainInventory[i2] != null && this.mainInventory[i2].itemID == i1 && this.mainInventory[i2].stackSize < this.mainInventory[i2].getMaxStackSize() && this.mainInventory[i2].stackSize < this.getInventoryStackLimit()) {
++            if(this.mainInventory[i2] != null
++                && this.mainInventory[i2].itemID == i1
++                && this.mainInventory[i2].itemMetadata == metadata
++                && this.mainInventory[i2].stackSize < this.mainInventory[i2].getMaxStackSize()
++                && this.mainInventory[i2].stackSize < this.getInventoryStackLimit()) {
+                 return i2;
+             }
+         }
+@@ -72,8 +76,8 @@
+ 
+     }
+ 
+-    private int storePartialItemStack(int i1, int i2) {
+-        int i3 = this.storeItemStack(i1);
++    private int storePartialItemStack(int i1, int i2, int metadata) {
++        int i3 = this.storeItemStack(i1, metadata);
+         if(i3 < 0) {
+             i3 = this.getFirstEmptyStack();
+         }
+@@ -82,7 +86,7 @@
+             return i2;
+         } else {
+             if(this.mainInventory[i3] == null) {
+-                this.mainInventory[i3] = new ItemStack(i1, 0);
++                this.mainInventory[i3] = new ItemStack(i1, 0).withMetadata(metadata);
+             }
+ 
+             int i4 = i2;
+@@ -129,7 +133,7 @@
+ 
+     public boolean addItemStackToInventory(ItemStack itemStack1) {
+         if(itemStack1.itemDmg == 0) {
+-            itemStack1.stackSize = this.storePartialItemStack(itemStack1.itemID, itemStack1.stackSize);
++            itemStack1.stackSize = this.storePartialItemStack(itemStack1.itemID, itemStack1.stackSize, itemStack1.itemMetadata);
+             if(itemStack1.stackSize == 0) {
+                 return true;
+             }
+@@ -191,7 +195,6 @@
+         if(this.mainInventory[this.currentItem] != null) {
+             f2 *= this.mainInventory[this.currentItem].getStrVsBlock(block1);
+         }
+-
+         return f2;
+     }
+ 
+@@ -230,13 +233,13 @@
+ 
+     public void readFromNBT(NBTTagList nBTTagList1) {
+         this.mainInventory = new ItemStack[36];
+-        this.armorInventory = new ItemStack[4];
++        this.armorInventory = new ItemStack[5];
+         this.craftingInventory = new ItemStack[4];
+ 
+         for(int i2 = 0; i2 < nBTTagList1.tagCount(); ++i2) {
+             NBTTagCompound nBTTagCompound3 = (NBTTagCompound)nBTTagList1.tagAt(i2);
+             int i4 = nBTTagCompound3.getByte("Slot") & 255;
+-            if(i4 >= 0 && i4 < this.mainInventory.length) {
++            if(i4 < this.mainInventory.length) {
+                 this.mainInventory[i4] = new ItemStack(nBTTagCompound3);
+             }
+ 
+@@ -252,7 +255,7 @@
+     }
+ 
+     public int getSizeInventory() {
+-        return this.mainInventory.length + 4;
++        return this.mainInventory.length + 5;
+     }
+ 
+     public ItemStack getStackInSlot(int slot) {
+@@ -298,26 +301,12 @@
+ 
+     public int getTotalArmorValue() {
+         int i1 = 0;
+-        int i2 = 0;
+-        int i3 = 0;
+-
+-        for(int i4 = 0; i4 < this.armorInventory.length; ++i4) {
+-            if(this.armorInventory[i4] != null && this.armorInventory[i4].getItem() instanceof ItemArmor) {
+-                int i5 = this.armorInventory[i4].getMaxDamage();
+-                int i6 = this.armorInventory[i4].itemDmg;
+-                int i7 = i5 - i6;
+-                i2 += i7;
+-                i3 += i5;
+-                int i8 = ((ItemArmor)this.armorInventory[i4].getItem()).damageReduceAmount;
+-                i1 += i8;
++        for (int i4 = 0; i4 < this.armorInventory.length; ++i4) {
++            if (this.armorInventory[i4] != null && this.armorInventory[i4].getItem() instanceof ItemArmor) {
++                i1 += ((ItemArmor) this.armorInventory[i4].getItem()).defense;
+             }
+         }
+-
+-        if(i3 == 0) {
+-            return 0;
+-        } else {
+-            return (i1 - 1) * i2 / i3 + 1;
+-        }
++        return i1;
+     }
+ 
+     public void damageArmor(int i1) {

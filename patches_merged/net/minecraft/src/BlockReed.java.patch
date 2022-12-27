@@ -1,0 +1,16 @@
+--- a/net/minecraft/src/BlockReed.java
++++ b/net/minecraft/src/BlockReed.java
+@@ -32,7 +32,12 @@
+ 
+     public boolean canPlaceBlockAt(World world, int x, int y, int z) {
+         int i5 = world.getBlockId(x, y - 1, z);
+-        return i5 == this.blockID ? true : (i5 != Block.grass.blockID && i5 != Block.dirt.blockID ? false : (world.getBlockMaterial(x - 1, y - 1, z) == Material.water ? true : (world.getBlockMaterial(x + 1, y - 1, z) == Material.water ? true : (world.getBlockMaterial(x, y - 1, z - 1) == Material.water ? true : world.getBlockMaterial(x, y - 1, z + 1) == Material.water))));
++        return i5 == this.blockID ? true
++            : (i5 != Block.grass.blockID && i5 != Block.dirt.blockID && i5 != Block.sand.blockID ? false
++            : (world.getBlockMaterial(x - 1, y - 1, z) == Material.water ? true
++            : (world.getBlockMaterial(x + 1, y - 1, z) == Material.water ? true
++            : (world.getBlockMaterial(x, y - 1, z - 1) == Material.water ? true
++            : world.getBlockMaterial(x, y - 1, z + 1) == Material.water))));
+     }
+ 
+     public void onNeighborBlockChange(World worldObj, int x, int y, int z, int id) {

@@ -1,0 +1,20 @@
+--- a/net/minecraft/src/SlotInventory.java
++++ b/net/minecraft/src/SlotInventory.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class SlotInventory extends Slot {
+     private final GuiContainer guiContainer;
+     public final int xDisplayPosition;
+@@ -18,5 +20,9 @@
+         x -= i3;
+         y -= i4;
+         return x >= this.xDisplayPosition - 1 && x < this.xDisplayPosition + 16 + 1 && y >= this.yDisplayPosition - 1 && y < this.yDisplayPosition + 16 + 1;
++    }
++
++    public ItemTooltip getTooltip() {
++        return this.getStack().getTooltip();
+     }
+ }

@@ -1,0 +1,39 @@
+--- a/net/minecraft/src/EntityFallingSand.java
++++ b/net/minecraft/src/EntityFallingSand.java
+@@ -3,6 +3,7 @@
+ public class EntityFallingSand extends Entity {
+     public int blockID;
+     public int fallTime = 0;
++    public boolean breakOnFall = false;
+ 
+     public EntityFallingSand(World world1) {
+         super(world1);
+@@ -53,11 +54,12 @@
+                 this.motionZ *= (double)0.7F;
+                 this.motionY *= -0.5D;
+                 this.setEntityDead();
+-                if(!this.worldObj.canBlockBePlacedAt(this.blockID, i1, i2, i3, true) || !this.worldObj.setBlockWithNotify(i1, i2, i3, this.blockID)) {
+-                    this.dropItem(this.blockID, 1);
++                if(this.breakOnFall || !this.worldObj.canBlockBePlacedAt(this.blockID, i1, i2, i3, true) || !this.worldObj.setBlockWithNotify(i1, i2, i3, this.blockID)) {
++//                    this.dropItem(this.blockID, 1);
++                    Block.blocksList[this.blockID].dropBlockAsItem(this.worldObj, i1, i2, i3, 0);
+                 }
+             } else if(this.fallTime > 100) {
+-                this.dropItem(this.blockID, 1);
++                Block.blocksList[this.blockID].dropBlockAsItem(this.worldObj, i1, i2, i3, 0);
+                 this.setEntityDead();
+             }
+ 
+@@ -66,10 +68,12 @@
+ 
+     protected void writeEntityToNBT(NBTTagCompound compoundTag) {
+         compoundTag.setByte("Tile", (byte)this.blockID);
++        compoundTag.setBoolean("BreakOnFall", this.breakOnFall);
+     }
+ 
+     protected void readEntityFromNBT(NBTTagCompound compoundTag) {
+         this.blockID = compoundTag.getByte("Tile") & 255;
++        this.breakOnFall = compoundTag.getBoolean("BreakOnFall");
+     }
+ 
+     public float getShadowSize() {

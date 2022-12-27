@@ -1,0 +1,42 @@
+--- a/net/minecraft/src/ItemSword.java
++++ b/net/minecraft/src/ItemSword.java
+@@ -1,17 +1,20 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class ItemSword extends Item {
+-    private int weaponDamage;
++    private final int weaponDamage;
+ 
+     public ItemSword(int id, int strength) {
+         super(id);
++        int strengthAbs = Math.abs(strength);
+         this.maxStackSize = 1;
+-        this.maxDamage = 32 << strength;
+-        if(strength == 3) {
++        this.maxDamage = 32 << strengthAbs;
++        if(strengthAbs == 3 || strength < 0) {
+             this.maxDamage *= 4;
+         }
+ 
+-        this.weaponDamage = 4 + strength * 2;
++        this.weaponDamage = 4 + strengthAbs * 2;
+     }
+ 
+     public float getStrVsBlock(ItemStack itemStack, Block block) {
+@@ -32,5 +35,14 @@
+ 
+     public boolean isFull3D() {
+         return true;
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                Integer.toString(this.weaponDamage) + " attack damage",
++                ItemTooltip.INFO_COL,
++                Integer.toString(this.maxDamage) + " max durability",
++                ItemTooltip.INFO_COL
++        };
+     }
+ }

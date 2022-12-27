@@ -1,0 +1,38 @@
+--- a/net/minecraft/src/PlayerControllerSP.java
++++ b/net/minecraft/src/PlayerControllerSP.java
+@@ -81,7 +81,7 @@
+                     this.curBlockDamage = 0.0F;
+                     this.prevBlockDamage = 0.0F;
+                     this.blockDestroySoundCounter = 0.0F;
+-                    this.blockHitWait = 5;
++                    this.blockHitWait = this.mc.thePlayer.creative ? 60 : 0;
+                 }
+             } else {
+                 this.curBlockDamage = 0.0F;
+@@ -119,6 +119,25 @@
+         this.prevBlockDamage = this.curBlockDamage;
+         this.monsterSpawner.onUpdate(this.mc.theWorld);
+         this.animalSpawner.onUpdate(this.mc.theWorld);
+-        this.mc.sndManager.playRandomMusicIfReady();
++
++        EntityPlayer plr = this.mc.thePlayer;
++        int ix = (int) plr.posX;
++        int iy = (int) plr.posY;
++        int iz = (int) plr.posZ;
++
++        this.mc.sndManager.tickMusic();
++        if (iy < 64
++                && this.mc.theWorld.getSavedLightValue(EnumSkyBlock.Sky, ix, iy, iz) <= 0
++                && this.mc.theWorld.hasSolidCeiling(ix, iy, iz)) {
++            if (this.mc.sndManager.getMusicType() != SoundManager.MusicType.CAVE) {
++                this.mc.sndManager.fadeOutBackgroundMusic();
++            }
++            this.mc.sndManager.playRandomCaveMusicIfReady();
++        } else {
++            if (this.mc.sndManager.getMusicType() != SoundManager.MusicType.NORMAL) {
++                this.mc.sndManager.fadeOutBackgroundMusic();
++            }
++            this.mc.sndManager.playRandomMusicIfReady();
++        }
+     }
+ }

@@ -1,0 +1,22 @@
+--- a/net/minecraft/src/GuiButton.java
++++ b/net/minecraft/src/GuiButton.java
+@@ -18,16 +18,14 @@
+         this(i1, i2, i3, 200, 20, string4);
+     }
+ 
+-    protected GuiButton(int i1, int i2, int i3, int i4, int i5, String string6) {
+-        this.width = 200;
+-        this.height = 20;
++    public GuiButton(int i1, int i2, int i3, int i4, int i5, String string6) {
++        this.width = i4;
++        this.height = i5;
+         this.enabled = true;
+         this.visible = true;
+         this.id = i1;
+         this.xPosition = i2;
+         this.yPosition = i3;
+-        this.width = i4;
+-        this.height = i5;
+         this.displayString = string6;
+     }
+ 

@@ -1,0 +1,284 @@
+--- a/net/minecraft/client/Minecraft.java
++++ b/net/minecraft/client/Minecraft.java
+@@ -9,60 +9,8 @@
+ import java.awt.Graphics;
+ import java.io.File;
+ 
+-import net.minecraft.src.AxisAlignedBB;
+-import net.minecraft.src.Block;
+-import net.minecraft.src.EffectRenderer;
+-import net.minecraft.src.EntityPlayerSP;
+-import net.minecraft.src.EntityRenderer;
+-import net.minecraft.src.EnumOS;
+-import net.minecraft.src.FontRenderer;
+-import net.minecraft.src.GLAllocation;
+-import net.minecraft.src.GameSettings;
+-import net.minecraft.src.GameWindowListener;
+-import net.minecraft.src.GuiChat;
+-import net.minecraft.src.GuiConflictWarning;
+-import net.minecraft.src.GuiConnecting;
+-import net.minecraft.src.GuiErrorScreen;
+-import net.minecraft.src.GuiGameOver;
+-import net.minecraft.src.GuiIngame;
+-import net.minecraft.src.GuiIngameMenu;
+-import net.minecraft.src.GuiInventory;
+-import net.minecraft.src.GuiMainMenu;
+-import net.minecraft.src.GuiScreen;
+-import net.minecraft.src.ItemRenderer;
+-import net.minecraft.src.ItemStack;
+-import net.minecraft.src.LoadingScreenRenderer;
+-import net.minecraft.src.MathHelper;
+-import net.minecraft.src.MinecraftError;
+-import net.minecraft.src.MinecraftException;
+-import net.minecraft.src.MinecraftImpl;
+-import net.minecraft.src.ModelBiped;
+-import net.minecraft.src.MouseHelper;
+-import net.minecraft.src.MovementInputFromOptions;
+-import net.minecraft.src.MovingObjectPosition;
+-import net.minecraft.src.OpenGlCapsChecker;
+-import net.minecraft.src.PlayerController;
+-import net.minecraft.src.PlayerControllerCreative;
+-import net.minecraft.src.RenderEngine;
+-import net.minecraft.src.RenderGlobal;
+-import net.minecraft.src.RenderManager;
+-import net.minecraft.src.ScaledResolution;
+-import net.minecraft.src.Session;
+-import net.minecraft.src.SoundManager;
+-import net.minecraft.src.Tessellator;
+-import net.minecraft.src.TextureCompassFX;
+-import net.minecraft.src.TextureFlamesFX;
+-import net.minecraft.src.TextureLavaFX;
+-import net.minecraft.src.TextureLavaFlowFX;
+-import net.minecraft.src.TextureWaterFX;
+-import net.minecraft.src.TextureWaterFlowFX;
+-import net.minecraft.src.ThreadDownloadResources;
+-import net.minecraft.src.ThreadSleepForever;
+-import net.minecraft.src.Timer;
+-import net.minecraft.src.UnexpectedThrowable;
+-import net.minecraft.src.Vec3D;
+-import net.minecraft.src.World;
+-import net.minecraft.src.WorldRenderer;
++import io.github.bluestaggo.mcdiverge.CreateWorldInfo;
++import net.minecraft.src.*;
+ 
+ import org.lwjgl.LWJGLException;
+ import org.lwjgl.input.Controllers;
+@@ -74,6 +22,9 @@
+ import org.lwjgl.util.glu.GLU;
+ 
+ public abstract class Minecraft implements Runnable {
++    private static Minecraft instance;
++    public static final String version = "Minecraft Diverge v0.1";
++
+     public PlayerController playerController;
+     private boolean fullscreen = false;
+     public int displayWidth;
+@@ -125,6 +76,7 @@
+     public boolean isRaining = false;
+     long systemTime = System.currentTimeMillis();
+     private int joinPlayerCounter = 0;
++    public boolean creativeDebugEnabled = false;
+ 
+     public Minecraft(Component component, Canvas canvas, MinecraftApplet mcApplet, int width, int height, boolean fullscreen) {
+         this.tempDisplayWidth = width;
+@@ -136,10 +88,15 @@
+         this.displayWidth = width;
+         this.displayHeight = height;
+         this.fullscreen = fullscreen;
++        Minecraft.instance = this;
+     }
+ 
+     public abstract void displayUnexpectedThrowable(UnexpectedThrowable unexpectedThrowable1);
+ 
++    public static GameSettings getOptions() {
++        return instance.options;
++    }
++
+     public void setServer(String string1, int i2) {
+         this.serverName = string1;
+         this.serverPort = i2;
+@@ -170,7 +127,7 @@
+             Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
+         }
+ 
+-        Display.setTitle("Minecraft Minecraft Alpha v1.1.2_01");
++        Display.setTitle("Minecraft " + Minecraft.version);
+ 
+         try {
+             Display.create();
+@@ -195,6 +152,8 @@
+         Mouse.create();
+         this.mouseHelper = new MouseHelper(this.mcCanvas);
+ 
++        Display.setVSyncEnabled(this.options.limitFramerate);
++
+         try {
+             Controllers.create();
+         } catch (Exception exception4) {
+@@ -240,7 +199,6 @@
+         } else {
+             this.displayGuiScreen(new GuiMainMenu());
+         }
+-
+     }
+ 
+     private void loadScreen() throws LWJGLException {
+@@ -494,9 +452,9 @@
+                         this.resize(this.displayWidth, this.displayHeight);
+                     }
+ 
+-                    if(this.options.limitFramerate) {
+-                        Thread.sleep(5L);
+-                    }
++                    // if(this.options.limitFramerate) {
++                    //     Thread.sleep(5L);
++                    // }
+ 
+                     this.checkGLError("Post render");
+                     ++i3;
+@@ -679,7 +637,7 @@
+                 if(itemStack9 != null) {
+                     i3 = itemStack9.stackSize;
+                     ItemStack itemStack10 = itemStack9.useItemRightClick(this.theWorld, this.thePlayer);
+-                    if(itemStack10 != itemStack9 || itemStack10 != null && itemStack10.stackSize != i3) {
++                    if(itemStack10 != itemStack9 || itemStack10.stackSize != i3) {
+                         this.thePlayer.inventory.mainInventory[this.thePlayer.inventory.currentItem] = itemStack10;
+                         this.entityRenderer.itemRenderer.resetEquippedProgress2();
+                         if(itemStack10.stackSize == 0) {
+@@ -788,6 +746,8 @@
+     }
+ 
+     public void runTick() {
++        GuiScreen.backgroundElapsedTicks++;
++
+         this.ingameGUI.updateTick();
+         this.entityRenderer.getMouseOver(1.0F);
+         if(this.thePlayer != null) {
+@@ -871,6 +831,10 @@
+                                                     this.options.thirdPersonView = !this.options.thirdPersonView;
+                                                 }
+ 
++                                                if(Keyboard.getEventKey() == Keyboard.KEY_F3) {
++                                                    this.options.debugMenu = !this.options.debugMenu;
++                                                }
++
+                                                 if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
+                                                     this.displayGuiScreen(new GuiInventory(this.thePlayer.inventory, this.thePlayer.inventory.craftingInventory));
+                                                 }
+@@ -882,6 +846,14 @@
+                                                 if(this.isMultiplayerWorld() && Keyboard.getEventKey() == this.options.keyBindChat.keyCode) {
+                                                     this.displayGuiScreen(new GuiChat());
+                                                 }
++
++                                                if(Keyboard.getEventKey() == this.options.keyBindCreative.keyCode) {
++                                                    this.thePlayer.displayGUICreative();
++                                                }
++
++                                                if(Keyboard.getEventKey() == this.options.keyBindRecipeGuide.keyCode) {
++                                                    this.thePlayer.displayGUIRecipeGuide();
++                                                }
+                                             }
+ 
+                                             for(int i4 = 0; i4 < 9; ++i4) {
+@@ -982,9 +954,14 @@
+     }
+ 
+     public void startWorld(String worldName) {
++        startWorld(worldName, null);
++    }
++
++    public void startWorld(String worldName, CreateWorldInfo info) {
++        this.sndManager.fadeOutTitleMusic();
+         this.changeWorld1((World)null);
+         System.gc();
+-        World world2 = new World(new File(getMinecraftDir(), "saves"), worldName);
++        World world2 = new World(new File(getMinecraftDir(), "saves"), worldName, info == null ? 0 : info.seed, info);
+         if(world2.isNewWorld) {
+             this.changeWorld(world2, "Generating level");
+         } else {
+@@ -998,7 +975,7 @@
+     }
+ 
+     public void changeWorld(World world, String title) {
+-        this.sndManager.playStreaming((String)null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
++        this.sndManager.playStreaming(null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
+         if(this.theWorld != null) {
+             this.theWorld.saveWorldIndirectly(this.loadingScreen);
+         }
+@@ -1041,6 +1018,7 @@
+                 world.saveWorldIndirectly(this.loadingScreen);
+             }
+         } else {
++            this.sndManager.fadeOutBackgroundMusic();
+             this.thePlayer = null;
+         }
+ 
+@@ -1088,9 +1066,15 @@
+             this.sndManager.addSound(name, file);
+         } else if(string4.equalsIgnoreCase("streaming")) {
+             this.sndManager.addStreaming(name, file);
+-        } else if(string4.equalsIgnoreCase("music")) {
+-            this.sndManager.addMusic(name, file);
+         } else if(string4.equalsIgnoreCase("newmusic")) {
++            if (name.contains("cave")) {
++                this.sndManager.addCaveMusic(name, file);
++            } else if (name.contains("title")) {
++                this.sndManager.addTitleMusic(name, file);
++            } else {
++                this.sndManager.addMusic(name, file);
++            }
++        } else if(string4.equalsIgnoreCase("music")) {
+             this.sndManager.addMusic(name, file);
+         }
+ 
+@@ -1100,6 +1084,12 @@
+         return this.glCapabilities;
+     }
+ 
++    public String debugInfoLocation() {
++        return "X: " + Math.floor(this.thePlayer.posX * 100.0F) / 100.0F
++               + ", Y: " + Math.floor(this.thePlayer.posY * 100.0F) / 100.0F
++               + ", Z: " + Math.floor(this.thePlayer.posZ * 100.0F) / 100.0F;
++    }
++
+     public String debugInfoRenders() {
+         return this.renderGlobal.getDebugInfoRenders();
+     }
+@@ -1112,6 +1102,17 @@
+         return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
+     }
+ 
++    public String debugInfoSeed() {
++        return "Seed: " + this.theWorld.randomSeed;
++    }
++
++    public String debugInfoWorld() {
++        return "S: " + (this.theWorld.snowCovered ? 1 : 0)
++                   + ". GM: " + (this.theWorld.creative ? 1 : 0)
++                   + ". T: " + this.theWorld.worldTime
++                   + ". SF: " + this.theWorld.starfallChance;
++    }
++
+     public void respawn() {
+         this.theWorld.setSpawnLocation();
+         if(this.thePlayer != null) {
+@@ -1128,7 +1129,7 @@
+     }
+ 
+     public static void startMainThread(String username, String sessionId) {
+-        startMainThread(username, sessionId, (String)null);
++        startMainThread(username, sessionId, null);
+     }
+ 
+     public static void startMainThread(String username, String sessionId, String server) {
+@@ -1139,8 +1140,8 @@
+         frame5.add(canvas6, "Center");
+         canvas6.setPreferredSize(new Dimension(854, 480));
+         frame5.pack();
+-        frame5.setLocationRelativeTo((Component)null);
+-        MinecraftImpl minecraftImpl7 = new MinecraftImpl(frame5, canvas6, (MinecraftApplet)null, 854, 480, z3, frame5);
++        frame5.setLocationRelativeTo(null);
++        MinecraftImpl minecraftImpl7 = new MinecraftImpl(frame5, canvas6, null, 854, 480, z3, frame5);
+         Thread thread8 = new Thread(minecraftImpl7, "Minecraft main thread");
+         thread8.setPriority(10);
+         minecraftImpl7.appletMode = false;

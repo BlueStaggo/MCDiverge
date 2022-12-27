@@ -1,0 +1,10 @@
+--- a/net/minecraft/src/MovementInput.java
++++ b/net/minecraft/src/MovementInput.java
+@@ -6,6 +6,7 @@
+     public boolean unused = false;
+     public boolean jump = false;
+     public boolean sneak = false;
++    public boolean run = false;
+ 
+     public void updatePlayerMoveState(EntityPlayer entityPlayer) {
+     }

@@ -1,0 +1,11 @@
+--- a/net/minecraft/src/SlotArmor.java
++++ b/net/minecraft/src/SlotArmor.java
+@@ -11,7 +11,7 @@
+     }
+ 
+     public boolean isItemValid(ItemStack itemStack) {
+-        return itemStack.getItem() instanceof ItemArmor ? ((ItemArmor)itemStack.getItem()).armorType == this.armorType : false;
++        return itemStack.getItem() instanceof ItemEquipable && ((ItemEquipable) itemStack.getItem()).armorType == this.armorType;
+     }
+ 
+     public int getBackgroundIconIndex() {

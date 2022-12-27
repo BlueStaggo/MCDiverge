@@ -1,0 +1,19 @@
+--- /dev/null
++++ b/net/minecraft/src/ItemEquipable.java
+@@ -1,0 +1,16 @@
++package net.minecraft.src;
++
++public class ItemEquipable extends Item {
++    public final int armorType;
++
++    public ItemEquipable(int i1, int i2) {
++        this(i1, i2, 0);
++    }
++
++    public ItemEquipable(int i1, int i2, int i3) {
++        super(i1);
++        this.maxStackSize = 1;
++        this.armorType = i2;
++        this.maxDamage = i3;
++    }
++}

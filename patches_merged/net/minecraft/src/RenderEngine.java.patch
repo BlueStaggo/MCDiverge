@@ -1,0 +1,10 @@
+--- a/net/minecraft/src/RenderEngine.java
++++ b/net/minecraft/src/RenderEngine.java
+@@ -28,6 +28,7 @@
+ 
+     public RenderEngine(GameSettings gameSettings1) {
+         this.options = gameSettings1;
++        RenderGlobal.globalBrightness = this.options.brightness * 0.2F;
+     }
+ 
+     public int getTexture(String string1) {

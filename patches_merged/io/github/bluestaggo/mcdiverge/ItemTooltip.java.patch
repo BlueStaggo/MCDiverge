@@ -1,0 +1,344 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/ItemTooltip.java
+@@ -1,0 +1,341 @@
++package io.github.bluestaggo.mcdiverge;
++
++import java.util.ArrayList;
++import java.util.List;
++
++import net.minecraft.src.Item;
++
++public class ItemTooltip {
++    public static ItemTooltip[] items = new ItemTooltip[32000];
++    public static ItemTooltip[][] fromMetadata = new ItemTooltip[32000][16];
++    public List<String> lines = new ArrayList<>();
++    public List<Integer> colors = new ArrayList<>();
++    public Pair<Integer, Integer> gradient;
++
++    public static final Pair<Integer, Integer> DEFAULT_GRAD = new Pair<>(0xC0333366, 0xC0101020);
++    public static final Pair<Integer, Integer> NOVELTY_GRAD = new Pair<>(0xC08f39e6, 0xC0442b8a);
++    public static final Pair<Integer, Integer> INVALID_GRAD = new Pair<>(0xC07E1212, 0xC02D0707);
++    public static final Pair<Integer, Integer> LEGENDARY_GRAD = new Pair<>(0xC0663366, 0xC0201020);
++    public static final int INVALID_COL = 0xFF5555;
++    public static final int DESCRIPTION_COL = 0xAAAAAA;
++    public static final int INFO_COL = 0xAAAA66;
++    public static final int UNCOMMON_COL = 0xFFFF55;
++    public static final int RARE_COL = 0x55FFFF;
++    public static final int LEGENDARY_COL = 0xFF55FF;
++
++    static {
++        items[1] = new ItemTooltip("Stone");
++        fromMetadata[1][1] = new ItemTooltip("Marble");
++        fromMetadata[1][2] = new ItemTooltip("Slate");
++        items[2] = new ItemTooltip("Grass");
++        items[3] = new ItemTooltip("Dirt");
++        items[4] = new ItemTooltip("Cobblestone");
++        fromMetadata[4][1] = new ItemTooltip("Cobbled Marble");
++        fromMetadata[4][2] = new ItemTooltip("Cobbled Slate");
++        items[5] = new ItemTooltip("Planks");
++        items[6] = new ItemTooltip("Sapling", "Grows into a tree", DESCRIPTION_COL);
++        items[7] = ItemTooltip.invalid("Bedrock");
++        items[8] = ItemTooltip.invalid("Flowing Water");
++        items[9] = ItemTooltip.invalid("Still Water");
++        items[10] = ItemTooltip.invalid("Flowing Lava");
++        items[11] = ItemTooltip.invalid("Still Lava");
++        items[12] = new ItemTooltip("Sand");
++        items[13] = new ItemTooltip("Gravel");
++        items[14] = new ItemTooltip("Gold Ore", UNCOMMON_COL);
++        items[15] = new ItemTooltip("Iron Ore", UNCOMMON_COL);
++        items[16] = new ItemTooltip("Coal Ore");
++        items[17] = new ItemTooltip("Log");
++        items[18] = new ItemTooltip("Leaves");
++        items[19] = new ItemTooltip("Sponge");
++        items[20] = new ItemTooltip("Glass");
++        items[21] = new ItemTooltip("Polished Stone");
++        fromMetadata[21][1] = new ItemTooltip("Polished Marble");
++        fromMetadata[21][2] = new ItemTooltip("Polished Slate");
++        items[22] = ItemTooltip.invalid("Double Plank Slab");
++        items[23] = new ItemTooltip("Plank Slab");
++        items[35] = new ItemTooltip("Wool");
++        items[37] = new ItemTooltip("Dandelion");
++        items[38] = new ItemTooltip("Rose");
++        items[39] = new ItemTooltip("Brown Mushroom");
++        items[40] = new ItemTooltip("Red Mushroom");
++        items[41] = new ItemTooltip("Block of Gold", UNCOMMON_COL);
++        items[42] = new ItemTooltip("Block of Iron", UNCOMMON_COL);
++        items[43] = ItemTooltip.invalid("Double Stone Slab");
++        items[44] = new ItemTooltip("Stone Slab");
++        fromMetadata[44][0] = new ItemTooltip("Cobblestone Slab");
++        fromMetadata[44][1] = new ItemTooltip("Cobbled Marble Slab");
++        fromMetadata[44][2] = new ItemTooltip("Cobbled Slate Slab");
++        fromMetadata[44][3] = new ItemTooltip("Stone Slab");
++        fromMetadata[44][4] = new ItemTooltip("Marble Slab");
++        fromMetadata[44][5] = new ItemTooltip("Slate Slab");
++        fromMetadata[44][6] = new ItemTooltip("Polished Stone Slab");
++        fromMetadata[44][7] = new ItemTooltip("Polished Marble Slab");
++        fromMetadata[44][8] = new ItemTooltip("Polished Slate Slab");
++        fromMetadata[44][9] = new ItemTooltip("Brick Slab");
++        items[45] = new ItemTooltip("Bricks");
++        items[46] = new ItemTooltip("TNT", UNCOMMON_COL, "Punch for an explosion", DESCRIPTION_COL);
++        items[47] = new ItemTooltip("Bookshelf");
++        items[48] = new ItemTooltip("Mossy Cobblestone");
++        items[49] = new ItemTooltip("Obsidian", RARE_COL);
++        items[50] = new ItemTooltip("Torch");
++        items[51] = ItemTooltip.invalid("Fire");
++        items[52] = ItemTooltip.invalid("Mob Spawner");
++        items[53] = new ItemTooltip("Wooden Stairs");
++        items[54] = new ItemTooltip("Chest");
++        items[55] = ItemTooltip.invalid("Redstone Dust (Block)");
++        items[56] = new ItemTooltip("Diamond Ore", RARE_COL);
++        items[57] = new ItemTooltip("Block of Diamond", RARE_COL);
++        items[58] = new ItemTooltip("Crafting Table", "The basic tool for crafting", DESCRIPTION_COL);
++        items[59] = ItemTooltip.invalid("Crops");
++        items[60] = ItemTooltip.invalid("Farmland");
++        items[61] = new ItemTooltip("Furnace", "Used for cooking items", DESCRIPTION_COL);
++        items[62] = ItemTooltip.invalid("Lit Furnace");
++        items[63] = ItemTooltip.invalid("Sign (Block)");
++        items[64] = ItemTooltip.invalid("Wooden Door (Block)");
++        items[65] = new ItemTooltip("Ladder");
++        items[66] = new ItemTooltip("Minecart Track", UNCOMMON_COL, "Used for travel with minecarts", DESCRIPTION_COL);
++        items[67] = new ItemTooltip("Cobblestone Stairs");
++        items[68] = ItemTooltip.invalid("Wall Sign (Block)");
++        items[69] = new ItemTooltip("Lever",
++                                    "Can be switched to toggle", DESCRIPTION_COL,
++                                    "a redstone signal", DESCRIPTION_COL);
++        items[70] = new ItemTooltip("Stone Pressure Plate",
++                                    "Emits a redstone signal when", DESCRIPTION_COL,
++                                    "a player steps on it", DESCRIPTION_COL);
++        items[71] = ItemTooltip.invalid("Iron Door (Block)");
++        items[72] = new ItemTooltip("Wooden Pressure Plate",
++                                    "Emits a redstone signal when", DESCRIPTION_COL,
++                                    "something steps on it", DESCRIPTION_COL);
++        items[73] = new ItemTooltip("Redstone Ore", RARE_COL);
++        items[74] = ItemTooltip.invalid("Glowing Redstone Ore");
++        items[75] = ItemTooltip.invalid("Redstone Torch (Off)");
++        items[76] = new ItemTooltip("Redstone Torch", RARE_COL);
++        items[77] = new ItemTooltip("Stone Button", "Press to emit a redstone signal", DESCRIPTION_COL);
++        items[78] = new ItemTooltip("Snow");
++        items[79] = new ItemTooltip("Ice");
++        items[80] = new ItemTooltip("Snow Block");
++        items[81] = new ItemTooltip("Cactus", "Hurts on contact", DESCRIPTION_COL);
++        items[82] = new ItemTooltip("Clay Block");
++        items[83] = ItemTooltip.invalid("Sugar Cane (Block)");
++        items[84] = new ItemTooltip("Jukebox", RARE_COL, "Can play music discs", DESCRIPTION_COL);
++        items[85] = new ItemTooltip("Fence");
++        items[86] = new ItemTooltip("Speleothem");
++        items[87] = new ItemTooltip(LEGENDARY_GRAD, "Ruby Ore", LEGENDARY_COL);
++        items[88] = new ItemTooltip(LEGENDARY_GRAD, "Sapphire Ore", LEGENDARY_COL);
++        items[89] = new ItemTooltip(LEGENDARY_GRAD, "Block of Ruby", LEGENDARY_COL);
++        items[90] = new ItemTooltip(LEGENDARY_GRAD, "Block of Sapphire", LEGENDARY_COL);
++        items[91] = new ItemTooltip(LEGENDARY_GRAD, "Blaster", LEGENDARY_COL,
++                                    "Smelt items at quadruple", DESCRIPTION_COL,
++                                       "the speed of a furnace but", DESCRIPTION_COL,
++                                    "uses double the fuel", DESCRIPTION_COL);
++        items[92] = ItemTooltip.invalid("Lit Blaster");
++        items[93] = new ItemTooltip(LEGENDARY_GRAD, "Refabricator", LEGENDARY_COL,
++                                    "Duplicates or repairs items", DESCRIPTION_COL,
++                                    "from the power of", DESCRIPTION_COL,
++                                    "star dust", DESCRIPTION_COL);
++
++        items[256] = new ItemTooltip("Iron Shovel", UNCOMMON_COL, Item.shovel);
++        items[257] = new ItemTooltip("Iron Pickaxe", UNCOMMON_COL, Item.pickaxeSteel);
++        items[258] = new ItemTooltip("Iron Axe", UNCOMMON_COL, Item.axeSteel);
++        items[259] = new ItemTooltip("Flint and Steel", UNCOMMON_COL, "Right click to create fire",
++                DESCRIPTION_COL);
++        items[260] = new ItemTooltip("Apple", UNCOMMON_COL, Item.appleRed);
++        items[261] = new ItemTooltip("Bow", "Right click to shoot arrows", DESCRIPTION_COL);
++        items[262] = new ItemTooltip("Arrow", "Shot with a bow", DESCRIPTION_COL);
++        items[263] = new ItemTooltip("Coal");
++        items[264] = new ItemTooltip("Diamond", RARE_COL);
++        items[265] = new ItemTooltip("Iron Ingot", UNCOMMON_COL);
++        items[266] = new ItemTooltip("Gold Ingot", UNCOMMON_COL);
++        items[267] = new ItemTooltip("Iron Sword", UNCOMMON_COL, Item.swordSteel);
++        items[268] = new ItemTooltip("Wooden Sword", Item.swordWood);
++        items[269] = new ItemTooltip("Wooden Shovel", Item.shovelWood);
++        items[270] = new ItemTooltip("Wooden Pickaxe", Item.pickaxeWood);
++        items[271] = new ItemTooltip("Wooden Axe", Item.axeWood);
++        items[272] = new ItemTooltip("Stone Sword", Item.swordStone);
++        items[273] = new ItemTooltip("Stone Shovel", Item.shovelStone);
++        items[274] = new ItemTooltip("Stone Pickaxe", Item.pickaxeStone);
++        items[275] = new ItemTooltip("Stone Axe", Item.axeStone);
++        items[276] = new ItemTooltip("Diamond Sword", RARE_COL, Item.swordDiamond);
++        items[277] = new ItemTooltip("Diamond Shovel", RARE_COL, Item.shovelDiamond);
++        items[278] = new ItemTooltip("Diamond Pickaxe", RARE_COL, Item.pickaxeDiamond);
++        items[279] = new ItemTooltip("Diamond Axe", RARE_COL, Item.axeDiamond);
++        items[280] = new ItemTooltip("Stick");
++        items[281] = new ItemTooltip("Bowl");
++        items[282] = new ItemTooltip("Mushroom Stew", UNCOMMON_COL, Item.bowlSoup);
++        items[283] = new ItemTooltip("Golden Sword", UNCOMMON_COL, Item.swordGold);
++        items[284] = new ItemTooltip("Golden Shovel", UNCOMMON_COL, Item.shovelGold);
++        items[285] = new ItemTooltip("Golden Pickaxe", UNCOMMON_COL, Item.pickaxeGold);
++        items[286] = new ItemTooltip("Golden Axe", UNCOMMON_COL, Item.axeGold);
++        items[287] = new ItemTooltip("String");
++        items[288] = new ItemTooltip("Feather");
++        items[289] = new ItemTooltip("Gunpowder");
++        items[290] = new ItemTooltip("Wooden Hoe", Item.hoeWood);
++        items[291] = new ItemTooltip("Stone Hoe", Item.hoeStone);
++        items[292] = new ItemTooltip("Iron Hoe", UNCOMMON_COL, Item.hoeSteel);
++        items[293] = new ItemTooltip("Diamond Hoe", RARE_COL, Item.hoeDiamond);
++        items[294] = new ItemTooltip("Golden Hoe", UNCOMMON_COL, Item.hoeGold);
++        items[295] = new ItemTooltip("Seeds", "Can be planted on farmland", DESCRIPTION_COL);
++        items[296] = new ItemTooltip("Wheat", "Can be crafted into bread", DESCRIPTION_COL);
++        items[297] = new ItemTooltip("Bread", Item.bread);
++        items[298] = new ItemTooltip("Leather Cap", Item.helmetLeather);
++        items[299] = new ItemTooltip("Leather Tunic", Item.plateLeather);
++        items[300] = new ItemTooltip("Leather Pants", Item.legsLeather);
++        items[301] = new ItemTooltip("Leather Boots", Item.bootsLeather);
++        items[302] = new ItemTooltip("Chainmail Helmet", UNCOMMON_COL, Item.helmetChain);
++        items[303] = new ItemTooltip("Chainmail Chestplate", UNCOMMON_COL, Item.plateChain);
++        items[304] = new ItemTooltip("Chainmail Leggings", UNCOMMON_COL, Item.legsChain);
++        items[305] = new ItemTooltip("Chainmail Boots", UNCOMMON_COL, Item.bootsChain);
++        items[306] = new ItemTooltip("Iron Helmet", UNCOMMON_COL, Item.helmetSteel);
++        items[307] = new ItemTooltip("Iron Chestplate", UNCOMMON_COL, Item.plateSteel);
++        items[308] = new ItemTooltip("Iron Leggings", UNCOMMON_COL, Item.legsSteel);
++        items[309] = new ItemTooltip("Iron Boots", UNCOMMON_COL, Item.bootsSteel);
++        items[310] = new ItemTooltip("Diamond Helmet", RARE_COL, Item.helmetDiamond);
++        items[311] = new ItemTooltip("Diamond Chestplate", RARE_COL, Item.plateDiamond);
++        items[312] = new ItemTooltip("Diamond Leggings", RARE_COL, Item.legsDiamond);
++        items[313] = new ItemTooltip("Diamond Boots", RARE_COL, Item.bootsDiamond);
++        items[314] = new ItemTooltip("Golden Helmet", UNCOMMON_COL, Item.helmetGold);
++        items[315] = new ItemTooltip("Golden Chestplate", UNCOMMON_COL, Item.plateGold);
++        items[316] = new ItemTooltip("Golden Leggings", UNCOMMON_COL, Item.legsGold);
++        items[317] = new ItemTooltip("Golden Boots", UNCOMMON_COL, Item.bootsGold);
++        items[318] = new ItemTooltip("Flint");
++        items[319] = new ItemTooltip("Raw Porkchop", Item.porkRaw);
++        items[320] = new ItemTooltip("Cooked Porkchop", Item.porkCooked);
++        items[321] = new ItemTooltip("Painting", "Display a random piece of artwork", DESCRIPTION_COL);
++        items[322] = new ItemTooltip("Golden Apple", Item.appleGold);
++        items[323] = new ItemTooltip("Sign");
++        items[324] = new ItemTooltip("Wooden Door");
++        items[325] = new ItemTooltip("Bucket",
++                                     "Right click to pick up", DESCRIPTION_COL,
++                                     "a liquid", DESCRIPTION_COL);
++        items[326] = new ItemTooltip("Water Bucket", "Right click to place water", DESCRIPTION_COL);
++        items[327] = new ItemTooltip("Lava Bucket", "Right click to place lava", DESCRIPTION_COL);
++        items[328] = new ItemTooltip("Minecart", UNCOMMON_COL,
++                                     "Used for travelling on", DESCRIPTION_COL,
++                                     "minecart tracks", DESCRIPTION_COL);
++        items[329] = new ItemTooltip("Saddle", UNCOMMON_COL, "Used for riding a pig", DESCRIPTION_COL);
++        items[330] = new ItemTooltip("Iron Door", UNCOMMON_COL,
++                                     "Cannot be opened without", DESCRIPTION_COL,
++                                     "a restone signal", DESCRIPTION_COL);
++        items[331] = new ItemTooltip("Redstone Dust", RARE_COL, "Powers multiple devices", DESCRIPTION_COL);
++        items[332] = new ItemTooltip("Snowball", "Right click to throw", DESCRIPTION_COL);
++        items[333] = new ItemTooltip("Boat", "Used for travelling on water", DESCRIPTION_COL);
++        items[334] = new ItemTooltip("Leather");
++        items[335] = new ItemTooltip("Milk");
++        items[336] = new ItemTooltip("Brick");
++        items[337] = new ItemTooltip("Clay Ball");
++        items[338] = new ItemTooltip("Sugar Cane");
++        items[339] = new ItemTooltip("Paper");
++        items[340] = new ItemTooltip("Book");
++        items[341] = new ItemTooltip("Slime Ball", UNCOMMON_COL);
++        items[342] = new ItemTooltip("Minecart with Chest", UNCOMMON_COL,
++                                     "Used for carrying items", DESCRIPTION_COL,
++                                     "on minecart tracks", DESCRIPTION_COL);
++        items[343] = new ItemTooltip("Minecart with Furnace", UNCOMMON_COL,
++                                     "Uses fuel to move fast", DESCRIPTION_COL,
++                                     "on minecart tracks");
++        items[344] = new ItemTooltip("Egg", "Right click to throw", DESCRIPTION_COL);
++        items[345] = new ItemTooltip("Compass", UNCOMMON_COL,
++                                     "Points in the direction to", DESCRIPTION_COL,
++                                     "your spawnpoint", DESCRIPTION_COL);
++        items[346] = new ItemTooltip("Fishing Rod", "Right click to cast", DESCRIPTION_COL);
++        items[347] = new ItemTooltip("Quiver",
++                                     "Stores up to 256 arrows", DESCRIPTION_COL,
++                                     "Can be equipped in", INFO_COL,
++                                     "the charm slot", INFO_COL);
++        items[348] = new ItemTooltip(LEGENDARY_GRAD, "Ruby Staff", LEGENDARY_COL,
++                                     "Right click to shoot a", DESCRIPTION_COL,
++                                     "flaming ruby crystal", DESCRIPTION_COL,
++                                     Item.staffRuby);
++        items[349] = new ItemTooltip(LEGENDARY_GRAD, "Sapphire Staff", LEGENDARY_COL,
++                                     "Right click to shoot a", DESCRIPTION_COL,
++                                     "barrage of sapphire shards", DESCRIPTION_COL,
++                                     Item.staffSapphire);
++        items[350] = new ItemTooltip(LEGENDARY_GRAD, "Ruby", LEGENDARY_COL, "A gem capable of magic", DESCRIPTION_COL);
++        items[351] = new ItemTooltip(LEGENDARY_GRAD, "Sapphire", LEGENDARY_COL, "A gem capable of magic", DESCRIPTION_COL);
++        items[352] = new ItemTooltip("Raw Beef", Item.beefRaw);
++        items[353] = new ItemTooltip("Cooked Beef", Item.beefCooked);
++        items[354] = new ItemTooltip("Raw Chicken", Item.chickenRaw);
++        items[355] = new ItemTooltip("Cooked Chicken", Item.chickenCooked);
++        items[356] = new ItemTooltip("Raw Mutton", Item.muttonRaw);
++        items[357] = new ItemTooltip("Cooked Mutton", Item.muttonCooked);
++        items[358] = new ItemTooltip(LEGENDARY_GRAD, "Warding Ring", LEGENDARY_COL,
++                                     "Heals half a heart every minute", DESCRIPTION_COL,
++                                     "Can be equipped in", INFO_COL,
++                                     "the charm slot", INFO_COL);
++        items[359] = new ItemTooltip(LEGENDARY_GRAD, "Repair Kit", LEGENDARY_COL,
++                                     "Crouch to repair the", DESCRIPTION_COL,
++                                     "currently held item", DESCRIPTION_COL,
++                                     "Can be equipped in", INFO_COL,
++                                     "the charm slot", INFO_COL,
++                                     Item.repairKit);
++        items[360] = new ItemTooltip("Star Chunk", RARE_COL,
++                                     "A fallen star from the", DESCRIPTION_COL,
++                                     "night sky; provides great", DESCRIPTION_COL,
++                                     "energy when heated", DESCRIPTION_COL);
++        items[361] = new ItemTooltip(LEGENDARY_GRAD, "Star Dust", LEGENDARY_COL,
++                                     "This extraterrestrial dust", DESCRIPTION_COL,
++                                     "emanates powerful energy", DESCRIPTION_COL);
++        items[362] = new ItemTooltip(LEGENDARY_GRAD, "Sparkle Staff", LEGENDARY_COL,
++                                     "Right click to shoot a", DESCRIPTION_COL,
++                                     "star blast", DESCRIPTION_COL,
++                                     Item.staffSparkle);
++        items[363] = new ItemTooltip("Slime Shoes", UNCOMMON_COL,
++                                     "Bounces on falling", DESCRIPTION_COL,
++                                     "Can be equipped in", INFO_COL,
++                                     "the charm slot", INFO_COL,
++                                     "64 max durability", INFO_COL);
++
++        items[2256] = new ItemTooltip(NOVELTY_GRAD, "Music Disc", RARE_COL, Item.record13);
++        items[2257] = new ItemTooltip(NOVELTY_GRAD, "Music Disc", RARE_COL, Item.recordCat);
++        items[2258] = new ItemTooltip(NOVELTY_GRAD, "Music Disc", RARE_COL, Item.recordMagnet);
++    }
++
++    public ItemTooltip(Pair<Integer, Integer> gradient, Object... lines) {
++        this.gradient = gradient;
++        for (Object line : lines) {
++            if (Item.class.isAssignableFrom(line.getClass())) {
++                for (Object subLine : ((Item) line).getDynamicTooltip()) {
++                    this.parseLine(subLine);
++                }
++            } else {
++                this.parseLine(line);
++            }
++        }
++        if (this.parsedString) {
++            this.lines.add(this.nextText);
++            this.colors.add(0xFFFFFF);
++        }
++    }
++
++    public ItemTooltip(Object... lines) {
++        this(DEFAULT_GRAD, lines);
++    }
++
++    public static ItemTooltip invalid(String name, Object... objects) {
++        return new ItemTooltip(INVALID_GRAD, name, INVALID_COL, objects);
++    }
++
++    public int size() {
++        return lines.size();
++    }
++
++    private boolean parsedString;
++    private String nextText;
++
++    private void parseLine(Object line) {
++        if (line instanceof String) {
++            if (this.parsedString) {
++                this.lines.add(this.nextText);
++                this.colors.add(0xFFFFFF);
++            }
++            this.nextText = (String) line;
++            this.parsedString = true;
++        } else if (line instanceof Integer) {
++            if (this.parsedString) {
++                this.lines.add(this.nextText);
++                this.colors.add((int) line);
++            }
++            this.parsedString = false;
++        }
++    }
++}

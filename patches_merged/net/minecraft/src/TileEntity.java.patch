@@ -1,0 +1,17 @@
+--- a/net/minecraft/src/TileEntity.java
++++ b/net/minecraft/src/TileEntity.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.TileEntityRefabricator;
++
+ import java.util.HashMap;
+ import java.util.Map;
+ 
+@@ -86,5 +88,6 @@
+         addMapping(TileEntityChest.class, "Chest");
+         addMapping(TileEntitySign.class, "Sign");
+         addMapping(TileEntityMobSpawner.class, "MobSpawner");
++        addMapping(TileEntityRefabricator.class, "Refabricator");
+     }
+ }

@@ -1,0 +1,33 @@
+--- a/net/minecraft/src/ItemFood.java
++++ b/net/minecraft/src/ItemFood.java
+@@ -1,17 +1,27 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class ItemFood extends Item {
+     private int healAmount;
+-
++    
+     public ItemFood(int id, int healAmount) {
+         super(id);
+         this.healAmount = healAmount;
+-        this.maxStackSize = 1;
++        this.maxStackSize = 4;
+     }
+ 
+     public ItemStack onItemRightClick(ItemStack itemStack, World worldObj, EntityPlayer entityPlayer) {
+         --itemStack.stackSize;
+-        entityPlayer.heal(this.healAmount);
++//        entityPlayer.heal(this.healAmount);
++        entityPlayer.healthRegen = Math.min(entityPlayer.healthRegen + this.healAmount, 20 - entityPlayer.health);
+         return itemStack;
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                "Heals " + healAmount / 2.0F + (healAmount == 2 ? " heart" : " hearts"),
++                ItemTooltip.INFO_COL
++        };
+     }
+ }

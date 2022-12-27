@@ -1,0 +1,131 @@
+--- a/net/minecraft/src/BlockStep.java
++++ b/net/minecraft/src/BlockStep.java
+@@ -1,13 +1,39 @@
+ package net.minecraft.src;
+ 
+ import java.util.Random;
++import java.util.stream.IntStream;
+ 
+ public class BlockStep extends Block {
+-    private boolean blockType;
+-
+-    public BlockStep(int id, boolean blockType) {
+-        super(id, 6, Material.rock);
++    public final boolean blockType;
++    protected final Type[] slabTypes;
++
++    public static class Type {
++        public final int sideTexture;
++        public final int topTexture;
++
++        public Type(int texture) {
++            this(texture, texture);
++        }
++
++        public Type(int texture, boolean autoSide) {
++            this(autoSide ? texture - 1 : texture, texture);
++        }
++
++        public Type(int sideTexture, int topTexture) {
++            this.sideTexture = sideTexture;
++            this.topTexture = topTexture;
++        }
++
++        public int getTextureFromSide(int side) {
++            return side <= 1 ? topTexture : sideTexture;
++        }
++    }
++
++    public BlockStep(int id, Material material, boolean blockType, Type[] slabTypes) {
++        super(id, 6, material);
++        this.slabTypes = slabTypes;
+         this.blockType = blockType;
++        this.blockIndexInTexture = slabTypes[0].topTexture;
+         if(!blockType) {
+             this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+         }
+@@ -15,7 +41,23 @@
+         this.setLightOpacity(255);
+     }
+ 
+-    public int getBlockTextureFromSide(int side) {
++    public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
++//        switch (metadata) {
++//            case 0: return textureXY(0, 1);
++//            case 1: return textureXY(11, 6);
++//            case 2: return textureXY(11, 7);
++//            case 3: return textureXY(1, 0);
++//            case 4: return textureXY(8, 6);
++//            case 5: return textureXY(8, 7);
++//            case 6: return side <= 1 ? textureXY(6, 0) : textureXY(5, 0);
++//            case 7: return side <= 1 ? textureXY(10, 6) : textureXY(9, 6);
++//            case 8: return side <= 1 ? textureXY(10, 7) : textureXY(9, 7);
++//            case 9: return textureXY(7, 0);
++//            default: return side <= 1 ? 6 : 5;
++//        }
++        if (metadata < slabTypes.length) {
++            return slabTypes[metadata].getTextureFromSide(side);
++        }
+         return side <= 1 ? 6 : 5;
+     }
+ 
+@@ -23,27 +65,32 @@
+         return this.blockType;
+     }
+ 
+-    public void onNeighborBlockChange(World worldObj, int x, int y, int z, int id) {
+-        if(this == Block.stairSingle) {
+-            ;
+-        }
+-    }
+-
+     public void onBlockAdded(World worldObj, int x, int y, int z) {
+-        if(this != Block.stairSingle) {
++        if(this.blockType) {
+             super.onBlockAdded(worldObj, x, y, z);
++            return;
+         }
+ 
++        int metadata = worldObj.getBlockMetadata(x, y, z);
+         int i5 = worldObj.getBlockId(x, y - 1, z);
+-        if(i5 == stairSingle.blockID) {
++        int i5Metadata = worldObj.getBlockMetadata(x, y - 1, z);
++
++        if(i5 == blockID && i5Metadata == metadata) {
+             worldObj.setBlockWithNotify(x, y, z, 0);
+-            worldObj.setBlockWithNotify(x, y - 1, z, Block.stairDouble.blockID);
++            worldObj.setBlockAndMetadataWithNotify(x, y - 1, z, blockID - 1, metadata);
+         }
+-
+     }
+ 
+     public int idDropped(int metadata, Random rand) {
+-        return Block.stairSingle.blockID;
++        return blockType ? this.blockID + 1 : this.blockID;
++    }
++
++    public int quantityDropped(Random rand) {
++        return blockType ? 2 : 1;
++    }
++
++    public int metadataDropped(int metadata, Random rand) {
++        return metadata;
+     }
+ 
+     public boolean renderAsNormalBlock() {
+@@ -51,10 +98,14 @@
+     }
+ 
+     public boolean shouldSideBeRendered(IBlockAccess blockAccess, int x, int y, int z, int side) {
+-        if(this != Block.stairSingle) {
++        if(this.blockType) {
+             super.shouldSideBeRendered(blockAccess, x, y, z, side);
+         }
+ 
+         return side == 1 ? true : (!super.shouldSideBeRendered(blockAccess, x, y, z, side) ? false : (side == 0 ? true : blockAccess.getBlockId(x, y, z) != this.blockID));
++    }
++
++    public int[] availableMetadata() {
++        return IntStream.range(0, this.slabTypes.length).toArray();
+     }
+ }

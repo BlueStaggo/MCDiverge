@@ -1,0 +1,54 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/BlockBlaster.java
+@@ -1,0 +1,51 @@
++package io.github.bluestaggo.mcdiverge;
++
++import java.util.Random;
++
++import net.minecraft.src.*;
++
++public class BlockBlaster extends BlockFurnace {
++    public BlockBlaster(int i1, boolean z2) {
++        super(i1, z2, Material.iron);
++        this.blockIndexInTexture = textureXY(14, 2);
++    }
++
++    public int idDropped(int i1, Random random2) {
++        return Block.blasterIdle.blockID;
++    }
++
++    public int getBlockTexture(IBlockAccess iBlockAccess1, int i2, int i3, int i4, int i5) {
++        if (i5 == 1) {
++            return Block.blockSteel.blockIndexInTexture - 16;
++        } else if (i5 == 0) {
++            return Block.blockSteel.blockIndexInTexture + 16;
++        } else {
++            int i6 = iBlockAccess1.getBlockMetadata(i2, i3, i4);
++            return i5 != i6 ? Block.blockSteel.blockIndexInTexture
++                    : (this.isActive ? this.blockIndexInTexture + 16 : this.blockIndexInTexture);
++        }
++    }
++
++    public int getBlockTextureFromSide(int i1) {
++        return i1 == 1 ? Block.blockSteel.blockIndexInTexture - 16
++                : (i1 == 0 ? Block.blockSteel.blockIndexInTexture + 16
++                        : (i1 == 3 ? this.blockIndexInTexture : Block.blockSteel.blockIndexInTexture));
++    }
++
++    protected TileEntity getBlockEntity() {
++        return new TileEntityFurnace(50, 2);
++    }
++
++    public void updateFurnaceBlockState(boolean z0, World world1, int i2, int i3, int i4) {
++        int i5 = world1.getBlockMetadata(i2, i3, i4);
++        TileEntity tileEntity6 = world1.getBlockTileEntity(i2, i3, i4);
++        if (z0) {
++            world1.setBlockWithNotify(i2, i3, i4, Block.blasterActive.blockID);
++        } else {
++            world1.setBlockWithNotify(i2, i3, i4, Block.blasterIdle.blockID);
++        }
++
++        world1.setBlockMetadataWithNotify(i2, i3, i4, i5);
++        world1.setBlockTileEntity(i2, i3, i4, tileEntity6);
++    }
++}

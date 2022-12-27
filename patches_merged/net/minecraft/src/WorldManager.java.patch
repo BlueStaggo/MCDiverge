@@ -1,0 +1,11 @@
+--- a/net/minecraft/src/WorldManager.java
++++ b/net/minecraft/src/WorldManager.java
+@@ -33,7 +33,7 @@
+         this.mcServer.configManager.markBlockNeedsUpdate(x, y, z);
+     }
+ 
+-    public void playRecord(String name, int x, int y, int z) {
++    public void playRecord(String name, int x, int y, int z, String author) {
+     }
+ 
+     public void doNothingWithTileEntity(int x, int y, int z, TileEntity tileEntity) {

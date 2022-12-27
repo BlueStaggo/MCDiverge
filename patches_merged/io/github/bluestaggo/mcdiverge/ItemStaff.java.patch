@@ -1,0 +1,45 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/ItemStaff.java
+@@ -1,0 +1,42 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.*;
++
++public class ItemStaff extends ItemMagic {
++    public final int staffDamage;
++    public final int burn;
++    public final float pierce;
++
++    public ItemStaff(int i1, float f2, int i3, int maxDmg) {
++        this(i1, f2, i3, maxDmg, 0, 1.0F);
++    }
++
++    public ItemStaff(int i1, float f2, int i3, int maxDmg, int burn, float pierce) {
++        super(i1, f2);
++        this.maxStackSize = 1;
++        this.maxDamage = maxDmg;
++        this.staffDamage = i3;
++        this.burn = burn;
++        this.pierce = pierce;
++        this.bFull3D = true;
++    }
++
++    public ItemStack onMagicItemRightClick(ItemStack itemStack1, World world2, EntityPlayer entityPlayer3) {
++        world2.playSoundAtEntity(entityPlayer3, "diverge.wand", 1.0F, rand.nextFloat() * 0.2F + 0.9F);
++        world2.spawnEntityInWorld(new EntitySnowball(world2, entityPlayer3, this.iconIndex + 16, this.staffDamage, this.burn, this.pierce));
++        itemStack1.damageItem(1);
++
++        return itemStack1;
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                this.staffDamage + " attack damage",
++                ItemTooltip.INFO_COL,
++                "Uses " + this.useMana + " points of mana",
++                ItemTooltip.INFO_COL,
++                this.maxDamage + " max durability",
++                ItemTooltip.INFO_COL
++        };
++    }
++}

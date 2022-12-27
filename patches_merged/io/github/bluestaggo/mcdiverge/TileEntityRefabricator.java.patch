@@ -1,0 +1,120 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/TileEntityRefabricator.java
+@@ -1,0 +1,117 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.*;
++
++public class TileEntityRefabricator extends TileEntity implements IInventory {
++    private ItemStack[] items = new ItemStack[2];
++    private int fabricationTime;
++
++    public int getSizeInventory() {
++        return this.items.length;
++    }
++
++    public ItemStack getStackInSlot(int i1) {
++        return this.items[i1];
++    }
++
++    public ItemStack decrStackSize(int slot, int stackSize) {
++        if(this.items[slot] != null) {
++            ItemStack itemStack3;
++            if(this.items[slot].stackSize <= stackSize) {
++                itemStack3 = this.items[slot];
++                this.items[slot] = null;
++            } else {
++                itemStack3 = this.items[slot].splitStack(stackSize);
++                if(this.items[slot].stackSize == 0) {
++                    this.items[slot] = null;
++                }
++            }
++            return itemStack3;
++        } else {
++            return null;
++        }
++    }
++
++    public void setInventorySlotContents(int slot, ItemStack itemStack) {
++        this.items[slot] = itemStack;
++        if(itemStack != null && itemStack.stackSize > this.getInventoryStackLimit()) {
++            itemStack.stackSize = this.getInventoryStackLimit();
++        }
++    }
++
++    public String getInvName() {
++        return "Refabricator";
++    }
++
++    public int getInventoryStackLimit() {
++        return 64;
++    }
++
++    public boolean canRefabricate() {
++        return this.items[0] != null
++                && this.items[1] != null
++                && this.items[1].itemID == Item.starDust.shiftedIndex
++                && this.items[1].stackSize >= 1
++                && (this.items[0].stackSize < this.items[0].getMaxStackSize()
++                    || this.items[0].itemDmg > 0
++                        && Item.itemsList[this.items[0].itemID].allowRepair());
++    }
++
++    public void readFromNBT(NBTTagCompound compoundTag) {
++        super.readFromNBT(compoundTag);
++        NBTTagList nBTTagList2 = compoundTag.getTagList("Items");
++        this.items = new ItemStack[this.getSizeInventory()];
++
++        for(int i3 = 0; i3 < nBTTagList2.tagCount(); ++i3) {
++            NBTTagCompound nBTTagCompound4 = (NBTTagCompound)nBTTagList2.tagAt(i3);
++            byte b5 = nBTTagCompound4.getByte("Slot");
++            if(b5 >= 0 && b5 < this.items.length) {
++                this.items[b5] = new ItemStack(nBTTagCompound4);
++            }
++        }
++
++        this.fabricationTime = compoundTag.getInteger("FabricationTime");
++    }
++
++    public void writeToNBT(NBTTagCompound compoundTag) {
++        super.writeToNBT(compoundTag);
++
++        NBTTagList nBTTagList2 = new NBTTagList();
++        for(int i3 = 0; i3 < this.items.length; ++i3) {
++            if(this.items[i3] != null) {
++                NBTTagCompound nBTTagCompound4 = new NBTTagCompound();
++                nBTTagCompound4.setByte("Slot", (byte)i3);
++                this.items[i3].writeToNBT(nBTTagCompound4);
++                nBTTagList2.setTag(nBTTagCompound4);
++            }
++        }
++        compoundTag.setTag("Items", nBTTagList2);
++        compoundTag.setInteger("FabricationTime", this.fabricationTime);
++    }
++
++    public int getProgressScaled(int scale) {
++        return this.fabricationTime * scale / 600;
++    }
++
++    public void updateEntity() {
++        if (!canRefabricate()) {
++            this.fabricationTime -= 10;
++            if (this.fabricationTime < 0) {
++                this.fabricationTime = 0;
++            }
++            return;
++        }
++
++        this.fabricationTime++;
++        if (this.fabricationTime >= 600) {
++            ItemStack input = this.items[0];
++            if (input.itemDmg > 0 && Item.itemsList[input.itemID].allowRepair()) {
++                input.itemDmg = 0;
++            } else if (input.stackSize < input.getMaxStackSize()) {
++                input.stackSize++;
++            }
++            this.decrStackSize(1, 1);
++            this.fabricationTime = 0;
++        }
++    }
++}

@@ -1,0 +1,17 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/ItemSlimeShoes.java
+@@ -1,0 +1,14 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.EntityPlayer;
++import net.minecraft.src.ItemStack;
++
++public class ItemSlimeShoes extends ItemCharm {
++    public ItemSlimeShoes(int id) {
++        super(id, 64, "slimeshoes");
++    }
++
++    public void updateCharm(EntityPlayer player, ItemStack stack) {
++        player.bounce = 0.5F;
++    }
++}

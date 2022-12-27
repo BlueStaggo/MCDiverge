@@ -1,0 +1,25 @@
+--- a/net/minecraft/src/ServerConfigurationManager.java
++++ b/net/minecraft/src/ServerConfigurationManager.java
+@@ -187,6 +187,15 @@
+         this.saveBannedList();
+     }
+ 
++    public void setPlayerCreative(String name, boolean creative) {
++        for (Object playerEntity : this.playerEntities) {
++            EntityPlayerMP player = (EntityPlayerMP) playerEntity;
++            if (player.username.equalsIgnoreCase(name)) {
++                player.creative = creative;
++            }
++        }
++    }
++
+     private void loadBannedList() {
+         try {
+             this.bannedIPs.clear();
+@@ -318,6 +327,5 @@
+         for(int i1 = 0; i1 < this.playerEntities.size(); ++i1) {
+             this.playerNBTManagerObj.writePlayerNBT((EntityPlayerMP)this.playerEntities.get(i1));
+         }
+-
+     }
+ }

@@ -1,0 +1,11 @@
+--- a/net/minecraft/src/ItemSnowball.java
++++ b/net/minecraft/src/ItemSnowball.java
+@@ -9,7 +9,7 @@
+     public ItemStack onItemRightClick(ItemStack itemStack, World worldObj, EntityPlayer entityPlayer) {
+         --itemStack.stackSize;
+         worldObj.playSoundAtEntity(entityPlayer, "random.bow", 0.5F, 0.4F / (rand.nextFloat() * 0.4F + 0.8F));
+-        worldObj.spawnEntityInWorld(new EntitySnowball(worldObj, entityPlayer));
++        worldObj.spawnEntityInWorld(new EntitySnowball(worldObj, entityPlayer, 14, 1));
+         return itemStack;
+     }
+ }

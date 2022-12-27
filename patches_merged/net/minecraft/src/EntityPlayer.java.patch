@@ -1,0 +1,250 @@
+--- a/net/minecraft/src/EntityPlayer.java
++++ b/net/minecraft/src/EntityPlayer.java
+@@ -1,5 +1,8 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemCharm;
++import io.github.bluestaggo.mcdiverge.TileEntityRefabricator;
++
+ import java.util.List;
+ 
+ public class EntityPlayer extends EntityLiving {
+@@ -12,6 +15,16 @@
+     public int swingProgressInt = 0;
+     public String username;
+     private int damageRemainder = 0;
++    public float energy = 20.0F;
++    public int energyBoostTick = 0;
++    public boolean energyRegen;
++    public float mana = 20.0F;
++    public boolean showMana = false;
++    public boolean creative;
++    private int slowHealTick = 0;
++    public boolean slowHealing = false;
++    public float bounce = 0.0F;
++    private float bounceHeight = 0.0F;
+ 
+     public EntityPlayer(World world1) {
+         super(world1);
+@@ -22,6 +35,7 @@
+         this.unusedRotation = 180.0F;
+         this.fireResistance = 20;
+         this.texture = "/char.png";
++        this.creative = world1.creative;
+     }
+ 
+     public void updateRidden() {
+@@ -53,13 +67,76 @@
+     }
+ 
+     public void onLivingUpdate() {
+-        if(this.worldObj.difficultySetting == 0 && this.health < 20 && this.ticksExisted % 20 * 4 == 0) {
++        this.preUpdateCharms();
++
++        for (ItemStack armor : this.inventory.armorInventory) {
++            if (armor == null) continue;
++            Item item = Item.itemsList[armor.itemID];
++            if (item instanceof ItemCharm) {
++                ((ItemCharm) item).updateCharm(this, armor);
++                if (armor.itemID == Item.slimeShoes.shiftedIndex && this.bounceHeight > 0.0F) {
++                    this.worldObj.playSoundAtEntity(this, "mob.slime", this.getSoundVolume(), ((this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F) * 0.8F);
++                    armor.damageItem(1);
++                    this.motionX *= 2.0;
++                    this.motionZ *= 2.0;
++                    this.motionY = Math.sqrt(2 * 0.08 * this.bounceHeight); // Thanks https://qr.ae/prhm4v
++                    this.bounceHeight = 0.0F;
++                }
++            }
++        }
++
++        if((this.worldObj.difficultySetting == 0 && this.health < 20 && this.ticksExisted % 20 * 4 == 0)
++            || this.ticksExisted % 5 == 0 && this.healthRegen > 0) {
+             this.heal(1);
+-        }
++            this.healthRegen--;
++        }
++
++        if (this.slowHealing && this.health < 20) {
++            if (--this.slowHealTick <= 0) {
++                this.heal(1);
++                this.slowHealTick = 1200;
++            }
++        } else {
++            this.slowHealTick = 1200;
++        }
++
++        if (this.energyBoostTick > 0) {
++            this.energyBoostTick--;
++        }
++
++        ItemStack currentItem = this.inventory.getCurrentItem();
++        this.showMana = (currentItem != null && Item.itemsList[currentItem.itemID].isMagic()) || this.mana < 20;
++        if (currentItem != null && this.creative) {
++            currentItem.itemDmg = 0;
++        }
++
++        this.mana += (this.mana / 50.0F) + 0.1F;
++        this.mana = MathHelper.clamp(this.mana, 0.0F, 20.0F);
+ 
+         this.inventory.decrementAnimations();
+         this.prevCameraYaw = this.cameraYaw;
+         super.onLivingUpdate();
++
++        if (this.creative) {
++            this.health = 20;
++            this.energy = 20.0F;
++            this.mana = 20.0F;
++            this.hurtTime = 0;
++        }
++
++        if (this.noClip) {
++            if (this.moveForward != 0 || this.moveStrafing != 0) {
++                this.motionX *= 1.8F;
++                this.motionZ *= 1.8F;
++            } else {
++                this.motionX = 0;
++                this.motionZ = 0;
++            }
++            this.motionY = this.isSneaking() ? -1 : this.isJumping ? 1 : 0;
++            this.health = 20;
++            this.energy = 20;
++        }
++
+         float f1 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+         float f2 = (float)Math.atan(-this.motionY * (double)0.2F) * 15.0F;
+         if(f1 > 0.1F) {
+@@ -79,12 +156,33 @@
+         if(this.health > 0) {
+             List list3 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.boundingBox.expand(1.0D, 0.0D, 1.0D));
+             if(list3 != null) {
+-                for(int i4 = 0; i4 < list3.size(); ++i4) {
+-                    this.collideWithPlayer((Entity)list3.get(i4));
++                for (Object o : list3) {
++                    this.collideWithPlayer((Entity) o);
+                 }
+             }
+         }
+ 
++        if (this.isRunning()) {
++            this.energy -= 0.2F;
++        } else {
++            this.energy += 0.1F;
++        }
++        this.energy = MathHelper.clamp(this.energy, 0.0F, 20.0F);
++        this.energyRegen = this.energyRegen ? this.energy < 20 : this.energy == 0;
++    }
++
++    public void preUpdateCharms() {
++        this.slowHealing = false;
++        this.bounce = 0.0F;
++    }
++
++    protected void fall(float distance) {
++        if (this.bounce > 0.0F && distance > 1.5F) {
++            this.bounceHeight = distance * this.bounce;
++            super.fall(distance * (1.0F - this.bounce));
++        } else {
++            super.fall(distance);
++        }
+     }
+ 
+     private void collideWithPlayer(Entity entity) {
+@@ -102,6 +200,9 @@
+         if(this.username.equals("Notch")) {
+             this.dropPlayerItemWithRandomChoice(new ItemStack(Item.appleRed, 1), true);
+         }
++        if(this.username.equals("BlueStag256")) {
++            this.dropPlayerItemWithRandomChoice(new ItemStack(Item.ruby, 1), true);
++        }
+ 
+         this.inventory.dropAllItems();
+         if(entity != null) {
+@@ -165,22 +266,34 @@
+             f2 /= 5.0F;
+         }
+ 
++        if(block.blockID == Block.wood.blockID && this.isSneaking()) {
++            f2 /= 4.0F;
++        }
++
+         return f2;
+     }
+ 
+     public boolean canHarvestBlock(Block block) {
+-        return this.inventory.canHarvestBlock(block);
++        return this.inventory.canHarvestBlock(block) && !this.creative;
+     }
+ 
+     public void readEntityFromNBT(NBTTagCompound compoundTag) {
+         super.readEntityFromNBT(compoundTag);
+         NBTTagList nBTTagList2 = compoundTag.getTagList("Inventory");
+         this.inventory.readFromNBT(nBTTagList2);
++        this.energy = compoundTag.hasKey("Energy") ? compoundTag.getFloat("Energy") : 20.0F;
++        this.energyRegen = compoundTag.getBoolean("RegeneratingEnergy");
++        this.noClip = compoundTag.getBoolean("NoClip");
++        this.mana = compoundTag.hasKey("Mana") ? compoundTag.getFloat("Mana") : 20.0F;
+     }
+ 
+     public void writeEntityToNBT(NBTTagCompound compoundTag) {
+         super.writeEntityToNBT(compoundTag);
+         compoundTag.setTag("Inventory", this.inventory.writeToNBT(new NBTTagList()));
++        compoundTag.setFloat("Energy", this.energy);
++        compoundTag.setBoolean("RegeneratingEnergy", this.energyRegen);
++        compoundTag.setBoolean("NoClip", this.noClip);
++        compoundTag.setFloat("Mana", this.mana);
+     }
+ 
+     public void displayGUIChest(IInventory inventory) {
+@@ -198,9 +311,7 @@
+ 
+     public boolean attackEntityFrom(Entity entity, int damage) {
+         this.entityAge = 0;
+-        if(this.health <= 0) {
+-            return false;
+-        } else if((float)this.heartsLife > (float)this.heartsHalvesLife / 2.0F) {
++        if(this.creative || this.health <= 0 || (float)this.heartsLife > (float)this.heartsHalvesLife / 2.0F) {
+             return false;
+         } else {
+             if(entity instanceof EntityMob || entity instanceof EntityArrow) {
+@@ -222,7 +333,7 @@
+             this.inventory.damageArmor(damage);
+             damage = i4 / 25;
+             this.damageRemainder = i4 % 25;
+-            return damage == 0 ? false : super.attackEntityFrom(entity, damage);
++            return damage != 0 && super.attackEntityFrom(entity, damage);
+         }
+     }
+ 
+@@ -232,6 +343,18 @@
+     public void displayGUIEditSign(TileEntitySign signTileEntity) {
+     }
+ 
++    public void displayGUIRefabricator(TileEntityRefabricator refabricatorTileEntity) {
++    }
++
++    public void displayGUIRecipeGuide() {
++    }
++
++    public void displayGUIRecipeGuide(ItemStack itemStack) {
++    }
++
++    public void displayGUICreative() {
++    }
++
+     public void interactWithEntity(Entity entity) {
+     }
+ 
+@@ -250,5 +373,13 @@
+     public void swingItem() {
+         this.swingProgressInt = -1;
+         this.isSwinging = true;
++    }
++
++    public boolean useMana(float f1) {
++        if (this.mana >= f1) {
++            this.mana -= f1;
++            return true;
++        }
++        return false;
+     }
+ }

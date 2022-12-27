@@ -1,0 +1,93 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/BlockSpeleothem.java
+@@ -1,0 +1,90 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.Block;
++import net.minecraft.src.BlockOre;
++import net.minecraft.src.Material;
++import net.minecraft.src.World;
++
++public class BlockSpeleothem extends Block {
++    public BlockSpeleothem(int i1, int i2) {
++        super(i1, i2, Material.rock);
++    }
++
++    public boolean canPlaceBlockAt(World world1, int i2, int i3, int i4) {
++        return world1.isBlockNormalCube(i2, i3 - 1, i4)
++                || (world1.isBlockNormalCube(i2, i3 - 2, i4) && world1.getBlockId(i2, i3 - 1, i4) == this.blockID)
++                || world1.isBlockNormalCube(i2, i3 + 1, i4)
++                || (world1.isBlockNormalCube(i2, i3 + 2, i4) && world1.getBlockId(i2, i3 + 1, i4) == this.blockID);
++    }
++
++    public int getBlockTextureFromSideAndMetadata(int i1, int i2) {
++        return this.blockIndexInTexture + (i2 & 3) * 16 + (i2 & 4) / 4;
++    }
++
++    public void onNeighborBlockChange(World world1, int i2, int i3, int i4, int i5) {
++        if (!canPlaceBlockAt(world1, i2, i3, i4)) {
++            this.dropBlockAsItem(world1, i2, i3, i4, i5);
++            world1.setBlockWithNotify(i2, i3, i4, 0);
++        } else {
++            updateMetadata(world1, i2, i3, i4);
++        }
++    }
++
++    public void onBlockAdded(World world1, int i2, int i3, int i4) {
++        updateMetadata(world1, i2, i3, i4);
++    }
++
++    private static boolean isSlate(World world1, int i2, int i3, int i4) {
++        return (world1.getBlockId(i2, i3, i4) == Block.stone.blockID
++                && world1.getBlockMetadata(i2, i3, i4) == 2)
++            || (Block.blocksList[world1.getBlockId(i2, i3, i4)] instanceof BlockOre
++                && world1.getBlockMetadata(i2, i3, i4) == 1);
++    }
++
++    private void updateMetadata(World world1, int i2, int i3, int i4) {
++        int metadata;
++        if (world1.isBlockNormalCube(i2, i3 - 1, i4)) {
++            if (world1.getBlockId(i2, i3 + 1, i4) == this.blockID) {
++                metadata = 1;
++            } else {
++                metadata = 0;
++            }
++            if (isSlate(world1, i2, i3 - 1, i4)) {
++                metadata += 4;
++            }
++        } else if (world1.isBlockNormalCube(i2, i3 + 1, i4)) {
++            if (world1.getBlockId(i2, i3 - 1, i4) == this.blockID) {
++                metadata = 2;
++            } else {
++                metadata = 3;
++            }
++            if (isSlate(world1, i2, i3 + 1, i4)) {
++                metadata += 4;
++            }
++        } else if (world1.getBlockId(i2, i3 + 1, i4) == this.blockID) {
++            metadata = 3;
++            if (isSlate(world1, i2, i3 + 2, i4)) {
++                metadata += 4;
++            }
++        } else {
++            metadata = 0;
++            if (isSlate(world1, i2, i3 - 2, i4)) {
++                metadata += 4;
++            }
++        }
++
++        world1.setBlockMetadataWithNotify(i2, i3, i4, metadata);
++    }
++
++    public boolean isOpaqueCube() {
++        return false;
++    }
++
++    public boolean renderAsNormalBlock() {
++        return false;
++    }
++
++    public int getRenderType() {
++        return 1;
++    }
++}

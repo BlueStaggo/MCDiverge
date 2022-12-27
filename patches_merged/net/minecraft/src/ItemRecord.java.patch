@@ -1,0 +1,37 @@
+--- a/net/minecraft/src/ItemRecord.java
++++ b/net/minecraft/src/ItemRecord.java
+@@ -1,22 +1,30 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class ItemRecord extends Item {
+-    private String recordName;
++    private final String recordName;
++    private final String recordTitle;
+ 
+-    protected ItemRecord(int id, String record) {
++    protected ItemRecord(int id, String name, String title) {
+         super(id);
+-        this.recordName = record;
++        this.recordName = name;
++        this.recordTitle = title;
+         this.maxStackSize = 1;
+     }
+ 
+     public boolean onItemUse(ItemStack itemStack, EntityPlayer entityPlayer, World worldObj, int x, int y, int z, int side) {
+         if(worldObj.getBlockId(x, y, z) == Block.jukebox.blockID && worldObj.getBlockMetadata(x, y, z) == 0) {
+             worldObj.setBlockMetadataWithNotify(x, y, z, this.shiftedIndex - Item.record13.shiftedIndex + 1);
+-            worldObj.playRecord(this.recordName, x, y, z);
++            worldObj.playRecord(this.recordName, x, y, z, this.recordTitle);
+             --itemStack.stackSize;
+             return true;
+         } else {
+             return false;
+         }
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] { this.recordTitle, ItemTooltip.DESCRIPTION_COL };
+     }
+ }

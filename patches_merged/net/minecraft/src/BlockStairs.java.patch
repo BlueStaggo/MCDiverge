@@ -1,0 +1,19 @@
+--- a/net/minecraft/src/BlockStairs.java
++++ b/net/minecraft/src/BlockStairs.java
+@@ -181,15 +181,7 @@
+     }
+ 
+     public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
+-        return this.modelBlock.getBlockTextureFromSideAndMetadata(side, metadata);
+-    }
+-
+-    public int getBlockTextureFromSide(int side) {
+-        return this.modelBlock.getBlockTextureFromSide(side);
+-    }
+-
+-    public int getBlockTexture(IBlockAccess blockAccess, int x, int y, int z, int side) {
+-        return this.modelBlock.getBlockTexture(blockAccess, x, y, z, side);
++        return this.modelBlock.getBlockTextureFromSideAndMetadata(side, 0);
+     }
+ 
+     public int tickRate() {

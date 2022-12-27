@@ -1,0 +1,23 @@
+--- a/net/minecraft/src/WorldServer.java
++++ b/net/minecraft/src/WorldServer.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.CreateWorldInfo;
++
+ import java.io.File;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -13,7 +15,11 @@
+     private SpawnerAnimals animalSpawner = new SpawnerAnimals(15, EntityAnimal.class, new Class[]{EntitySheep.class, EntityPig.class, EntityCow.class, EntityChicken.class});
+ 
+     public WorldServer(File file1, String string2, boolean z3) {
+-        super(file1, string2);
++        this(file1, string2, z3, null);
++    }
++
++    public WorldServer(File file1, String string2, boolean z3, CreateWorldInfo info) {
++        super(file1, string2, 0, info);
+         this.monsters = z3;
+     }
+ 

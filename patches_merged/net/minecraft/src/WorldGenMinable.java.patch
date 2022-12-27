@@ -1,0 +1,43 @@
+--- a/net/minecraft/src/WorldGenMinable.java
++++ b/net/minecraft/src/WorldGenMinable.java
+@@ -3,12 +3,24 @@
+ import java.util.Random;
+ 
+ public class WorldGenMinable extends WorldGenerator {
+-    private int minableBlockId;
+-    private int numberOfBlocks;
++    private final int minableBlockId;
++    private final int numberOfBlocks;
++    private final int metadata;
++    private int slateMetadata;
+ 
+     public WorldGenMinable(int i1, int i2) {
++        this(i1, i2, 0);
++    }
++
++    public WorldGenMinable(int i1, int i2, int i3) {
+         this.minableBlockId = i1;
+         this.numberOfBlocks = i2;
++        this.metadata = this.slateMetadata = i3;
++    }
++
++    public WorldGenMinable withSlateMetadata(int i1) {
++        this.slateMetadata = i1;
++        return this;
+     }
+ 
+     public boolean generate(World world1, Random random2, int i3, int i4, int i5) {
+@@ -35,7 +47,13 @@
+                         double d37 = ((double)i33 + 0.5D - d22) / (d30 / 2.0D);
+                         double d39 = ((double)i34 + 0.5D - d24) / (d28 / 2.0D);
+                         if(d35 * d35 + d37 * d37 + d39 * d39 < 1.0D && world1.getBlockId(i32, i33, i34) == Block.stone.blockID) {
++                            boolean isSlate = world1.getBlockMetadata(i32, i33, i34) == 2;
+                             world1.setBlock(i32, i33, i34, this.minableBlockId);
++                            if (isSlate) {
++                                world1.setBlockMetadata(i32, i33, i34, this.slateMetadata);
++                            } else {
++                                world1.setBlockMetadata(i32, i33, i34, this.metadata);
++                            }
+                         }
+                     }
+                 }

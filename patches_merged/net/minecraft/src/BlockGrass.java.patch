@@ -1,0 +1,16 @@
+--- a/net/minecraft/src/BlockGrass.java
++++ b/net/minecraft/src/BlockGrass.java
+@@ -20,6 +20,13 @@
+         }
+     }
+ 
++
++    public int getBlockTextureFromSide(int side) {
++        return side == 1 ? 0
++                : side == 0 ? 2
++                : 3;
++    }
++
+     public void updateTick(World worldObj, int x, int y, int z, Random rand) {
+         if(worldObj.getBlockLightValue(x, y + 1, z) < 4 && worldObj.getBlockMaterial(x, y + 1, z).getCanBlockGrass()) {
+             if(rand.nextInt(4) != 0) {

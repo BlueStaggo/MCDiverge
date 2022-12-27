@@ -1,0 +1,86 @@
+--- a/net/minecraft/src/EntityLiving.java
++++ b/net/minecraft/src/EntityLiving.java
+@@ -4,6 +4,7 @@
+ 
+ public class EntityLiving extends Entity {
+     public int heartsHalvesLife = 20;
++    public int healthRegen = 0;
+     public float unusedRotationPitch2;
+     public float unusedFloat;
+     public float unusedRotationPitch;
+@@ -46,7 +47,6 @@
+     private double newPosZ;
+     private double newRotationYaw;
+     private double newRotationPitch;
+-    float unusedFloat3 = 0.0F;
+     protected int entityAge = 0;
+     protected float moveStrafing;
+     protected float moveForward;
+@@ -54,6 +54,7 @@
+     protected boolean isJumping = false;
+     protected float defaultPitch = 0.0F;
+     protected float moveSpeed = 0.7F;
++    protected float runSpeed = 1.5F;
+     private Entity currentTarget;
+     private int numTicksToChaseTarget = 0;
+ 
+@@ -379,21 +380,27 @@
+         }
+ 
+         this.dead = true;
+-        int i2 = this.getDropItemId();
+-        if(i2 > 0) {
+-            int i3 = this.rand.nextInt(3);
+-
+-            for(int i4 = 0; i4 < i3; ++i4) {
+-                this.dropItem(i2, 1);
++        int[] items = this.getDropItems();
++
++        for (int i2 : items) {
++            if(i2 > 0) {
++                int i3 = this.rand.nextInt(3);
++
++                for(int i4 = 0; i4 < i3; ++i4) {
++                    this.dropItem(i2, 1);
++                }
+             }
+         }
+-
+     }
+ 
+     protected int getDropItemId() {
+         return 0;
+     }
+ 
++    protected int[] getDropItems() {
++        return new int[] { getDropItemId() };
++    }
++
+     protected void fall(float distance) {
+         int i2 = (int)Math.ceil((double)(distance - 3.0F));
+         if(i2 > 0) {
+@@ -442,7 +449,7 @@
+             }
+ 
+             float f9 = 0.16277136F / (f8 * f8 * f8);
+-            this.moveFlying(moveX, moveZ, this.onGround ? 0.1F * f9 : 0.02F);
++            this.moveFlying(moveX, moveZ, (this.onGround ? 0.1F : 0.02F) * (this.isRunning() ? this.runSpeed : 1.0F));
+             f8 = 0.91F;
+             if(this.onGround) {
+                 f8 = 0.54600006F;
+@@ -491,6 +498,7 @@
+ 
+     public void writeEntityToNBT(NBTTagCompound compoundTag) {
+         compoundTag.setShort("Health", (short)this.health);
++        compoundTag.setShort("HealthRegen", (short)this.healthRegen);
+         compoundTag.setShort("HurtTime", (short)this.hurtTime);
+         compoundTag.setShort("DeathTime", (short)this.deathTime);
+         compoundTag.setShort("AttackTime", (short)this.attackTime);
+@@ -501,6 +509,7 @@
+         if(!compoundTag.hasKey("Health")) {
+             this.health = 10;
+         }
++        this.healthRegen = compoundTag.getShort("HealthRegen");
+ 
+         this.hurtTime = compoundTag.getShort("HurtTime");
+         this.deathTime = compoundTag.getShort("DeathTime");

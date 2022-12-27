@@ -1,0 +1,73 @@
+--- a/net/minecraft/src/GuiOptions.java
++++ b/net/minecraft/src/GuiOptions.java
+@@ -1,27 +1,40 @@
+ package net.minecraft.src;
+ 
++import java.util.Arrays;
++import java.util.List;
++import java.util.stream.Collectors;
++
+ public class GuiOptions extends GuiScreen {
+     private GuiScreen parentScreen;
+     protected String screenTitle = "Options";
+     private GameSettings options;
++    private final int maxPages;
++    private int currentPage;
+ 
+     public GuiOptions(GuiScreen guiScreen1, GameSettings gameSettings2) {
+         this.parentScreen = guiScreen1;
+         this.options = gameSettings2;
++        this.maxPages = Math.floorDiv(this.options.numberOfOptions, 10) + 1;
+     }
+ 
+     public void initGui() {
+-        for(int i1 = 0; i1 < this.options.numberOfOptions; ++i1) {
+-            int i2 = this.options.isSlider(i1);
+-            if(i2 == 0) {
+-                this.controlList.add(new GuiSmallButton(i1, this.width / 2 - 155 + i1 % 2 * 160, this.height / 6 + 24 * (i1 >> 1), this.options.getOptionDisplayString(i1)));
++        this.controlList.add(new GuiButton(100, this.width / 2 - 100, this.height / 6 + 132, "Controls..."));
++        this.controlList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 168, "Done"));
++        this.controlList.add(new GuiButton(300, this.width / 2 - 140, this.height / 6 + 132, 20, 20, "<"));
++        this.controlList.add(new GuiButton(301, this.width / 2 + 120, this.height / 6 + 132, 20, 20, ">"));
++        initPage();
++    }
++
++    private void initPage() {
++        this.controlList = (List) this.controlList.stream().filter(button -> ((GuiButton) button).id >= 100).collect(Collectors.toList());
++        for(int i1 = 0; i1 < Math.min(this.options.numberOfOptions - currentPage * 10, 10); ++i1) {
++            int i11 = i1 + currentPage * 10;
++            if(this.options.isSlider(i11) == 0) {
++                this.controlList.add(new GuiSmallButton(i11, this.width / 2 - 155 + i1 % 2 * 160, this.height / 6 + 24 * (i1 >> 1), this.options.getOptionDisplayString(i11)));
+             } else {
+-                this.controlList.add(new GuiSlider(i1, this.width / 2 - 155 + i1 % 2 * 160, this.height / 6 + 24 * (i1 >> 1), i1, this.options.getOptionDisplayString(i1), this.options.getOptionFloatValue(i1)));
++                this.controlList.add(new GuiSlider(i11, this.width / 2 - 155 + i1 % 2 * 160, this.height / 6 + 24 * (i1 >> 1), i11, this.options.getOptionDisplayString(i11), this.options.getOptionFloatValue(i11)));
+             }
+         }
+-
+-        this.controlList.add(new GuiButton(100, this.width / 2 - 100, this.height / 6 + 120 + 12, "Controls..."));
+-        this.controlList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 168, "Done"));
+     }
+ 
+     protected void actionPerformed(GuiButton button) {
+@@ -39,6 +52,21 @@
+                 this.mc.displayGuiScreen(this.parentScreen);
+             }
+ 
++            if(button.id == 300) {
++                this.currentPage--;
++                if (this.currentPage < 0) {
++                    this.currentPage = maxPages - 1;
++                }
++                this.initPage();
++            }
++
++            if(button.id == 301) {
++                this.currentPage++;
++                if (this.currentPage >= maxPages) {
++                    this.currentPage = 0;
++                }
++                this.initPage();
++            }
+         }
+     }
+ 

@@ -1,0 +1,11 @@
+--- a/net/minecraft/src/EntityTracker.java
++++ b/net/minecraft/src/EntityTracker.java
+@@ -34,7 +34,7 @@
+             this.trackEntity(entity1, 64, 20);
+         } else if(entity1 instanceof EntityMinecart) {
+             this.trackEntity(entity1, 160, 4);
+-        } else if(entity1 instanceof IAnimals) {
++        } else if(entity1 instanceof IAnimal) {
+             this.trackEntity(entity1, 160, 2);
+         }
+ 

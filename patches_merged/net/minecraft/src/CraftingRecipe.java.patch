@@ -1,0 +1,89 @@
+--- a/net/minecraft/src/CraftingRecipe.java
++++ b/net/minecraft/src/CraftingRecipe.java
+@@ -4,25 +4,27 @@
+     private int width;
+     private int height;
+     private int[] ingredientMap;
++    private int[] metadataMap;
+     private ItemStack resultStack;
+     public final int resultId;
+ 
+-    public CraftingRecipe(int width, int height, int[] ingredientMap, ItemStack resultStack) {
++    public CraftingRecipe(int width, int height, int[] ingredientMap, int[] metadataMap, ItemStack resultStack) {
+         this.resultId = resultStack.itemID;
+         this.width = width;
+         this.height = height;
+         this.ingredientMap = ingredientMap;
++        this.metadataMap = metadataMap;
+         this.resultStack = resultStack;
+     }
+ 
+-    public boolean matches(int[] i1) {
++    public boolean matches(int[] i1, int[] metadata) {
+         for(int i2 = 0; i2 <= 3 - this.width; ++i2) {
+             for(int i3 = 0; i3 <= 3 - this.height; ++i3) {
+-                if(this.checkMatch(i1, i2, i3, true)) {
++                if(this.checkMatch(i1, i2, i3, metadata, true)) {
+                     return true;
+                 }
+ 
+-                if(this.checkMatch(i1, i2, i3, false)) {
++                if(this.checkMatch(i1, i2, i3, metadata, false)) {
+                     return true;
+                 }
+             }
+@@ -31,21 +33,24 @@
+         return false;
+     }
+ 
+-    private boolean checkMatch(int[] i1, int i2, int i3, boolean z4) {
++    private boolean checkMatch(int[] i1, int i2, int i3, int[] metaMap, boolean z4) {
+         for(int i5 = 0; i5 < 3; ++i5) {
+             for(int i6 = 0; i6 < 3; ++i6) {
+                 int i7 = i5 - i2;
+                 int i8 = i6 - i3;
+                 int i9 = -1;
++                int metadata = -1;
+                 if(i7 >= 0 && i8 >= 0 && i7 < this.width && i8 < this.height) {
+                     if(z4) {
+                         i9 = this.ingredientMap[this.width - i7 - 1 + i8 * this.width];
++                        metadata = this.metadataMap[this.width - i7 - 1 + i8 * this.width];
+                     } else {
+                         i9 = this.ingredientMap[i7 + i8 * this.width];
++                        metadata = this.metadataMap[i7 + i8 * this.width];
+                     }
+                 }
+ 
+-                if(i1[i5 + i6 * 3] != i9) {
++                if(i1[i5 + i6 * 3] != i9 || (metadata >= 0 && metaMap[i5 + i6 * 3] != metadata)) {
+                     return false;
+                 }
+             }
+@@ -54,11 +59,25 @@
+         return true;
+     }
+ 
+-    public ItemStack getCraftingResult(int[] i1) {
+-        return new ItemStack(this.resultStack.itemID, this.resultStack.stackSize);
++    public ItemStack getCraftingResult() {
++        return new ItemStack(this.resultStack.itemID, this.resultStack.stackSize).withMetadata(this.resultStack.itemMetadata);
+     }
+ 
+     public int getRecipeSize() {
+         return this.width * this.height;
++    }
++
++    public ItemStack[] asItemStacks() {
++        ItemStack[] items = new ItemStack[10];
++        for (int y = 0; y < this.height; y++) {
++            for (int x = 0; x < this.width; x++) {
++                int item = this.ingredientMap[x + y * this.width];
++                if (item > 0) {
++                    items[x + y * 3] = new ItemStack(item, 1).withMetadata(this.metadataMap[x + y * this.width]);
++                }
++            }
++        }
++        items[9] = this.resultStack;
++        return items;
+     }
+ }

@@ -1,0 +1,11 @@
+--- a/net/minecraft/src/GuiFurnace.java
++++ b/net/minecraft/src/GuiFurnace.java
+@@ -3,7 +3,7 @@
+ import org.lwjgl.opengl.GL11;
+ 
+ public class GuiFurnace extends GuiContainer {
+-    private TileEntityFurnace furnaceInventory;
++    private final TileEntityFurnace furnaceInventory;
+ 
+     public GuiFurnace(InventoryPlayer inventoryPlayer1, TileEntityFurnace tileEntityFurnace2) {
+         this.furnaceInventory = tileEntityFurnace2;

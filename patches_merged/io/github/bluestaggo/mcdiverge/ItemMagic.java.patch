@@ -1,0 +1,33 @@
+--- /dev/null
++++ b/io/github/bluestaggo/mcdiverge/ItemMagic.java
+@@ -1,0 +1,30 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.EntityPlayer;
++import net.minecraft.src.Item;
++import net.minecraft.src.ItemStack;
++import net.minecraft.src.World;
++
++public class ItemMagic extends Item {
++    public float useMana;
++
++    public ItemMagic(int i1, float f2) {
++        super(i1);
++        this.useMana = f2;
++    }
++
++    public ItemStack onMagicItemRightClick(ItemStack itemStack1, World world2, EntityPlayer entityPlayer3) {
++        return itemStack1;
++    }
++
++    public ItemStack onItemRightClick(ItemStack itemStack1, World world2, EntityPlayer entityPlayer3) {
++        if (entityPlayer3.useMana(this.useMana)) {
++            return this.onMagicItemRightClick(itemStack1, world2, entityPlayer3);
++        }
++        return itemStack1;
++    }
++
++    public boolean isMagic() {
++        return true;
++    }
++}

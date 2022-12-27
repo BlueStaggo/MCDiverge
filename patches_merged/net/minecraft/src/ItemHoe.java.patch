@@ -1,0 +1,27 @@
+--- a/net/minecraft/src/ItemHoe.java
++++ b/net/minecraft/src/ItemHoe.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public class ItemHoe extends Item {
+     public ItemHoe(int id, int strength) {
+         super(id);
+@@ -37,5 +39,16 @@
+ 
+     public boolean isFull3D() {
+         return true;
++    }
++
++    public Object[] getDynamicTooltip() {
++        return new Object[] {
++                "Right click to create farmland",
++                ItemTooltip.DESCRIPTION_COL,
++                "and gather seeds.",
++                ItemTooltip.DESCRIPTION_COL,
++                Integer.toString(this.maxDamage) + " max durability",
++                ItemTooltip.INFO_COL
++        };
+     }
+ }

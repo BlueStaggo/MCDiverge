@@ -1,0 +1,36 @@
+--- a/net/minecraft/src/BlockRedstoneOre.java
++++ b/net/minecraft/src/BlockRedstoneOre.java
+@@ -3,10 +3,12 @@
+ import java.util.Random;
+ 
+ public class BlockRedstoneOre extends Block {
+-    private boolean glowing;
++    private final boolean glowing;
++    private final int slateTex;
+ 
+-    public BlockRedstoneOre(int id, int tex, boolean glowing) {
++    public BlockRedstoneOre(int id, int tex, int slateTex, boolean glowing) {
+         super(id, tex, Material.rock);
++        this.slateTex = slateTex;
+         if(glowing) {
+             this.setTickOnLoad(true);
+         }
+@@ -36,7 +38,7 @@
+     private void glow(World worldObj, int x, int y, int z) {
+         this.sparkle(worldObj, x, y, z);
+         if(this.blockID == Block.oreRedstone.blockID) {
+-            worldObj.setBlockWithNotify(x, y, z, Block.oreRedstoneGlowing.blockID);
++            worldObj.setBlockAndMetadataWithNotify(x, y, z, Block.oreRedstoneGlowing.blockID, worldObj.getBlockMetadata(x, y, z));
+         }
+ 
+     }
+@@ -99,6 +101,9 @@
+                 worldObj.spawnParticle("reddust", d9, d11, d13, 0.0D, 0.0D, 0.0D);
+             }
+         }
++    }
+ 
++    public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
++        return metadata == 1 ? slateTex : blockIndexInTexture;
+     }
+ }

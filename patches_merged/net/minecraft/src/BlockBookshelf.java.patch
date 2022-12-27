@@ -1,0 +1,14 @@
+--- a/net/minecraft/src/BlockBookshelf.java
++++ b/net/minecraft/src/BlockBookshelf.java
+@@ -12,6 +12,10 @@
+     }
+ 
+     public int quantityDropped(Random rand) {
+-        return 0;
++        return 3;
++    }
++
++    public int idDropped(int metadata, Random rand) {
++        return Item.book.shiftedIndex;
+     }
+ }

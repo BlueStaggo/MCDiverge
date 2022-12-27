@@ -1,0 +1,18 @@
+--- a/net/minecraft/src/PlayerController.java
++++ b/net/minecraft/src/PlayerController.java
+@@ -59,7 +59,14 @@
+ 
+     public boolean onPlayerRightClick(EntityPlayer entityPlayer, World world, ItemStack itemStack, int x, int y, int z, int side) {
+         int i8 = world.getBlockId(x, y, z);
+-        return i8 > 0 && Block.blocksList[i8].blockActivated(world, x, y, z, entityPlayer) ? true : (itemStack == null ? false : itemStack.useItem(entityPlayer, world, x, y, z, side));
++        int oldStackSize = itemStack != null ? itemStack.stackSize : 0;
++        boolean result = i8 > 0 && Block.blocksList[i8].blockActivated(world, x, y, z, entityPlayer) ? true
++        : (itemStack == null ? false
++        : itemStack.useItem(entityPlayer, world, x, y, z, side));
++        if (entityPlayer.creative && itemStack != null) {
++            itemStack.stackSize = oldStackSize;
++        }
++        return result;
+     }
+ 
+     public EntityPlayer createPlayer(World world) {

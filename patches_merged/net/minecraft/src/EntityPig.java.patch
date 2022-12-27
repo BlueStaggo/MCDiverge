@@ -1,0 +1,10 @@
+--- a/net/minecraft/src/EntityPig.java
++++ b/net/minecraft/src/EntityPig.java
+@@ -7,7 +7,6 @@
+         super(world1);
+         this.texture = "/mob/pig.png";
+         this.setSize(0.9F, 0.9F);
+-        this.saddled = false;
+     }
+ 
+     public void writeEntityToNBT(NBTTagCompound compoundTag) {

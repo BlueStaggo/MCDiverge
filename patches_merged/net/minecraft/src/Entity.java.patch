@@ -1,0 +1,41 @@
+--- a/net/minecraft/src/Entity.java
++++ b/net/minecraft/src/Entity.java
+@@ -444,6 +444,10 @@
+         return false;
+     }
+ 
++    public boolean isRunning() {
++        return false;
++    }
++
+     public AxisAlignedBB getBoundingBox() {
+         return null;
+     }
+@@ -504,7 +508,7 @@
+         double d3 = (this.boundingBox.maxY - this.boundingBox.minY) * 0.66D;
+         int i5 = MathHelper.floor_double(this.posY - (double)this.yOffset + d3);
+         int i6 = MathHelper.floor_double(this.posZ);
+-        return this.worldObj.getBrightness(i2, i5, i6);
++        return this.worldObj.getBrightness(i2, i5, i6) * (1 - RenderGlobal.globalBrightness) + RenderGlobal.globalBrightness;
+     }
+ 
+     public void setWorld(World world) {
+@@ -736,7 +740,7 @@
+         int i1 = MathHelper.floor_double(this.posX);
+         int i2 = MathHelper.floor_double(this.posY + (double)this.getEyeHeight());
+         int i3 = MathHelper.floor_double(this.posZ);
+-        return this.worldObj.isBlockNormalCube(i1, i2, i3);
++        return this.worldObj.isBlockNormalCube(i1, i2, i3) && !this.noClip;
+     }
+ 
+     public boolean interact(EntityPlayer entityPlayer) {
+@@ -835,5 +839,9 @@
+     public void setPositionAndRotation(double x, double y, double z, float rotationYaw, float rotationPitch, int newPosRotationIncrements) {
+         this.setPosition(x, y, z);
+         this.setRotation(rotationYaw, rotationPitch);
++    }
++
++    public void playSound(String sound, float volume, float pitch) {
++        this.worldObj.playSoundAtEntity(this, sound, volume, pitch);
+     }
+ }

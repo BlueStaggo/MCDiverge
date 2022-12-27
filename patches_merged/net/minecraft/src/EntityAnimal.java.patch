@@ -1,0 +1,10 @@
+--- a/net/minecraft/src/EntityAnimal.java
++++ b/net/minecraft/src/EntityAnimal.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.src;
+ 
+-public abstract class EntityAnimal extends EntityCreature implements IAnimals {
++public abstract class EntityAnimal extends EntityCreature implements IAnimal {
+     public EntityAnimal(World world1) {
+         super(world1);
+     }

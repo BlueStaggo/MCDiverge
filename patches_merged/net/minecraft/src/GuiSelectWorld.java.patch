@@ -1,0 +1,126 @@
+--- a/net/minecraft/src/GuiSelectWorld.java
++++ b/net/minecraft/src/GuiSelectWorld.java
+@@ -1,6 +1,8 @@
+ package net.minecraft.src;
+ 
+ import java.io.File;
++import java.util.List;
++import java.util.stream.Collectors;
+ 
+ import net.minecraft.client.Minecraft;
+ 
+@@ -8,49 +10,78 @@
+     protected GuiScreen parentScreen;
+     protected String screenTitle = "Select world";
+     private boolean selected = false;
++    private int currentPage;
++    private static final int maxPages = 100 / 5;
++    private File mcDir = Minecraft.getMinecraftDir();
+ 
+     public GuiSelectWorld(GuiScreen guiScreen1) {
+         this.parentScreen = guiScreen1;
++        if (guiScreen1 instanceof GuiSelectWorld) {
++            this.currentPage = ((GuiSelectWorld) guiScreen1).currentPage;
++        }
+     }
+ 
+     public void initGui() {
+-        File file1 = Minecraft.getMinecraftDir();
++        this.controlList.clear();
++        this.initPage();
++        this.initButtons();
++    }
+ 
++    public void initPage() {
++        this.controlList = (List) this.controlList.stream().filter(button -> ((GuiButton) button).id >= 100).collect(Collectors.toList());
+         for(int i2 = 0; i2 < 5; ++i2) {
+-            NBTTagCompound nBTTagCompound3 = World.getLevelData(file1, "World" + (i2 + 1));
++            int i22 = i2 + this.currentPage * 5;
++            NBTTagCompound nBTTagCompound3 = World.getLevelData(mcDir, "World" + (i22 + 1));
+             if(nBTTagCompound3 == null) {
+-                this.controlList.add(new GuiButton(i2, this.width / 2 - 100, this.height / 6 + 24 * i2, "- empty -"));
++                this.controlList.add(new GuiButton(i22, this.width / 2 - 100, this.height / 6 + 24 * i2, "- empty -"));
+             } else {
+-                String string4 = "World " + (i2 + 1);
++                String string4 = nBTTagCompound3.getString("DisplayName");
++                if(string4.isEmpty()) {
++                    string4 = "World " + (i22 + 1);
++                }
+                 long j5 = nBTTagCompound3.getLong("SizeOnDisk");
+                 string4 = string4 + " (" + (float)(j5 / 1024L * 100L / 1024L) / 100.0F + " MB)";
+-                this.controlList.add(new GuiButton(i2, this.width / 2 - 100, this.height / 6 + 24 * i2, string4));
++                this.controlList.add(new GuiButton(i22, this.width / 2 - 100, this.height / 6 + 24 * i2, string4));
+             }
+         }
+-
+-        this.initButtons();
+     }
+ 
+     protected String getSaveName(int i1) {
+         File file2 = Minecraft.getMinecraftDir();
+-        return World.getLevelData(file2, "World" + i1) != null ? "World" + i1 : null;
++        NBTTagCompound data = World.getLevelData(file2, "World" + i1);
++        if (data == null) {
++            return null;
++        }
++
++        String displayName = data.getString("DisplayName");
++        if (displayName.isEmpty()) {
++            return "World" + i1;
++        }
++        return displayName;
+     }
+ 
+     public void initButtons() {
+-        this.controlList.add(new GuiButton(5, this.width / 2 - 100, this.height / 6 + 120 + 12, "Delete world..."));
+-        this.controlList.add(new GuiButton(6, this.width / 2 - 100, this.height / 6 + 168, "Cancel"));
++        this.controlList.add(new GuiButton(100, this.width / 2 - 100, this.height / 6 + 132, "Delete world..."));
++        this.controlList.add(new GuiButton(101, this.width / 2 - 100, this.height / 6 + 168, "Cancel"));
++        this.controlList.add(new GuiButton(102, this.width / 2 - 140, this.height / 6 + 132, 20, 20, "<"));
++        this.controlList.add(new GuiButton(103, this.width / 2 + 120, this.height / 6 + 132, 20, 20, ">"));
+     }
+ 
+     protected void actionPerformed(GuiButton button) {
+         if(button.enabled) {
+-            if(button.id < 5) {
++            if(button.id < 100) {
+                 this.selectWorld(button.id + 1);
+-            } else if(button.id == 5) {
++            } else if(button.id == 100) {
+                 this.mc.displayGuiScreen(new GuiDeleteWorld(this));
+-            } else if(button.id == 6) {
++            } else if(button.id == 101) {
+                 this.mc.displayGuiScreen(this.parentScreen);
++            } else if(button.id == 102 && this.currentPage > 0) {
++                this.currentPage--;
++                this.initPage();
++            } else if(button.id == 103 && this.currentPage < maxPages - 1) {
++                this.currentPage++;
++                this.initPage();
+             }
+-
+         }
+     }
+ 
+@@ -58,6 +89,13 @@
+         this.mc.displayGuiScreen((GuiScreen)null);
+         if(!this.selected) {
+             this.selected = true;
++
++            NBTTagCompound nBTTagCompound3 = World.getLevelData(Minecraft.getMinecraftDir(), "World" + i1);
++            if(nBTTagCompound3 == null) {
++                this.mc.displayGuiScreen(new GuiCreateWorld(this, i1));
++                return;
++            }
++
+             this.mc.playerController = new PlayerControllerSP(this.mc);
+             this.mc.startWorld("World" + i1);
+             this.mc.displayGuiScreen((GuiScreen)null);
+@@ -67,6 +105,7 @@
+     public void drawScreen(int mouseX, int mouseY, float renderPartialTick) {
+         this.drawDefaultBackground();
+         this.drawCenteredString(this.fontRenderer, this.screenTitle, this.width / 2, 20, 0xFFFFFF);
++        this.drawCenteredString(this.fontRenderer, (this.currentPage + 1) + " / " + maxPages, this.width / 2, this.height - 10, 0xFFFFFF);
+         super.drawScreen(mouseX, mouseY, renderPartialTick);
+     }
+ }

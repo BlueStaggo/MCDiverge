@@ -1,0 +1,100 @@
+--- a/net/minecraft/src/ItemStack.java
++++ b/net/minecraft/src/ItemStack.java
+@@ -1,21 +1,29 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.ItemTooltip;
++
+ public final class ItemStack {
+     public int stackSize;
+     public int animationsToGo;
+     public int itemID;
+     public int itemDmg;
++    public int itemMetadata;
+ 
+     public ItemStack(Block block) {
+-        this((Block)block, 1);
++        this(block, 1);
+     }
+ 
+     public ItemStack(Block block, int stackSize) {
++        this(block, stackSize, 0);
++    }
++
++    public ItemStack(Block block, int stackSize, int metadata) {
+         this(block.blockID, stackSize);
++        this.itemMetadata = metadata;
+     }
+ 
+     public ItemStack(Item item) {
+-        this((Item)item, 1);
++        this(item, 1);
+     }
+ 
+     public ItemStack(Item item, int stackSize) {
+@@ -27,26 +35,30 @@
+     }
+ 
+     public ItemStack(int itemID, int stackSize) {
+-        this.stackSize = 0;
+         this.itemID = itemID;
+         this.stackSize = stackSize;
++        if (Item.itemsList[itemID] != null)
++            this.itemDmg = Item.itemsList[itemID].startingDamage;
+     }
+ 
+     public ItemStack(int itemID, int stackSize, int itemDmg) {
+-        this.stackSize = 0;
+         this.itemID = itemID;
+         this.stackSize = stackSize;
+         this.itemDmg = itemDmg;
+     }
+ 
+     public ItemStack(NBTTagCompound nbtCompound) {
+-        this.stackSize = 0;
+         this.readFromNBT(nbtCompound);
+     }
+ 
++    public ItemStack withMetadata(int metadata) {
++        this.itemMetadata = metadata;
++        return this;
++    }
++
+     public ItemStack splitStack(int stackSize) {
+         this.stackSize -= stackSize;
+-        return new ItemStack(this.itemID, stackSize, this.itemDmg);
++        return new ItemStack(this.itemID, stackSize, this.itemDmg).withMetadata(this.itemMetadata);
+     }
+ 
+     public Item getItem() {
+@@ -73,6 +85,7 @@
+         nbtCompound.setShort("id", (short)this.itemID);
+         nbtCompound.setByte("Count", (byte)this.stackSize);
+         nbtCompound.setShort("Damage", (short)this.itemDmg);
++        nbtCompound.setShort("Metadata", (byte)this.itemMetadata);
+         return nbtCompound;
+     }
+ 
+@@ -80,6 +93,7 @@
+         this.itemID = nbtCompound.getShort("id");
+         this.stackSize = nbtCompound.getByte("Count");
+         this.itemDmg = nbtCompound.getShort("Damage");
++        this.itemMetadata = nbtCompound.getShort("Metadata");
+     }
+ 
+     public int getMaxStackSize() {
+@@ -127,6 +141,13 @@
+     }
+ 
+     public ItemStack copy() {
+-        return new ItemStack(this.itemID, this.stackSize, this.itemDmg);
++        return new ItemStack(this.itemID, this.stackSize, this.itemDmg).withMetadata(this.itemMetadata);
++    }
++
++    public ItemTooltip getTooltip() {
++        if (ItemTooltip.fromMetadata[this.itemID] != null && ItemTooltip.fromMetadata[this.itemID][Math.max(this.itemMetadata, 0)] != null) {
++            return ItemTooltip.fromMetadata[this.itemID][Math.max(this.itemMetadata, 0)];
++        }
++        return Item.itemsList[this.itemID].getTooltip();
+     }
+ }

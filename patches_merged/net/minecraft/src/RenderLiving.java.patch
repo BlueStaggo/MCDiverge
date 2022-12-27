@@ -1,0 +1,39 @@
+--- a/net/minecraft/src/RenderLiving.java
++++ b/net/minecraft/src/RenderLiving.java
+@@ -58,7 +58,7 @@
+             GL11.glEnable(GL11.GL_ALPHA_TEST);
+             this.mainModel.render(f16, f15, f13, f11 - f10, f12, f14);
+ 
+-            for(int i17 = 0; i17 < 4; ++i17) {
++            for(int i17 = 0; i17 < maxRenderPasses(); ++i17) {
+                 if(this.shouldRenderPass(entityLiving1, i17)) {
+                     this.renderPassModel.render(f16, f15, f13, f11 - f10, f12, f14);
+                     GL11.glDisable(GL11.GL_BLEND);
+@@ -79,7 +79,7 @@
+                     GL11.glColor4f(f25, 0.0F, 0.0F, 0.4F);
+                     this.mainModel.render(f16, f15, f13, f11 - f10, f12, f14);
+ 
+-                    for(int i19 = 0; i19 < 4; ++i19) {
++                    for(int i19 = 0; i19 < maxRenderPasses(); ++i19) {
+                         if(this.shouldRenderPass(entityLiving1, i19)) {
+                             GL11.glColor4f(f25, 0.0F, 0.0F, 0.4F);
+                             this.renderPassModel.render(f16, f15, f13, f11 - f10, f12, f14);
+@@ -95,7 +95,7 @@
+                     GL11.glColor4f(f26, f20, f21, f22);
+                     this.mainModel.render(f16, f15, f13, f11 - f10, f12, f14);
+ 
+-                    for(int i23 = 0; i23 < 4; ++i23) {
++                    for(int i23 = 0; i23 < maxRenderPasses(); ++i23) {
+                         if(this.shouldRenderPass(entityLiving1, i23)) {
+                             GL11.glColor4f(f26, f20, f21, f22);
+                             this.renderPassModel.render(f16, f15, f13, f11 - f10, f12, f14);
+@@ -146,5 +146,9 @@
+ 
+     public void doRender(Entity entity1, double d2, double d4, double d6, float f8, float f9) {
+         this.doRenderLiving((EntityLiving)entity1, d2, d4, d6, f8, f9);
++    }
++
++    protected float maxRenderPasses() {
++        return 4;
+     }
+ }

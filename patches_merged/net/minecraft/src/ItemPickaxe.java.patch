@@ -1,0 +1,97 @@
+--- a/net/minecraft/src/ItemPickaxe.java
++++ b/net/minecraft/src/ItemPickaxe.java
+@@ -1,15 +1,90 @@
+ package net.minecraft.src;
+ 
++import java.util.Arrays;
++
+ public class ItemPickaxe extends ItemTool {
+-    private static Block[] blocksEffectiveAgainst = new Block[]{Block.cobblestone, Block.stairDouble, Block.stairSingle, Block.stone, Block.cobblestoneMossy, Block.oreIron, Block.blockSteel, Block.oreCoal, Block.blockGold, Block.oreGold, Block.oreDiamond, Block.blockDiamond, Block.ice};
+-    private int harvestLevel;
++    private static final Block[] tier3 = new Block[] {
++    Block.obsidian,
++    Block.oreRuby,
++    Block.oreSapphire,
++    Block.refabricator
++    };
++    private static final Block[] tier2 = new Block[] {
++    Block.blockDiamond,
++    Block.oreDiamond,
++    Block.blockGold,
++    Block.oreGold,
++    Block.oreRedstone,
++    Block.oreRedstoneGlowing
++    };
++    private static final Block[] tier1 = new Block[] {
++    Block.blockSteel,
++    Block.oreIron
++    };
++
++    private static final Block[] blocksEffectiveAgainst = new Block[] {
++    Block.cobblestone,
++    Block.stairDouble,
++    Block.stairSingle,
++    Block.stone,
++    Block.polishedStone,
++    Block.cobblestoneMossy,
++    Block.oreIron,
++    Block.blockSteel,
++    Block.oreCoal,
++    Block.blockGold,
++    Block.oreGold,
++    Block.oreDiamond,
++    Block.blockDiamond,
++    Block.ice,
++    Block.mobSpawner,
++    Block.stoneOvenIdle,
++    Block.stoneOvenActive,
++    Block.stairCompactStone,
++    Block.minecartTrack,
++    Block.doorSteel,
++    Block.obsidian,
++    Block.oreRuby,
++    Block.oreSapphire,
++    Block.blasterIdle,
++    Block.blasterActive,
++    Block.refabricator,
++	Block.speleothem
++    };
++    private final int harvestLevel;
+ 
+     public ItemPickaxe(int id, int harvestLevel) {
+-        super(id, 2, harvestLevel, blocksEffectiveAgainst);
++        super(id, 2, Math.abs(harvestLevel), blocksEffectiveAgainst);
+         this.harvestLevel = harvestLevel;
++        if (harvestLevel < 0) {
++            this.efficiencyOnProperMaterial *= 2.5F;
++            this.maxDamage *= 4;
++        }
+     }
+ 
+     public boolean canHarvestBlock(Block block) {
+-        return block == Block.obsidian ? this.harvestLevel == 3 : (block != Block.blockDiamond && block != Block.oreDiamond ? (block != Block.blockGold && block != Block.oreGold ? (block != Block.blockSteel && block != Block.oreIron ? (block != Block.oreRedstone && block != Block.oreRedstoneGlowing ? (block.material == Material.rock ? true : block.material == Material.iron) : this.harvestLevel >= 2) : this.harvestLevel >= 1) : this.harvestLevel >= 2) : this.harvestLevel >= 2);
++//        return block == Block.obsidian
++//            ? this.harvestLevel == 3
++//            : (block != Block.blockDiamond && block != Block.oreDiamond
++//                ? (block != Block.blockGold && block != Block.oreGold
++//                    ? (block != Block.blockSteel && block != Block.oreIron
++//                        ? (block != Block.oreRedstone && block != Block.oreRedstoneGlowing
++//                            ? (block.material == Material.rock
++//                                ? true
++//                                : block.material == Material.iron)
++//                            : this.harvestLevel >= 2)
++//                        : this.harvestLevel >= 1)
++//                    : this.harvestLevel >= 2)
++//                : this.harvestLevel >= 2);
++        if (Arrays.asList(tier3).contains(block)) {
++            return this.harvestLevel >= 3;
++        }
++        if (Arrays.asList(tier2).contains(block)) {
++            return this.harvestLevel >= 2;
++        }
++        if (Arrays.asList(tier1).contains(block)) {
++            return this.harvestLevel >= 1;
++        }
++        return block.material == Material.rock || block.material == Material.iron;
+     }
+ }
