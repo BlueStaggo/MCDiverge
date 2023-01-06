@@ -15,16 +15,26 @@
          if(glowing) {
              this.setTickOnLoad(true);
          }
-@@ -36,7 +38,7 @@
+@@ -36,14 +38,16 @@
      private void glow(World worldObj, int x, int y, int z) {
          this.sparkle(worldObj, x, y, z);
          if(this.blockID == Block.oreRedstone.blockID) {
 -            worldObj.setBlockWithNotify(x, y, z, Block.oreRedstoneGlowing.blockID);
-+            worldObj.setBlockAndMetadataWithNotify(x, y, z, Block.oreRedstoneGlowing.blockID, worldObj.getBlockMetadata(x, y, z));
++			int metadata = worldObj.getBlockMetadata(x, y, z);
++            worldObj.setBlockAndMetadataWithNotify(x, y, z, Block.oreRedstoneGlowing.blockID, metadata);
          }
  
      }
-@@ -99,6 +101,9 @@
+ 
+     public void updateTick(World worldObj, int x, int y, int z, Random rand) {
+         if(this.blockID == Block.oreRedstoneGlowing.blockID) {
+-            worldObj.setBlockWithNotify(x, y, z, Block.oreRedstone.blockID);
++			int metadata = worldObj.getBlockMetadata(x, y, z);
++            worldObj.setBlockAndMetadataWithNotify(x, y, z, Block.oreRedstone.blockID, metadata);
+         }
+ 
+     }
+@@ -99,6 +103,9 @@
                  worldObj.spawnParticle("reddust", d9, d11, d13, 0.0D, 0.0D, 0.0D);
              }
          }

@@ -1,0 +1,44 @@
+--- a/net/minecraft/src/Packet17AddToInventory.java
++++ b/net/minecraft/src/Packet17AddToInventory.java
+@@ -8,6 +8,7 @@
+     public int itemID;
+     public int count;
+     public int itemDamage;
++	public int itemMetadata;
+ 
+     public Packet17AddToInventory() {
+     }
+@@ -16,22 +17,21 @@
+         this.itemID = stack.itemID;
+         this.count = count;
+         this.itemDamage = stack.itemDmg;
+-        if(count == 0) {
+-            boolean count1 = true;
+-        }
+-
++		this.itemMetadata = stack.itemMetadata;
+     }
+ 
+     public void readPacketData(DataInputStream dataInputStream) throws IOException {
+         this.itemID = dataInputStream.readShort();
+         this.count = dataInputStream.readByte();
+         this.itemDamage = dataInputStream.readShort();
++		this.itemMetadata = dataInputStream.readByte();
+     }
+ 
+     public void writePacket(DataOutputStream dataOutputStream) throws IOException {
+         dataOutputStream.writeShort(this.itemID);
+         dataOutputStream.writeByte(this.count);
+         dataOutputStream.writeShort(this.itemDamage);
++		dataOutputStream.writeByte(this.itemMetadata);
+     }
+ 
+     public void processPacket(NetHandler netHandler) {
+@@ -39,6 +39,6 @@
+     }
+ 
+     public int getPacketSize() {
+-        return 5;
++        return 6;
+     }
+ }

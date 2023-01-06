@@ -1,6 +1,24 @@
 --- a/net/minecraft/src/BlockStairs.java
 +++ b/net/minecraft/src/BlockStairs.java
-@@ -181,15 +181,7 @@
+@@ -172,24 +172,20 @@
+         return this.modelBlock.getRenderBlockPass();
+     }
+ 
+-    public int idDropped(int metadata, Random rand) {
+-        return this.modelBlock.idDropped(metadata, rand);
+-    }
+-
+-    public int quantityDropped(Random rand) {
++//    public int idDropped(int metadata, Random rand) {
++//        return this.modelBlock.idDropped(metadata, rand);
++//    }
++
++	public int metadataDropped(int metadata, Random rand) {
++		return 0;
++	}
++
++	public int quantityDropped(Random rand) {
+         return this.modelBlock.quantityDropped(rand);
      }
  
      public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
@@ -17,3 +35,18 @@
      }
  
      public int tickRate() {
+@@ -223,14 +219,6 @@
+ 
+     public void onBlockRemoval(World worldObj, int x, int y, int z) {
+         this.modelBlock.onBlockRemoval(worldObj, x, y, z);
+-    }
+-
+-    public void dropBlockAsItemWithChance(World worldObj, int x, int y, int z, int metadata, float chance) {
+-        this.modelBlock.dropBlockAsItemWithChance(worldObj, x, y, z, metadata, chance);
+-    }
+-
+-    public void dropBlockAsItem(World worldObj, int x, int y, int z, int metadata) {
+-        this.modelBlock.dropBlockAsItem(worldObj, x, y, z, metadata);
+     }
+ 
+     public void onEntityWalking(World worldObj, int x, int y, int z, Entity entity) {

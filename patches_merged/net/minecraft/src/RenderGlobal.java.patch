@@ -8,7 +8,7 @@
  
      public RenderGlobal(Minecraft minecraft1, RenderEngine renderEngine2) {
          this.mc = minecraft1;
-@@ -1033,12 +1034,12 @@
+@@ -1033,15 +1034,19 @@
          ++this.frustumCheckOffset;
      }
  
@@ -25,7 +25,14 @@
      }
  
      public void playSound(String sound, double posX, double posY, double posZ, float volume, float pitch) {
-@@ -1111,5 +1112,17 @@
++        if (sound.equals("ambient.cave.cave") && !this.mc.options.caveSounds) {
++			return;
++        }
++
+         float f10 = 16.0F;
+         if(volume > 1.0F) {
+             f10 *= volume;
+@@ -1111,5 +1116,17 @@
      }
  
      public void doNothingWithTileEntity(int x, int y, int z, TileEntity tileEntity) {

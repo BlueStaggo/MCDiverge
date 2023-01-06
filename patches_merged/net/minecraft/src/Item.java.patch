@@ -208,7 +208,7 @@
 +    public static final Item repairKit = (new ItemRepairKit(103)).setIconIndex(textureXY(3, 9));
 +    public static final Item starChunk = (new Item(104)).setIconIndex(textureXY(12, 5));
 +    public static final Item starDust = (new Item(105)).setIconIndex(textureXY(13, 5));
-+    public static final Item staffSparkle = (new ItemStaff(106, 20.0F, 6, 256)).setIconIndex(textureXY(12, 6));
++    public static final Item staffSparkle = (new ItemStaff(106, 10.0F, 6, 256)).setIconIndex(textureXY(12, 6));
 +    public static final Item slimeShoes = (new ItemSlimeShoes(107)).setIconIndex(textureXY(2, 9));
 +    public static final Item record13 = (new ItemRecord(2000, "13", "C418 - 13")).setIconIndex(240);
 +    public static final Item recordCat = (new ItemRecord(2001, "cat", "C418 - cat")).setIconIndex(241);

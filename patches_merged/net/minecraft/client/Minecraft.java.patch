@@ -63,17 +63,16 @@
  
  import org.lwjgl.LWJGLException;
  import org.lwjgl.input.Controllers;
-@@ -74,6 +22,9 @@
+@@ -74,6 +22,8 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+    private static Minecraft instance;
-+    public static final String version = "Minecraft Diverge v0.1";
++    public static final String version = "Minecraft Diverge v0.1.1";
 +
      public PlayerController playerController;
      private boolean fullscreen = false;
      public int displayWidth;
-@@ -125,6 +76,7 @@
+@@ -125,6 +75,7 @@
      public boolean isRaining = false;
      long systemTime = System.currentTimeMillis();
      private int joinPlayerCounter = 0;
@@ -81,23 +80,7 @@
  
      public Minecraft(Component component, Canvas canvas, MinecraftApplet mcApplet, int width, int height, boolean fullscreen) {
          this.tempDisplayWidth = width;
-@@ -136,10 +88,15 @@
-         this.displayWidth = width;
-         this.displayHeight = height;
-         this.fullscreen = fullscreen;
-+        Minecraft.instance = this;
-     }
- 
-     public abstract void displayUnexpectedThrowable(UnexpectedThrowable unexpectedThrowable1);
- 
-+    public static GameSettings getOptions() {
-+        return instance.options;
-+    }
-+
-     public void setServer(String string1, int i2) {
-         this.serverName = string1;
-         this.serverPort = i2;
-@@ -170,7 +127,7 @@
+@@ -170,7 +121,7 @@
              Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
          }
  
@@ -106,7 +89,7 @@
  
          try {
              Display.create();
-@@ -195,6 +152,8 @@
+@@ -195,6 +146,8 @@
          Mouse.create();
          this.mouseHelper = new MouseHelper(this.mcCanvas);
  
@@ -115,7 +98,7 @@
          try {
              Controllers.create();
          } catch (Exception exception4) {
-@@ -240,7 +199,6 @@
+@@ -240,7 +193,6 @@
          } else {
              this.displayGuiScreen(new GuiMainMenu());
          }
@@ -123,7 +106,7 @@
      }
  
      private void loadScreen() throws LWJGLException {
-@@ -494,9 +452,9 @@
+@@ -494,9 +446,9 @@
                          this.resize(this.displayWidth, this.displayHeight);
                      }
  
@@ -136,7 +119,7 @@
  
                      this.checkGLError("Post render");
                      ++i3;
-@@ -679,7 +637,7 @@
+@@ -679,7 +631,7 @@
                  if(itemStack9 != null) {
                      i3 = itemStack9.stackSize;
                      ItemStack itemStack10 = itemStack9.useItemRightClick(this.theWorld, this.thePlayer);
@@ -145,7 +128,7 @@
                          this.thePlayer.inventory.mainInventory[this.thePlayer.inventory.currentItem] = itemStack10;
                          this.entityRenderer.itemRenderer.resetEquippedProgress2();
                          if(itemStack10.stackSize == 0) {
-@@ -788,6 +746,8 @@
+@@ -788,6 +740,8 @@
      }
  
      public void runTick() {
@@ -154,7 +137,7 @@
          this.ingameGUI.updateTick();
          this.entityRenderer.getMouseOver(1.0F);
          if(this.thePlayer != null) {
-@@ -871,6 +831,10 @@
+@@ -871,6 +825,10 @@
                                                      this.options.thirdPersonView = !this.options.thirdPersonView;
                                                  }
  
@@ -165,7 +148,7 @@
                                                  if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
                                                      this.displayGuiScreen(new GuiInventory(this.thePlayer.inventory, this.thePlayer.inventory.craftingInventory));
                                                  }
-@@ -882,6 +846,14 @@
+@@ -882,6 +840,14 @@
                                                  if(this.isMultiplayerWorld() && Keyboard.getEventKey() == this.options.keyBindChat.keyCode) {
                                                      this.displayGuiScreen(new GuiChat());
                                                  }
@@ -180,7 +163,17 @@
                                              }
  
                                              for(int i4 = 0; i4 < 9; ++i4) {
-@@ -982,9 +954,14 @@
+@@ -955,6 +921,9 @@
+             }
+ 
+             if(!this.isGamePaused || this.isMultiplayerWorld()) {
++                if (!this.options.caveSounds) {
++                    this.theWorld.soundCounter = 0xDEAD;
++                }
+                 this.theWorld.tick();
+             }
+ 
+@@ -982,9 +951,14 @@
      }
  
      public void startWorld(String worldName) {
@@ -196,7 +189,7 @@
          if(world2.isNewWorld) {
              this.changeWorld(world2, "Generating level");
          } else {
-@@ -998,7 +975,7 @@
+@@ -998,7 +972,7 @@
      }
  
      public void changeWorld(World world, String title) {
@@ -205,7 +198,7 @@
          if(this.theWorld != null) {
              this.theWorld.saveWorldIndirectly(this.loadingScreen);
          }
-@@ -1041,6 +1018,7 @@
+@@ -1041,6 +1015,7 @@
                  world.saveWorldIndirectly(this.loadingScreen);
              }
          } else {
@@ -213,7 +206,7 @@
              this.thePlayer = null;
          }
  
-@@ -1088,9 +1066,15 @@
+@@ -1088,9 +1063,15 @@
              this.sndManager.addSound(name, file);
          } else if(string4.equalsIgnoreCase("streaming")) {
              this.sndManager.addStreaming(name, file);
@@ -231,7 +224,7 @@
              this.sndManager.addMusic(name, file);
          }
  
-@@ -1100,6 +1084,12 @@
+@@ -1100,6 +1081,12 @@
          return this.glCapabilities;
      }
  
@@ -244,7 +237,7 @@
      public String debugInfoRenders() {
          return this.renderGlobal.getDebugInfoRenders();
      }
-@@ -1112,6 +1102,17 @@
+@@ -1112,6 +1099,17 @@
          return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
      }
  
@@ -262,7 +255,7 @@
      public void respawn() {
          this.theWorld.setSpawnLocation();
          if(this.thePlayer != null) {
-@@ -1128,7 +1129,7 @@
+@@ -1128,7 +1126,7 @@
      }
  
      public static void startMainThread(String username, String sessionId) {
@@ -271,7 +264,7 @@
      }
  
      public static void startMainThread(String username, String sessionId, String server) {
-@@ -1139,8 +1140,8 @@
+@@ -1139,8 +1137,8 @@
          frame5.add(canvas6, "Center");
          canvas6.setPreferredSize(new Dimension(854, 480));
          frame5.pack();

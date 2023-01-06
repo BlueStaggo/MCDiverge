@@ -9,8 +9,12 @@
  import java.io.DataInputStream;
  import java.io.DataOutputStream;
  import java.io.File;
-@@ -54,6 +57,9 @@
-     private int soundCounter;
+@@ -51,9 +54,12 @@
+     public boolean worldChunkLoadOverride;
+     private ArrayList collidingBoundingBoxes;
+     private Set positionsToUpdate;
+-    private int soundCounter;
++    public int soundCounter;
      private List entitiesWithinAABBExcludingEntity;
      public boolean multiplayerWorld;
 +    public String displayName;
@@ -143,16 +147,15 @@
          this.tickUpdates(false);
          this.updateBlocksAndPlayCaveSounds();
      }
-@@ -1572,7 +1594,7 @@
-             int i8;
-             int i9;
-             int i10;
--            if(this.soundCounter == 0) {
-+            if(Minecraft.getOptions().caveSounds && this.soundCounter == 0) {
-                 this.updateLCG = this.updateLCG * 3 + this.DIST_HASH_MAGIC;
-                 i6 = this.updateLCG >> 2;
-                 i7 = i6 & 15;
-@@ -1970,6 +1992,42 @@
+@@ -1547,6 +1569,7 @@
+         int i7;
+         for(int i1 = 0; i1 < this.playerEntities.size(); ++i1) {
+             EntityPlayer entityPlayer2 = (EntityPlayer)this.playerEntities.get(i1);
++
+             i3 = MathHelper.floor_double(entityPlayer2.posX / 16.0D);
+             i4 = MathHelper.floor_double(entityPlayer2.posZ / 16.0D);
+             byte b5 = 9;
+@@ -1970,6 +1993,42 @@
  
      }
  
@@ -195,7 +198,7 @@
      static {
          float f0 = 0.05F;
  
-@@ -1977,6 +2035,5 @@
+@@ -1977,6 +2036,5 @@
              float f2 = 1.0F - (float)i1 / 15.0F;
              lightBrightnessTable[i1] = (1.0F - f2) / (f2 * 3.0F + 1.0F) * (1.0F - f0) + f0;
          }

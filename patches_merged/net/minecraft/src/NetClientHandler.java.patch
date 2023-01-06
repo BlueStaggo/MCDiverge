@@ -1,0 +1,20 @@
+--- a/net/minecraft/src/NetClientHandler.java
++++ b/net/minecraft/src/NetClientHandler.java
+@@ -43,7 +43,7 @@
+         double d2 = (double)packet.xPosition / 32.0D;
+         double d4 = (double)packet.yPosition / 32.0D;
+         double d6 = (double)packet.zPosition / 32.0D;
+-        EntityItem entityItem8 = new EntityItem(this.worldClient, d2, d4, d6, new ItemStack(packet.itemID, packet.count));
++        EntityItem entityItem8 = new EntityItem(this.worldClient, d2, d4, d6, new ItemStack(packet.itemID, packet.count).withMetadata(packet.itemMetadata));
+         entityItem8.motionX = (double)packet.rotation / 128.0D;
+         entityItem8.motionY = (double)packet.pitch / 128.0D;
+         entityItem8.motionZ = (double)packet.roll / 128.0D;
+@@ -272,7 +272,7 @@
+     }
+ 
+     public void handleAddToInventory(Packet17AddToInventory packet) {
+-        this.mc.thePlayer.inventory.addItemStackToInventory(new ItemStack(packet.itemID, packet.count, packet.itemDamage));
++        this.mc.thePlayer.inventory.addItemStackToInventory(new ItemStack(packet.itemID, packet.count, packet.itemDamage).withMetadata(packet.itemMetadata));
+     }
+ 
+     public void handleHandshake(Packet2Handshake packet) {

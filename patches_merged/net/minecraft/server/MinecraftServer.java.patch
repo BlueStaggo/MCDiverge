@@ -39,7 +39,24 @@
          this.worldMngr.addWorldAccess(new WorldManager(this));
          this.worldMngr.difficultySetting = 1;
          this.configManager.setPlayerManager(this.worldMngr);
-@@ -265,7 +244,6 @@
+@@ -169,7 +148,7 @@
+                     long j5 = System.currentTimeMillis();
+                     long j7 = j5 - j1;
+                     if(j7 > 2000L) {
+-                        logger.warning("Can\'t keep up! Did the system time change, or is the server overloaded?");
++                        logger.warning("Can't keep up! Did the system time change, or is the server overloaded?");
+                         j7 = 2000L;
+                     }
+ 
+@@ -236,6 +215,7 @@
+ 
+         int i6;
+         for(i6 = 0; i6 < arrayList1.size(); ++i6) {
++
+             playerList.remove(arrayList1.get(i6));
+         }
+ 
+@@ -265,7 +245,6 @@
          } catch (Exception exception5) {
              logger.log(Level.WARNING, "Unexpected exception while parsing console command", exception5);
          }
@@ -47,29 +64,41 @@
      }
  
      public void addCommand(String command, ICommandListener commandListener) {
-@@ -314,6 +292,16 @@
-                         string11 = string2.substring(string2.indexOf(" ")).trim();
-                         this.configManager.pardonIP(string11);
-                         this.print(string4, "Pardoning ip " + string11);
-+                    } else if(string2.toLowerCase().startsWith("creative ")) {
-+                        string11 = string2.substring(string2.indexOf(" ")).trim();
-+                        this.configManager.setPlayerCreative(string11, true);
-+                        this.print(string4, "Setting " + string11 + "'s gamemode into creative");
-+                        this.configManager.sendChatMessageToPlayer(string11, "\u00a7eYou are now in creative mode!");
-+                    } else if(string2.toLowerCase().startsWith("survival ")) {
-+                        string11 = string2.substring(string2.indexOf(" ")).trim();
-+                        this.configManager.setPlayerCreative(string11, false);
-+                        this.print(string4, "Setting " + string11 + "'s gamemode into survival");
-+                        this.configManager.sendChatMessageToPlayer(string11, "\u00a7eYou are now in survival mode!");
-                     } else {
-                         EntityPlayerMP entityPlayerMP12;
-                         if(string2.toLowerCase().startsWith("ban ")) {
-@@ -444,6 +432,8 @@
-                 iCommandListener3.addHelpCommandMessage("   save-on                   re-enables terrain saving");
-                 iCommandListener3.addHelpCommandMessage("   list                      lists all currently connected players");
-                 iCommandListener3.addHelpCommandMessage("   say <message>             broadcasts a message to all players");
-+                iCommandListener3.addHelpCommandMessage("   creative <player>         puts a player into creative mode");
-+                iCommandListener3.addHelpCommandMessage("   survival <player>         puts a player into survival mode");
-             }
-         }
+@@ -343,7 +322,7 @@
+                                 entityPlayerMP12.playerNetServerHandler.kickPlayer("Kicked by admin");
+                                 this.print(string4, "Kicking " + entityPlayerMP12.username);
+                             } else {
+-                                iCommandListener3.addHelpCommandMessage("Can\'t find user " + string11 + ". No kick.");
++                                iCommandListener3.addHelpCommandMessage("Can't find user " + string11 + ". No kick.");
+                             }
+                         } else {
+                             String[] string5;
+@@ -354,9 +333,9 @@
+                                     entityPlayerMP12 = this.configManager.getPlayerEntity(string5[1]);
+                                     entityPlayerMP7 = this.configManager.getPlayerEntity(string5[2]);
+                                     if(entityPlayerMP12 == null) {
+-                                        iCommandListener3.addHelpCommandMessage("Can\'t find user " + string5[1] + ". No tp.");
++                                        iCommandListener3.addHelpCommandMessage("Can't find user " + string5[1] + ". No tp.");
+                                     } else if(entityPlayerMP7 == null) {
+-                                        iCommandListener3.addHelpCommandMessage("Can\'t find user " + string5[2] + ". No tp.");
++                                        iCommandListener3.addHelpCommandMessage("Can't find user " + string5[2] + ". No tp.");
+                                     } else {
+                                         entityPlayerMP12.playerNetServerHandler.teleportTo(entityPlayerMP7.posX, entityPlayerMP7.posY, entityPlayerMP7.posZ, entityPlayerMP7.rotationYaw, entityPlayerMP7.rotationPitch);
+                                         this.print(string4, "Teleporting " + string5[1] + " to " + string5[2] + ".");
+@@ -392,13 +371,13 @@
  
+                                             entityPlayerMP7.dropPlayerItem(new ItemStack(i8, i9));
+                                         } else {
+-                                            iCommandListener3.addHelpCommandMessage("There\'s no item with id " + i8);
++                                            iCommandListener3.addHelpCommandMessage("There's no item with id " + i8);
+                                         }
+                                     } catch (NumberFormatException numberFormatException10) {
+-                                        iCommandListener3.addHelpCommandMessage("There\'s no item with id " + string5[2]);
++                                        iCommandListener3.addHelpCommandMessage("There's no item with id " + string5[2]);
+                                     }
+                                 } else {
+-                                    iCommandListener3.addHelpCommandMessage("Can\'t find user " + string6);
++                                    iCommandListener3.addHelpCommandMessage("Can't find user " + string6);
+                                 }
+                             } else if(string2.toLowerCase().startsWith("say ")) {
+                                 string2 = string2.substring(string2.indexOf(" ")).trim();

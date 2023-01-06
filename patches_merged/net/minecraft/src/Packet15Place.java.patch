@@ -1,0 +1,45 @@
+--- a/net/minecraft/src/Packet15Place.java
++++ b/net/minecraft/src/Packet15Place.java
+@@ -6,6 +6,7 @@
+ 
+ public class Packet15Place extends Packet {
+     public int id;
++	public int metadata;
+     public int xPosition;
+     public int yPosition;
+     public int zPosition;
+@@ -14,8 +15,9 @@
+     public Packet15Place() {
+     }
+ 
+-    public Packet15Place(int id, int x, int y, int z, int direction) {
++    public Packet15Place(int id, int metadata, int x, int y, int z, int direction) {
+         this.id = id;
++		this.metadata = metadata;
+         this.xPosition = x;
+         this.yPosition = y;
+         this.zPosition = z;
+@@ -24,6 +26,7 @@
+ 
+     public void readPacketData(DataInputStream dataInputStream) throws IOException {
+         this.id = dataInputStream.readShort();
++		this.metadata = dataInputStream.readByte();
+         this.xPosition = dataInputStream.readInt();
+         this.yPosition = dataInputStream.read();
+         this.zPosition = dataInputStream.readInt();
+@@ -32,6 +35,7 @@
+ 
+     public void writePacket(DataOutputStream dataOutputStream) throws IOException {
+         dataOutputStream.writeShort(this.id);
++		dataOutputStream.writeByte(this.metadata);
+         dataOutputStream.writeInt(this.xPosition);
+         dataOutputStream.write(this.yPosition);
+         dataOutputStream.writeInt(this.zPosition);
+@@ -43,6 +47,6 @@
+     }
+ 
+     public int getPacketSize() {
+-        return 12;
++        return 13;
+     }
+ }
