@@ -1,6 +1,9 @@
 # Installation guide
 This guide assists with the installation of the Minecraft Diverge mod.
 
+## Betacraft
+Minecraft Diverge appears in the Betacraft mod repository. Pick any specific version or choose the automatically updating latest version!
+
 ## MultiMC or derivatives
 1. Download the mcdiverge.zip file (not source code!) from [the latest release](https://github.com/BlueStaggo/MCDiverge/releases/latest).
 2. Create a new Minecraft Alpha v1.1.2_01 instance.
@@ -9,7 +12,7 @@ This guide assists with the installation of the Minecraft Diverge mod.
 5. Navigate to the downloads folder and select the Minecraft Diverge zip.
 6. Minecraft Diverge can now be played on MultiMC.
 
-## Betacraft
+## Betacraft (Manual)
 1. Download the .info file from [the latest release](https://github.com/BlueStaggo/MCDiverge/releases/latest) (MCDiverge-Latest.info or MCDiverge-v###.info, depends on if automatic updates are desired).
 2. Move the .info file to the corresponding locations:
     - **Windows:** `%APPDATA%/Roaming/.betacraft/versions/jsons`
