@@ -1,7 +1,0 @@
---- /dev/null
-+++ b/net/minecraft/src/IAnimal.java
-@@ -1,0 +1,4 @@
-+package net.minecraft.src;
-+
-+public interface IAnimal {
-+}

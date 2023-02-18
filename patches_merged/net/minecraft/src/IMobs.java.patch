@@ -1,8 +1,0 @@
---- a/net/minecraft/src/IMobs.java
-+++ b/net/minecraft/src/IMobs.java
-@@ -1,4 +1,4 @@
- package net.minecraft.src;
- 
--public interface IMobs extends IAnimals {
-+public interface IMobs extends IAnimal {
- }

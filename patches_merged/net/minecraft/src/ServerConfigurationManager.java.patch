@@ -1,9 +1,0 @@
---- a/net/minecraft/src/ServerConfigurationManager.java
-+++ b/net/minecraft/src/ServerConfigurationManager.java
-@@ -318,6 +318,5 @@
-         for(int i1 = 0; i1 < this.playerEntities.size(); ++i1) {
-             this.playerNBTManagerObj.writePlayerNBT((EntityPlayerMP)this.playerEntities.get(i1));
-         }
--
-     }
- }
