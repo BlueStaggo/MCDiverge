@@ -9888,9 +9888,10 @@
  }
 --- net/minecraft/src/BlockSapling.java
 +++ net/minecraft/src/BlockSapling.java
-@@ -1,6 +1,9 @@
+@@ -1,6 +1,10 @@
  package net.minecraft.src;
  
++import io.github.bluestaggo.mcdiverge.WorldGenMahoganyTrees;
 +import io.github.bluestaggo.mcdiverge.WorldGenSpruceTrees;
 +
  import java.util.Random;
@@ -9898,7 +9899,7 @@
  
  public class BlockSapling extends BlockFlower {
  	protected BlockSapling(int var1, int var2) {
-@@ -9,24 +12,46 @@
+@@ -9,24 +13,59 @@
  		this.setBlockBounds(0.5F - var3, 0.0F, 0.5F - var3, 0.5F + var3, var3 * 2.0F, 0.5F + var3);
  	}
  
@@ -9908,17 +9909,19 @@
 -			int var6 = var1.getBlockMetadata(var2, var3, var4);
 -			if(var6 < 15) {
 -				var1.setBlockMetadataWithNotify(var2, var3, var4, var6 + 1);
--			} else {
++	public void updateTick(World worldObj, int x, int y, int z, Random rand) {
++		super.updateTick(worldObj, x, y, z, rand);
++		if(worldObj.getBlockLightValue(x, y + 1, z) >= 9 && rand.nextInt(30) == 0) {
++			int type = worldObj.getBlockMetadata(x, y, z);
++
++			if ((type & 8) == 0) {
++				worldObj.setBlockMetadataWithNotify(x, y, z, type | 8);
+ 			} else {
 -				var1.setBlock(var2, var3, var4, 0);
 -				Object var7 = new WorldGenTrees();
 -				if(var5.nextInt(10) == 0) {
 -					var7 = new WorldGenBigTree();
-+	public void updateTick(World worldObj, int x, int y, int z, Random rand) {
-+		super.updateTick(worldObj, x, y, z, rand);
-+		if(worldObj.getBlockLightValue(x, y + 1, z) >= 9 && rand.nextInt(5) == 0) {
-+			if (rand.nextInt(20) == 0) {
-+				int type = worldObj.getBlockMetadata(x, y, z);
-+
++				type &= 3;
 +				worldObj.setBlock(x, y, z, 0);
 +				WorldGenerator gen = getTreeGenerator(type);
 +				if(rand.nextInt(10) == 0) {
@@ -9928,7 +9931,7 @@
 -				if(!((WorldGenerator)var7).generate(var1, var5, var2, var3, var4)) {
 -					var1.setBlock(var2, var3, var4, this.blockID);
 +				if(!gen.generate(worldObj, rand, x, y, z)) {
-+					worldObj.setBlock(x, y, z, this.blockID);
++					worldObj.setBlockAndMetadata(x, y, z, this.blockID, type);
  				}
  			}
  		}
@@ -9940,6 +9943,7 @@
 +			default: return new WorldGenTrees();
 +			case 1: return new WorldGenSpruceTrees();
 +			case 2: return new WorldGenTrees().withAltForm(2, 10).withScale(2, 2, 2);
++			case 3: return new WorldGenMahoganyTrees();
 +		}
 +	}
 +
@@ -9948,11 +9952,20 @@
 +			default: return new WorldGenBigTree();
 +			case 1: return new WorldGenSpruceTrees().makeBig().withScale(3, 2, 2);
 +			case 2: return new WorldGenBigTree().withAltForm(2, 10);
++			case 3: return new WorldGenMahoganyTrees().withScale(5, 8, 6);
 +		}
 +	}
 +
 +	public int getBlockTextureFromSideAndMetadata(int side, int metadata) {
-+		return metadata == 0 ? this.blockIndexInTexture : textureXY(11, 8 + metadata);
++		return (metadata % 8) == 0 ? this.blockIndexInTexture : textureXY(11, 8 + (metadata % 8));
++	}
++
++	public int metadataDropped(int metadata, Random rand) {
++		return metadata % 8;
++	}
++
++	public int tickRate() {
++		return 1;
 +	}
 +
 +	public int[] availableMetadata() {
@@ -24811,7 +24824,7 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2";
++	public static final String version = "Minecraft Diverge v0.2.0_01";
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
@@ -24952,7 +24965,7 @@
 -		var4.draw();
 -		short var5 = 256;
 -		short var6 = 256;
-+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/title/mojang" + (new Random().nextInt(100) == 0 ? "-alt.png" : ".png")));
++		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/title/mojang" + (new Random().nextInt(10) == 0 ? "-alt.png" : ".png")));
 +		tessellator4.startDrawingQuads();
 +		tessellator4.setColorOpaque_I(0xFFFFFF);
 +		tessellator4.addVertexWithUV(0.0D, (double)this.displayHeight, 0.0D, 0.0D, 2.0D);
@@ -30446,7 +30459,7 @@
  	protected int getDropItemId() {
 --- net/minecraft/src/IChunkProvider.java
 +++ net/minecraft/src/IChunkProvider.java
-@@ -1,15 +1,19 @@
+@@ -1,5 +1,7 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.Biome;
@@ -30454,10 +30467,9 @@
  public interface IChunkProvider {
  	boolean chunkExists(int var1, int var2);
  
- 	Chunk provideChunk(int var1, int var2);
+@@ -7,9 +9,11 @@
  
--	void populate(IChunkProvider var1, int var2, int var3);
-+	void populate(IChunkProvider iChunkProvider1, int var2, int var3);
+ 	void populate(IChunkProvider var1, int var2, int var3);
  
 -	boolean saveChunks(boolean var1, IProgressUpdate var2);
 +	boolean saveChunks(boolean var1, IProgressUpdate iProgressUpdate2);
@@ -31865,7 +31877,7 @@
  				} else {
  					this.ySize = (float)((double)this.ySize + 0.5D);
  				}
-@@ -350,34 +350,30 @@
+@@ -350,50 +350,45 @@
  			this.posX = (this.boundingBox.minX + this.boundingBox.maxX) / 2.0D;
  			this.posY = this.boundingBox.minY + (double)this.yOffset - (double)this.ySize;
  			this.posZ = (this.boundingBox.minZ + this.boundingBox.maxZ) / 2.0D;
@@ -31904,14 +31916,23 @@
  			var37 = this.posX - var7;
  			var23 = this.posZ - var9;
  			this.distanceWalkedModified = (float)((double)this.distanceWalkedModified + (double)MathHelper.sqrt_double(var37 * var37 + var23 * var23) * 0.6D);
-+			if (!this.onGround) {
+-			int var26;
+-			int var38;
+-			int var40;
++			int var26 = MathHelper.floor_double(this.posY - (double)0.2F - (double)this.yOffset);
++			int var38 = MathHelper.floor_double(this.posX);
++			int var40 = MathHelper.floor_double(this.posZ);
++			var28 = this.worldObj.getBlockId(var38, var26, var40);
++
++			if (var28 == 0) {
 +				this.nextStepDistance = (int)this.distanceWalkedModified;
 +			}
- 			int var26;
- 			int var38;
- 			int var40;
-@@ -388,12 +384,12 @@
- 				var28 = this.worldObj.getBlockId(var38, var26, var40);
++
+ 			if(this.canTriggerWalking && !var18) {
+-				var38 = MathHelper.floor_double(this.posX);
+-				var26 = MathHelper.floor_double(this.posY - (double)0.2F - (double)this.yOffset);
+-				var40 = MathHelper.floor_double(this.posZ);
+-				var28 = this.worldObj.getBlockId(var38, var26, var40);
  				if(this.distanceWalkedModified > (float)this.nextStepDistance && var28 > 0) {
  					++this.nextStepDistance;
 -					StepSound var29 = Block.blocksList[var28].stepSound;
@@ -31927,7 +31948,7 @@
  					}
  
  					Block.blocksList[var28].onEntityWalking(this.worldObj, var38, var26, var40, this);
-@@ -440,33 +436,48 @@
+@@ -440,33 +435,48 @@
  		}
  	}
  
@@ -31983,7 +32004,7 @@
  			float var9 = (float)(var5 + 1) - var8;
  			return var2 < (double)var9;
  		} else {
-@@ -479,46 +490,46 @@
+@@ -479,46 +489,46 @@
  	}
  
  	public boolean handleLavaMovement() {
@@ -32053,7 +32074,7 @@
  		if(var9 < -180.0D) {
  			this.prevRotationYaw += 360.0F;
  		}
-@@ -530,50 +541,50 @@
+@@ -530,50 +540,50 @@
  		this.setPosition(this.posX, this.posY, this.posZ);
  	}
  
@@ -32131,7 +32152,7 @@
  			double var6 = MathHelper.abs_max(var2, var4);
  			if(var6 >= (double)0.01F) {
  				var6 = (double)MathHelper.sqrt_double(var6);
-@@ -591,19 +602,19 @@
+@@ -591,19 +601,19 @@
  				var2 *= (double)(1.0F - this.entityCollisionReduction);
  				var4 *= (double)(1.0F - this.entityCollisionReduction);
  				this.addVelocity(-var2, 0.0D, -var4);
@@ -32157,7 +32178,7 @@
  		return false;
  	}
  
-@@ -615,102 +626,102 @@
+@@ -615,102 +625,102 @@
  		return false;
  	}
  
@@ -32312,7 +32333,7 @@
  	}
  
  	public float getShadowSize() {
-@@ -722,10 +733,10 @@
+@@ -722,10 +732,10 @@
  	}
  
  	public EntityItem entityDropItem(int var1, int var2, float var3) {
@@ -32327,7 +32348,7 @@
  	}
  
  	public boolean isEntityAlive() {
-@@ -736,14 +747,14 @@
+@@ -736,14 +746,14 @@
  		int var1 = MathHelper.floor_double(this.posX);
  		int var2 = MathHelper.floor_double(this.posY + (double)this.getEyeHeight());
  		int var3 = MathHelper.floor_double(this.posZ);
@@ -32345,7 +32366,7 @@
  		return null;
  	}
  
-@@ -811,29 +822,36 @@
+@@ -811,29 +821,36 @@
  		return (double)this.height * 0.75D;
  	}
  
@@ -45271,7 +45292,7 @@
 +	}
 +
 +	public void fadeOutBackgroundMusic() {
-+		if (fadeOutTicks > 0 || !sndSystem.playing("BgMusic") || this.musicType == MusicType.TITLE) {
++		if (!loaded || fadeOutTicks > 0 || !sndSystem.playing("BgMusic") || this.musicType == MusicType.TITLE) {
 +			return;
 +		}
 +		sndSystem.fadeOut("BgMusic", null, 2500);
@@ -45280,7 +45301,7 @@
 +	}
 +
 +	public void fadeOutTitleMusic() {
-+		if (fadeOutTicks > 0 || !sndSystem.playing("BgMusic") || this.musicType != MusicType.TITLE) {
++		if (!loaded || fadeOutTicks > 0 || !sndSystem.playing("BgMusic") || this.musicType != MusicType.TITLE) {
 +			return;
 +		}
 +		sndSystem.fadeOut("BgMusic", null, 2500);
@@ -45289,7 +45310,7 @@
 +	}
 +
 +	public void stopBackgroundMusic() {
-+		if (!sndSystem.playing("BgMusic") || this.musicType == MusicType.TITLE) {
++		if (!loaded || !sndSystem.playing("BgMusic") || this.musicType == MusicType.TITLE) {
 +			return;
 +		}
 +		sndSystem.stop("BgMusic");
@@ -49572,7 +49593,7 @@
  		}
  
  		AxisAlignedBB.clearBoundingBoxPool();
-@@ -261,25 +249,24 @@
+@@ -261,14 +249,13 @@
  
  		try {
  			this.commandLineParser();
@@ -49591,84 +49612,49 @@
  	}
  
  	public void commandLineParser() {
- 		while(this.commands.size() > 0) {
--			ServerCommand var1 = (ServerCommand)this.commands.remove(0);
--			String var2 = var1.command;
--			ICommandListener var3 = var1.commandListener;
--			String var4 = var3.getUsername();
-+			ServerCommand serverCommand1 = (ServerCommand)this.commands.remove(0);
-+			String var2 = serverCommand1.command;
-+			ICommandListener iCommandListener3 = serverCommand1.commandListener;
-+			String var4 = iCommandListener3.getUsername();
- 			if(!var2.toLowerCase().startsWith("help") && !var2.toLowerCase().startsWith("?")) {
- 				if(var2.toLowerCase().startsWith("list")) {
--					var3.addHelpCommandMessage("Connected players: " + this.configManager.getPlayerList());
-+					iCommandListener3.addHelpCommandMessage("Connected players: " + this.configManager.getPlayerList());
- 				} else if(var2.toLowerCase().startsWith("stop")) {
- 					this.print(var4, "Stopping the server..");
- 					this.serverRunning = false;
 @@ -342,7 +329,7 @@
  								var12.playerNetServerHandler.kickPlayer("Kicked by admin");
  								this.print(var4, "Kicking " + var12.username);
  							} else {
 -								var3.addHelpCommandMessage("Can\'t find user " + var11 + ". No kick.");
-+								iCommandListener3.addHelpCommandMessage("Can't find user " + var11 + ". No kick.");
++								var3.addHelpCommandMessage("Can't find user " + var11 + ". No kick.");
  							}
  						} else {
  							String[] var5;
-@@ -353,15 +340,15 @@
+@@ -353,9 +340,9 @@
  									var12 = this.configManager.getPlayerEntity(var5[1]);
  									var7 = this.configManager.getPlayerEntity(var5[2]);
  									if(var12 == null) {
 -										var3.addHelpCommandMessage("Can\'t find user " + var5[1] + ". No tp.");
-+										iCommandListener3.addHelpCommandMessage("Can't find user " + var5[1] + ". No tp.");
++										var3.addHelpCommandMessage("Can't find user " + var5[1] + ". No tp.");
  									} else if(var7 == null) {
 -										var3.addHelpCommandMessage("Can\'t find user " + var5[2] + ". No tp.");
-+										iCommandListener3.addHelpCommandMessage("Can't find user " + var5[2] + ". No tp.");
++										var3.addHelpCommandMessage("Can't find user " + var5[2] + ". No tp.");
  									} else {
  										var12.playerNetServerHandler.teleportTo(var7.posX, var7.posY, var7.posZ, var7.rotationYaw, var7.rotationPitch);
  										this.print(var4, "Teleporting " + var5[1] + " to " + var5[2] + ".");
- 									}
- 								} else {
--									var3.addHelpCommandMessage("Syntax error, please provice a source and a target.");
-+									iCommandListener3.addHelpCommandMessage("Syntax error, please provice a source and a target.");
- 								}
- 							} else if(var2.toLowerCase().startsWith("give ")) {
- 								var5 = var2.split(" ");
 @@ -391,13 +378,13 @@
  
  											var7.dropPlayerItem(new ItemStack(var8, var9));
  										} else {
 -											var3.addHelpCommandMessage("There\'s no item with id " + var8);
-+											iCommandListener3.addHelpCommandMessage("There's no item with id " + var8);
++											var3.addHelpCommandMessage("There's no item with id " + var8);
  										}
 -									} catch (NumberFormatException var10) {
 -										var3.addHelpCommandMessage("There\'s no item with id " + var5[2]);
 +									} catch (NumberFormatException numberFormatException10) {
-+										iCommandListener3.addHelpCommandMessage("There's no item with id " + var5[2]);
++										var3.addHelpCommandMessage("There's no item with id " + var5[2]);
  									}
  								} else {
 -									var3.addHelpCommandMessage("Can\'t find user " + var6);
-+									iCommandListener3.addHelpCommandMessage("Can't find user " + var6);
++									var3.addHelpCommandMessage("Can't find user " + var6);
  								}
  							} else if(var2.toLowerCase().startsWith("say ")) {
  								var2 = var2.substring(var2.indexOf(" ")).trim();
-@@ -413,7 +400,7 @@
- 									var2 = "\u00a77" + var4 + " whispers " + var2;
- 									logger.info(var2);
- 									if(!this.configManager.sendPacketToPlayer(var5[1], new Packet3Chat(var2))) {
--										var3.addHelpCommandMessage("There\'s no player by that name online.");
-+										iCommandListener3.addHelpCommandMessage("There\'s no player by that name online.");
- 									}
- 								}
- 							} else {
-@@ -423,26 +410,26 @@
- 					}
- 				}
- 			} else {
--				var3.addHelpCommandMessage("To run the server without a gui, start it like this:");
--				var3.addHelpCommandMessage("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
--				var3.addHelpCommandMessage("Console commands:");
+@@ -426,23 +413,23 @@
+ 				var3.addHelpCommandMessage("To run the server without a gui, start it like this:");
+ 				var3.addHelpCommandMessage("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
+ 				var3.addHelpCommandMessage("Console commands:");
 -				var3.addHelpCommandMessage("   help  or  ?               shows this message");
 -				var3.addHelpCommandMessage("   kick <player>             removes a player from the server");
 -				var3.addHelpCommandMessage("   ban <player>              bans a player from the server");
@@ -49678,34 +49664,29 @@
 -				var3.addHelpCommandMessage("   op <player>               turns a player into an op");
 -				var3.addHelpCommandMessage("   deop <player>             removes op status from a player");
 -				var3.addHelpCommandMessage("   tp <player1> <player2>    moves one player to the same location as another player");
--				var3.addHelpCommandMessage("   give <player> <id> [num]  gives a player a resource");
--				var3.addHelpCommandMessage("   tell <player> <message>   sends a private message to a player");
++				var3.addHelpCommandMessage("   help  or  ?			   shows this message");
++				var3.addHelpCommandMessage("   kick <player>			 removes a player from the server");
++				var3.addHelpCommandMessage("   ban <player>			  bans a player from the server");
++				var3.addHelpCommandMessage("   pardon <player>		   pardons a banned player so that they can connect again");
++				var3.addHelpCommandMessage("   ban-ip <ip>			   bans an IP address from the server");
++				var3.addHelpCommandMessage("   pardon-ip <ip>			pardons a banned IP address so that they can connect again");
++				var3.addHelpCommandMessage("   op <player>			   turns a player into an op");
++				var3.addHelpCommandMessage("   deop <player>			 removes op status from a player");
++				var3.addHelpCommandMessage("   tp <player1> <player2>	moves one player to the same location as another player");
+ 				var3.addHelpCommandMessage("   give <player> <id> [num]  gives a player a resource");
+ 				var3.addHelpCommandMessage("   tell <player> <message>   sends a private message to a player");
 -				var3.addHelpCommandMessage("   stop                      gracefully stops the server");
 -				var3.addHelpCommandMessage("   save-all                  forces a server-wide level save");
 -				var3.addHelpCommandMessage("   save-off                  disables terrain saving (useful for backup scripts)");
 -				var3.addHelpCommandMessage("   save-on                   re-enables terrain saving");
 -				var3.addHelpCommandMessage("   list                      lists all currently connected players");
 -				var3.addHelpCommandMessage("   say <message>             broadcasts a message to all players");
-+				iCommandListener3.addHelpCommandMessage("To run the server without a gui, start it like this:");
-+				iCommandListener3.addHelpCommandMessage("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
-+				iCommandListener3.addHelpCommandMessage("Console commands:");
-+				iCommandListener3.addHelpCommandMessage("   help  or  ?			   shows this message");
-+				iCommandListener3.addHelpCommandMessage("   kick <player>			 removes a player from the server");
-+				iCommandListener3.addHelpCommandMessage("   ban <player>			  bans a player from the server");
-+				iCommandListener3.addHelpCommandMessage("   pardon <player>		   pardons a banned player so that they can connect again");
-+				iCommandListener3.addHelpCommandMessage("   ban-ip <ip>			   bans an IP address from the server");
-+				iCommandListener3.addHelpCommandMessage("   pardon-ip <ip>			pardons a banned IP address so that they can connect again");
-+				iCommandListener3.addHelpCommandMessage("   op <player>			   turns a player into an op");
-+				iCommandListener3.addHelpCommandMessage("   deop <player>			 removes op status from a player");
-+				iCommandListener3.addHelpCommandMessage("   tp <player1> <player2>	moves one player to the same location as another player");
-+				iCommandListener3.addHelpCommandMessage("   give <player> <id> [num]  gives a player a resource");
-+				iCommandListener3.addHelpCommandMessage("   tell <player> <message>   sends a private message to a player");
-+				iCommandListener3.addHelpCommandMessage("   stop					  gracefully stops the server");
-+				iCommandListener3.addHelpCommandMessage("   save-all				  forces a server-wide level save");
-+				iCommandListener3.addHelpCommandMessage("   save-off				  disables terrain saving (useful for backup scripts)");
-+				iCommandListener3.addHelpCommandMessage("   save-on				   re-enables terrain saving");
-+				iCommandListener3.addHelpCommandMessage("   list					  lists all currently connected players");
-+				iCommandListener3.addHelpCommandMessage("   say <message>			 broadcasts a message to all players");
++				var3.addHelpCommandMessage("   stop					  gracefully stops the server");
++				var3.addHelpCommandMessage("   save-all				  forces a server-wide level save");
++				var3.addHelpCommandMessage("   save-off				  disables terrain saving (useful for backup scripts)");
++				var3.addHelpCommandMessage("   save-on				   re-enables terrain saving");
++				var3.addHelpCommandMessage("   list					  lists all currently connected players");
++				var3.addHelpCommandMessage("   say <message>			 broadcasts a message to all players");
  			}
  		}
  
