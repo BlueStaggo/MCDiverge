@@ -19149,7 +19149,7 @@
  
  					var7.stackSize -= var11;
 -					EntityItem var12 = new EntityItem(var1, (double)((float)var2 + var8), (double)((float)var3 + var9), (double)((float)var4 + var10), new ItemStack(var7.itemID, var11, var7.itemDmg));
-+					EntityItem entityItem12 = new EntityItem(worldObj, (double)((float)x + var8), (double)((float)y + var9), (double)((float)z + var10), new ItemStack(var7.itemID, var11, var7.itemDmg));
++					EntityItem entityItem12 = new EntityItem(worldObj, (double)((float)x + var8), (double)((float)y + var9), (double)((float)z + var10), new ItemStack(var7.itemID, var11, var7.itemDmg).withMetadata(var7.itemMetadata));
  					float var13 = 0.05F;
 -					var12.motionX = (double)((float)this.random.nextGaussian() * var13);
 -					var12.motionY = (double)((float)this.random.nextGaussian() * var13 + 0.2F);
@@ -24824,7 +24824,7 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2.0_01";
++	public static final String version = "Minecraft Diverge v0.2.0_02";
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
@@ -39357,7 +39357,7 @@
  	public int getPacketSize() {
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/ItemTooltip.java
-@@ -1,0 +1,472 @@
+@@ -1,0 +1,475 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import java.util.ArrayList;
@@ -39523,6 +39523,9 @@
 +		items[46] = new ItemTooltip("TNT", UNCOMMON_COL, "Punch for an explosion", DESCRIPTION_COL);
 +		items[47] = new ItemTooltip("Bookshelf");
 +		items[48] = new ItemTooltip("Mossy Cobblestone");
++		fromMetadata[48][1] = new ItemTooltip("Mossy Cobbled Marble");
++		fromMetadata[48][2] = new ItemTooltip("Mossy Cobbled Slate");
++		fromMetadata[48][3] = new ItemTooltip("Mossy Cobbled Granite");
 +		items[49] = new ItemTooltip("Obsidian", RARE_COL);
 +		items[50] = new ItemTooltip("Torch");
 +		items[51] = ItemTooltip.invalid("Fire");
