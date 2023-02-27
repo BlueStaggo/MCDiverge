@@ -1402,7 +1402,7 @@
 -	public ItemSpade(int var1, int var2) {
 -		super(var1, 1, var2, blocksEffectiveAgainst);
 +	public ItemSpade(int id, int strength) {
-+		super(id, 1, Math.abs(strength), blocksEffectiveAgainst);
++		super(id, 1, Math.abs(strength), blocksEffectiveAgainst, strength < 0);
 +		if (strength < 0) {
 +			this.efficiencyOnProperMaterial *= 2.5F;
 +			this.maxDamage *= 4;
@@ -4994,7 +4994,7 @@
 -		if(var1.protocolVersion != 2) {
 +	public void handleLogin(Packet1Login packet) {
 +		this.username = packet.username;
-+		if(packet.protocolVersion != 85000001) {
++		if(packet.protocolVersion != 85000002) {
  			this.kickUser("Outdated client!");
  		} else {
  			if(!this.mcServer.onlineMode) {
@@ -8330,7 +8330,7 @@
  		return null;
  	}
  
-@@ -21,55 +21,55 @@
+@@ -21,55 +21,69 @@
  		return false;
  	}
  
@@ -8367,9 +8367,8 @@
  	}
  
 -	public void harvestBlock(World var1, int var2, int var3, int var4, int var5) {
-+	public void harvestBlock(World worldObj, int x, int y, int z, int metadata) {
- 		int var6 = Item.snowball.shiftedIndex;
- 		float var7 = 0.7F;
+-		int var6 = Item.snowball.shiftedIndex;
+-		float var7 = 0.7F;
 -		double var8 = (double)(var1.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
 -		double var10 = (double)(var1.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
 -		double var12 = (double)(var1.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
@@ -8377,16 +8376,31 @@
 -		var14.delayBeforeCanPickup = 10;
 -		var1.spawnEntityInWorld(var14);
 -		var1.setBlockWithNotify(var2, var3, var4, 0);
-+		double var8 = (double)(worldObj.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
-+		double var10 = (double)(worldObj.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
-+		double var12 = (double)(worldObj.rand.nextFloat() * var7) + (double)(1.0F - var7) * 0.5D;
-+		EntityItem entityItem14 = new EntityItem(worldObj, (double)x + var8, (double)y + var10, (double)z + var12, new ItemStack(var6));
-+		entityItem14.delayBeforeCanPickup = 10;
-+		worldObj.spawnEntityInWorld(entityItem14);
-+		worldObj.setBlockWithNotify(x, y, z, 0);
- 	}
- 
+-	}
+-
 -	public int idDropped(int var1, Random var2) {
++	public void harvestBlock(World worldObj, int x, int y, int z, int metadata) {
++		ItemStack itemStack = new ItemStack(Item.snowball.shiftedIndex);
++		float var10 = 0.7F;
++		double var11 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		double var13 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		double var15 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		EntityItem entityItem17 = new EntityItem(worldObj, (double)x + var11, (double)y + var13, (double)z + var15, itemStack);
++		entityItem17.delayBeforeCanPickup = 10;
++		worldObj.spawnEntityInWorld(entityItem17);
++	}
++
++	public void harvestBlockSilk(World worldObj, int x, int y, int z, int metadata) {
++		ItemStack itemStack = new ItemStack(this.blockID);
++		float var10 = 0.7F;
++		double var11 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		double var13 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		double var15 = (double)(worldObj.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
++		EntityItem entityItem17 = new EntityItem(worldObj, (double)x + var11, (double)y + var13, (double)z + var15, itemStack);
++		entityItem17.delayBeforeCanPickup = 10;
++		worldObj.spawnEntityInWorld(entityItem17);
++	}
++
 +	public int idDropped(int metadata, Random rand) {
  		return Item.snowball.shiftedIndex;
  	}
@@ -8400,6 +8414,10 @@
 -		if(var1.getSavedLightValue(EnumSkyBlock.Block, var2, var3, var4) > 11) {
 -			this.dropBlockAsItem(var1, var2, var3, var4, var1.getBlockMetadata(var2, var3, var4));
 -			var1.setBlockWithNotify(var2, var3, var4, 0);
++	public int idDroppedSilk(int metadata, Random rand) {
++		return this.blockID;
++	}
++
 +	public void updateTick(World worldObj, int x, int y, int z, Random rand) {
 +		if(worldObj.getSavedLightValue(EnumSkyBlock.Block, x, y, z) > 11) {
 +			this.dropBlockAsItem(worldObj, x, y, z, worldObj.getBlockMetadata(x, y, z));
@@ -9794,7 +9812,7 @@
 +}
 --- net/minecraft/src/GuiInventory.java
 +++ net/minecraft/src/GuiInventory.java
-@@ -3,51 +3,59 @@
+@@ -3,51 +3,55 @@
  import org.lwjgl.opengl.GL11;
  import org.lwjgl.opengl.GL12;
  
@@ -9805,8 +9823,6 @@
  	private CraftingInventoryPlayerCB craftingInventory;
  	private float xSize_lo;
  	private float ySize_lo;
-+	private int mouseX;
-+	private int mouseY;
  
 -	public GuiInventory(IInventory var1, ItemStack[] var2) {
 +	public GuiInventory(IInventory iInventory1, ItemStack[] var2) {
@@ -9862,30 +9878,12 @@
 +		super.drawScreen(mouseX, mouseY, renderPartialTick);
 +		this.xSize_lo = (float)mouseX;
 +		this.ySize_lo = (float)mouseY;
-+		this.mouseX = mouseX;
-+		this.mouseY = mouseY;
 +	}
 +
 +	protected void drawGuiContainerBackgroundLayer(float renderPartialTick) {
  		int var2 = this.mc.renderEngine.getTexture("/gui/inventory.png");
  		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
  		this.mc.renderEngine.bindTexture(var2);
-@@ -81,5 +89,15 @@
- 		GL11.glPopMatrix();
- 		RenderHelper.disableStandardItemLighting();
- 		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-+	}
-+
-+	protected void keyTyped(char c1, int var2) {
-+		super.keyTyped(c1, var2);
-+		if (var2 == this.mc.options.keyBindRecipeGuide.keyCode) {
-+			Optional<SlotInventory> hoverSlot = ((ArrayList<SlotInventory>)this.inventorySlots).stream()
-+					.filter(slot -> (slot).getIsMouseOverSlot(mouseX, mouseY))
-+					.findFirst();
-+			hoverSlot.ifPresent(slotInventory -> mc.thePlayer.displayGUIRecipeGuide(slotInventory.getStack()));
-+		}
- 	}
- }
 --- net/minecraft/src/BlockSapling.java
 +++ net/minecraft/src/BlockSapling.java
 @@ -1,6 +1,10 @@
@@ -13810,7 +13808,7 @@
  }
 --- net/minecraft/src/ItemHoe.java
 +++ net/minecraft/src/ItemHoe.java
-@@ -1,33 +1,35 @@
+@@ -1,33 +1,42 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.ItemTooltip;
@@ -13818,17 +13816,26 @@
  public class ItemHoe extends Item {
 -	public ItemHoe(int var1, int var2) {
 -		super(var1);
++	private final boolean silk;
++
 +	public ItemHoe(int id, int strength) {
 +		super(id);
  		this.maxStackSize = 1;
 -		this.maxDamage = 32 << var2;
-+		this.maxDamage = 32 << strength;
- 	}
- 
+-	}
+-
 -	public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, int var4, int var5, int var6, int var7) {
 -		int var8 = var3.getBlockId(var4, var5, var6);
 -		Material var9 = var3.getBlockMaterial(var4, var5 + 1, var6);
 -		if((var9.isSolid() || var8 != Block.grass.blockID) && var8 != Block.dirt.blockID) {
++		this.maxDamage = 32 << Math.abs(strength);
++		this.silk = strength < 0;
++	}
++
++	public boolean isSilk() {
++		return this.silk;
++	}
++
 +	public boolean onItemUse(ItemStack itemStack, EntityPlayer entityPlayer, World worldObj, int x, int y, int z, int side) {
 +		int var8 = worldObj.getBlockId(x, y, z);
 +		Material material9 = worldObj.getBlockMaterial(x, y + 1, z);
@@ -13862,7 +13869,7 @@
  				}
  			}
  
-@@ -37,5 +39,16 @@
+@@ -37,5 +46,16 @@
  
  	public boolean isFull3D() {
  		return true;
@@ -13924,7 +13931,7 @@
 +}
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/FurnaceRecipeManager.java
-@@ -1,0 +1,67 @@
+@@ -1,0 +1,61 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import net.minecraft.src.Block;
@@ -13978,14 +13985,8 @@
 +	}
 +
 +	public ItemStack[] getRecipeAsItems(int i) {
-+		ItemStack in = this.recipes.get(i).getInput();
-+		ItemStack out = this.recipes.get(i).getOutput(in);
-+		if (in.itemMetadata == -1) {
-+			in.itemMetadata = 0;
-+		}
-+		if (out.itemMetadata == -1) {
-+			out.itemMetadata = 0;
-+		}
++		ItemStack in = this.recipes.get(i).getInput().copy();
++		ItemStack out = this.recipes.get(i).getOutput(in).copy();
 +
 +		return new ItemStack[] { in, new ItemStack(Block.stoneOvenIdle),
 +								 null, null, null, null, null, null, null,
@@ -14958,8 +14959,8 @@
 +				return;
 +			}
 +			--heldItem.itemDmg;
-+			stack.damageItem(1);
 +			player.playSound("random.wood click", 1.0F, 1.0F);
++			stack.damageItem(1);
 +		}
 +	}
 +
@@ -15750,7 +15751,7 @@
  import java.util.ArrayList;
  import java.util.Collections;
  import java.util.HashMap;
-@@ -20,49 +24,55 @@
+@@ -20,49 +24,59 @@
  		(new RecipesFood()).addRecipes(this);
  		(new RecipesCrafting()).addRecipes(this);
  		(new RecipesArmor()).addRecipes(this);
@@ -15794,6 +15795,10 @@
 -		this.addRecipe(new ItemStack(Block.pressurePlateWood, 1), new Object[]{"###", Character.valueOf('#'), Block.planks});
 +		(new RecipesDyes()).addRecipes(this);
 +		(new RecipesBlocks()).addRecipes(this);
++		this.addRecipe(new ItemStack(Block.glass, 1), "##", "##", '#', Item.shardGlass);
++		this.addRecipe(new ItemStack(Block.ice, 1), "##", "##", '#', Item.shardIce);
++		this.addRecipe(new ItemStack(Block.gravel, 2), "#x", "x#", '#', Block.cobblestone, 'x', Item.flint);
++		this.addRecipe(new ItemStack(Block.snow, 2), "##", '#', Item.snowball);
 +		this.addRecipe(new ItemStack(Item.paper, 3), "###", '#', Item.reed);
 +		this.addRecipe(new ItemStack(Item.book, 1), "#", "#", "#", '#', Item.paper);
 +		this.addRecipe(new ItemStack(Block.fence, 2), "###", "###", '#', Item.stick);
@@ -15846,7 +15851,7 @@
  		String var3 = "";
  		int var4 = 0;
  		int var5 = 0;
-@@ -85,42 +95,69 @@
+@@ -85,42 +99,69 @@
  			}
  		}
  
@@ -15980,7 +15985,7 @@
  		this.slipperiness = 0.98F;
  		this.setTickOnLoad(true);
  	}
-@@ -13,26 +13,26 @@
+@@ -13,26 +13,38 @@
  		return 1;
  	}
  
@@ -16003,14 +16008,29 @@
  	}
  
 -	public int quantityDropped(Random var1) {
-+	public int quantityDropped(Random rand) {
- 		return 0;
- 	}
- 
+-		return 0;
+-	}
+-
 -	public void updateTick(World var1, int var2, int var3, int var4, Random var5) {
 -		if(var1.getSavedLightValue(EnumSkyBlock.Block, var2, var3, var4) > 11 - Block.lightOpacity[this.blockID]) {
 -			this.dropBlockAsItem(var1, var2, var3, var4, var1.getBlockMetadata(var2, var3, var4));
 -			var1.setBlockWithNotify(var2, var3, var4, Block.waterStill.blockID);
++	public int quantityDropped(Random rand) {
++		return rand.nextInt(3) + 2;
++	}
++
++	public int idDropped(int metadata, Random rand) {
++		return Item.shardIce.shiftedIndex;
++	}
++
++	public int quantityDroppedSilk(Random rand) {
++		return 1;
++	}
++
++	public int idDroppedSilk(int metadata, Random rand) {
++		return this.blockID;
++	}
++
 +	public void updateTick(World worldObj, int x, int y, int z, Random rand) {
 +		if(worldObj.getSavedLightValue(EnumSkyBlock.Block, x, y, z) > 11 - Block.lightOpacity[this.blockID]) {
 +			this.dropBlockAsItem(worldObj, x, y, z, worldObj.getBlockMetadata(x, y, z));
@@ -18415,10 +18435,11 @@
  	public int compare(Object var1, Object var2) {
 --- net/minecraft/src/GuiContainer.java
 +++ net/minecraft/src/GuiContainer.java
-@@ -2,20 +2,24 @@
+@@ -2,20 +2,27 @@
  
  import java.util.ArrayList;
  import java.util.List;
++import java.util.Optional;
 +
  import org.lwjgl.opengl.GL11;
  import org.lwjgl.opengl.GL12;
@@ -18430,6 +18451,8 @@
  	protected int xSize = 176;
  	protected int ySize = 166;
  	protected List inventorySlots = new ArrayList();
++	private int mouseX;
++	private int mouseY;
  
 -	public void drawScreen(int var1, int var2, float var3) {
 +	public void drawScreen(int mouseX, int mouseY, float renderPartialTick) {
@@ -18442,7 +18465,7 @@
  		GL11.glPushMatrix();
  		GL11.glRotatef(180.0F, 1.0F, 0.0F, 0.0F);
  		RenderHelper.enableStandardItemLighting();
-@@ -26,24 +30,24 @@
+@@ -26,24 +33,24 @@
  		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
  
  		for(int var6 = 0; var6 < this.inventorySlots.size(); ++var6) {
@@ -18476,7 +18499,7 @@
  		}
  
  		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-@@ -51,6 +55,12 @@
+@@ -51,9 +58,18 @@
  		GL11.glDisable(GL11.GL_LIGHTING);
  		GL11.glDisable(GL11.GL_DEPTH_TEST);
  		this.drawGuiContainerForegroundLayer();
@@ -18489,7 +18512,13 @@
  		GL11.glEnable(GL11.GL_LIGHTING);
  		GL11.glEnable(GL11.GL_DEPTH_TEST);
  		GL11.glPopMatrix();
-@@ -61,14 +71,14 @@
++
++		this.mouseX = mouseX;
++		this.mouseY = mouseY;
+ 	}
+ 
+ 	protected void drawGuiContainerForegroundLayer() {
+@@ -61,14 +77,14 @@
  
  	protected abstract void drawGuiContainerBackgroundLayer(float var1);
  
@@ -18511,7 +18540,7 @@
  			if(var7 >= 0) {
  				GL11.glDisable(GL11.GL_LIGHTING);
  				this.mc.renderEngine.bindTexture(this.mc.renderEngine.getTexture("/gui/items.png"));
-@@ -82,11 +92,40 @@
+@@ -82,11 +98,40 @@
  		itemRenderer.renderItemOverlayIntoGUI(this.fontRenderer, this.mc.renderEngine, var6, var4, var5);
  	}
  
@@ -18555,7 +18584,7 @@
  			}
  		}
  
-@@ -95,130 +134,122 @@
+@@ -95,130 +140,127 @@
  
  	protected void mouseClicked(int var1, int var2, int var3) {
  		if(var3 == 0 || var3 == 1) {
@@ -18738,8 +18767,13 @@
 +	}
 +
 +	protected void keyTyped(char character, int key) {
-+		if(key == 1 || key == this.mc.options.keyBindInventory.keyCode) {
++		if (key == 1 || key == this.mc.options.keyBindInventory.keyCode) {
  			this.mc.displayGuiScreen((GuiScreen)null);
++		} else if (key == this.mc.options.keyBindRecipeGuide.keyCode) {
++			Optional<SlotInventory> hoverSlot = ((ArrayList<SlotInventory>)this.inventorySlots).stream()
++					.filter(slot -> (slot).getIsMouseOverSlot(mouseX, mouseY))
++					.findFirst();
++			hoverSlot.ifPresent(slotInventory -> mc.thePlayer.displayGUIRecipeGuide(slotInventory.getStack()));
  		}
 -
  	}
@@ -20641,7 +20675,7 @@
  import net.minecraft.client.Minecraft;
  
  public class PlayerControllerSP extends PlayerController {
-@@ -10,25 +12,38 @@
+@@ -10,25 +12,40 @@
  	private float prevBlockDamage = 0.0F;
  	private float blockDestroySoundCounter = 0.0F;
  	private int blockHitWait = 0;
@@ -20681,20 +20715,26 @@
 +		int var5 = this.mc.theWorld.getBlockId(x, y, z);
 +		int var6 = this.mc.theWorld.getBlockMetadata(x, y, z);
 +		boolean var7 = super.sendBlockRemoved(x, y, z, side);
++		boolean silk = false;
  		ItemStack var8 = this.mc.thePlayer.getCurrentEquippedItem();
  		boolean var9 = this.mc.thePlayer.canHarvestBlock(Block.blocksList[var5]);
  		if(var8 != null) {
 -			var8.onDestroyBlock(var5, var1, var2, var3);
++			silk = var8.isSilk();
 +			var8.onDestroyBlock(var5, x, y, z);
  			if(var8.stackSize == 0) {
  				var8.onItemDestroyedByUse(this.mc.thePlayer);
  				this.mc.thePlayer.destroyCurrentEquippedItem();
-@@ -36,20 +51,20 @@
+@@ -36,20 +53,24 @@
  		}
  
  		if(var7 && var9) {
 -			Block.blocksList[var5].harvestBlock(this.mc.theWorld, var1, var2, var3, var6);
-+			Block.blocksList[var5].harvestBlock(this.mc.theWorld, x, y, z, var6);
++			if (silk) {
++				Block.blocksList[var5].harvestBlockSilk(this.mc.theWorld, x, y, z, var6);
++			} else {
++				Block.blocksList[var5].harvestBlock(this.mc.theWorld, x, y, z, var6);
++			}
  		}
  
  		return var7;
@@ -20715,7 +20755,7 @@
  		}
  
  	}
-@@ -59,12 +74,12 @@
+@@ -59,12 +80,12 @@
  		this.blockHitWait = 0;
  	}
  
@@ -20731,7 +20771,7 @@
  				if(var5 == 0) {
  					return;
  				}
-@@ -72,35 +87,35 @@
+@@ -72,35 +93,35 @@
  				Block var6 = Block.blocksList[var5];
  				this.curBlockDamage += var6.blockStrength(this.mc.thePlayer);
  				if(this.blockDestroySoundCounter % 4.0F == 0.0F && var6 != null) {
@@ -20775,7 +20815,7 @@
  			this.mc.ingameGUI.damageGuiPartialTime = var2;
  			this.mc.renderGlobal.damagePartialTime = var2;
  		}
-@@ -111,14 +126,33 @@
+@@ -111,14 +132,33 @@
  		return 4.0F;
  	}
  
@@ -20814,7 +20854,7 @@
  }
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/GuiRecipeGuide.java
-@@ -1,0 +1,134 @@
+@@ -1,0 +1,147 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import java.util.ArrayList;
@@ -20839,7 +20879,7 @@
 +
 +	public GuiRecipeGuide(ItemStack filterItem) {
 +		this.xSize = 176;
-+		this.ySize = 90;
++		this.ySize = 216;
 +		this.filterItem = filterItem;
 +
 +		String name = "Crafting";
@@ -20853,6 +20893,10 @@
 +
 +		this.setupRecipes();
 +		this.setupCurrentRecipe();
++	}
++
++	private int getMaxRecipePage() {
++		return this.recipes.size() % 3 == 0 ? this.recipes.size() / 3 - 1 : this.recipes.size() / 3;
 +	}
 +
 +	private void setupRecipes() {
@@ -20895,8 +20939,8 @@
 +		int posX = (this.width - this.xSize) / 2;
 +		int posY = (this.height - this.ySize) / 2;
 +		this.controlList.clear();
-+		this.controlList.add(new GuiButton(0, 5 + posX, 67 + posY, 18, 18, "<"));
-+		this.controlList.add(new GuiButton(1, 153 + posX, 67 + posY, 18, 18, ">"));
++		this.controlList.add(new GuiButton(0, 5 + posX, 193 + posY, 18, 18, "<"));
++		this.controlList.add(new GuiButton(1, 153 + posX, 193 + posY, 18, 18, ">"));
 +	}
 +
 +	private void setupCurrentRecipe() {
@@ -20904,44 +20948,53 @@
 +		if (this.recipes.size() == 0) {
 +			return;
 +		}
-+		ItemStack[] items = recipes.get(this.currentRecipe);
-+		InventoryReadonly inventory = new InventoryReadonly(items);
-+		for (int i = 0; i < 9; i++) {
-+			this.inventorySlots.add(new SlotInventory(this, inventory, i, 30 + (i % 3) * 18, 17 + (i / 3) * 18));
++		for (int j = 0; j < 3; j++) {
++			if (this.currentRecipe + j >= recipes.size())
++				break;
++
++			ItemStack[] items = recipes.get(this.currentRecipe + j);
++			for (ItemStack item : items) {
++				if (item != null && item.itemID == this.filterItem.itemID && item.itemMetadata == -1) {
++					item.itemMetadata = this.filterItem.itemMetadata;
++				}
++			}
++
++			InventoryReadonly inventory = new InventoryReadonly(items);
++			for (int i = 0; i < 9; i++) {
++				this.inventorySlots.add(new SlotInventory(this, inventory, i, 30 + (i % 3) * 18, 17 + (i / 3) * 18 + 63 * j));
++			}
++			this.inventorySlots.add(new SlotInventory(this, inventory, 9, 124, 35 + 63 * j));
 +		}
-+		this.inventorySlots.add(new SlotInventory(this, inventory, 9, 124, 35));
 +	}
 +
 +	protected void drawGuiContainerForegroundLayer() {
 +		if (this.recipes.size() > 0) {
-+			String title = (this.currentRecipe + 1) +
-+				" / " +
-+				this.recipes.size() +
-+				" " +
-+				this.filterItemName +
-+				" recipes";
++			String title =
++					(this.currentRecipe / 3 + 1)
++					+ " / "
++					+ (this.getMaxRecipePage() + 1)
++					+ " "
++					+ this.filterItemName
++					+ " recipes";
 +
 +			this.drawString(this.fontRenderer, title, 5, 5, 0xFFFFFF);
 +		} else {
 +			this.drawString(this.fontRenderer, "No recipes", 5, 5, 0xFFFFFF);
-+			this.drawString(this.fontRenderer, "Discover more items!", 29, 76, 0xFFFFFF);
 +		}
 +	}
 +
 +	protected void actionPerformed(GuiButton guiButton1) {
 +		switch (guiButton1.id) {
 +			case 0:
-+				if (this.currentRecipe > 0) {
-+					this.currentRecipe--;
-+				} else {
-+					this.currentRecipe = this.recipes.size() - 1;
++				this.currentRecipe -= 3;
++				if (this.currentRecipe < 0) {
++					this.currentRecipe = getMaxRecipePage() * 3;
 +				}
 +				break;
 +
 +			case 1:
-+				if (this.currentRecipe < this.recipes.size() - 1) {
-+					this.currentRecipe++;
-+				} else {
++				this.currentRecipe += 3;
++				if (this.currentRecipe >= this.recipes.size()) {
 +					this.currentRecipe = 0;
 +				}
 +				break;
@@ -24824,7 +24877,7 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2.0_02";
++	public static final String version = "Minecraft Diverge v0.2.1";
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
@@ -24965,7 +25018,7 @@
 -		var4.draw();
 -		short var5 = 256;
 -		short var6 = 256;
-+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/title/mojang" + (new Random().nextInt(10) == 0 ? "-alt.png" : ".png")));
++		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/title/mojang" + (new Random().nextInt(100) == 0 ? "-alt.png" : ".png")));
 +		tessellator4.startDrawingQuads();
 +		tessellator4.setColorOpaque_I(0xFFFFFF);
 +		tessellator4.addVertexWithUV(0.0D, (double)this.displayHeight, 0.0D, 0.0D, 2.0D);
@@ -25360,7 +25413,7 @@
  												if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
  													this.displayGuiScreen(new GuiInventory(this.thePlayer.inventory, this.thePlayer.inventory.craftingInventory));
  												}
-@@ -878,9 +837,21 @@
+@@ -878,9 +837,17 @@
  													this.thePlayer.dropPlayerItemWithRandomChoice(this.thePlayer.inventory.decrStackSize(this.thePlayer.inventory.currentItem, 1), false);
  												}
  
@@ -25375,14 +25428,10 @@
 +												if(Keyboard.getEventKey() == this.options.keyBindCreative.keyCode) {
 +													this.thePlayer.displayGUICreative();
 +												}
-+
-+												if(Keyboard.getEventKey() == this.options.keyBindRecipeGuide.keyCode) {
-+													this.thePlayer.displayGUIRecipeGuide();
-+												}
  											}
  
  											for(int var4 = 0; var4 < 9; ++var4) {
-@@ -954,6 +925,9 @@
+@@ -954,6 +921,9 @@
  			}
  
  			if(!this.isGamePaused || this.isMultiplayerWorld()) {
@@ -25392,7 +25441,7 @@
  				this.theWorld.tick();
  			}
  
-@@ -980,10 +954,15 @@
+@@ -980,10 +950,15 @@
  		return this.theWorld != null && this.theWorld.multiplayerWorld;
  	}
  
@@ -25410,7 +25459,7 @@
  		if(var2.isNewWorld) {
  			this.changeWorld(var2, "Generating level");
  		} else {
-@@ -992,54 +971,55 @@
+@@ -992,54 +967,55 @@
  
  	}
  
@@ -25485,7 +25534,7 @@
  			this.thePlayer = null;
  		}
  
-@@ -1047,15 +1027,15 @@
+@@ -1047,15 +1023,15 @@
  		this.systemTime = 0L;
  	}
  
@@ -25506,7 +25555,7 @@
  			int var6 = this.theWorld.spawnX;
  			int var7 = this.theWorld.spawnZ;
  			if(this.thePlayer != null) {
-@@ -1063,7 +1043,7 @@
+@@ -1063,7 +1039,7 @@
  				var7 = (int)this.thePlayer.posZ;
  			}
  
@@ -25515,7 +25564,7 @@
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
  				this.theWorld.getBlockId(var6 + var5, 64, var7 + var8);
  
-@@ -1077,20 +1057,26 @@
+@@ -1077,20 +1053,26 @@
  		this.theWorld.dropOldChunks();
  	}
  
@@ -25552,7 +25601,7 @@
  		}
  
  	}
-@@ -1099,6 +1085,12 @@
+@@ -1099,6 +1081,12 @@
  		return this.glCapabilities;
  	}
  
@@ -25565,7 +25614,7 @@
  	public String debugInfoRenders() {
  		return this.renderGlobal.getDebugInfoRenders();
  	}
-@@ -1111,6 +1103,15 @@
+@@ -1111,6 +1099,15 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
  	}
  
@@ -25581,7 +25630,7 @@
  	public void respawn() {
  		this.theWorld.setSpawnLocation();
  		if(this.thePlayer != null) {
-@@ -1126,51 +1127,78 @@
+@@ -1126,51 +1123,78 @@
  		this.preloadWorld("Respawning");
  	}
  
@@ -26474,7 +26523,7 @@
  	}
  
  	public void onLivingUpdate() {
-@@ -41,61 +51,78 @@
+@@ -41,61 +51,75 @@
  		this.movementInput.checkKeyForMovementInput(var1, var2);
  	}
  
@@ -26530,12 +26579,9 @@
 +		this.mc.displayGuiScreen(new GuiRefabricator(this.inventory, refabricatorTileEntity));
 +	}
 +
-+	public void displayGUIRecipeGuide() {
-+		this.mc.displayGuiScreen(new GuiRecipeGuide());
-+	}
-+
 +	public void displayGUIRecipeGuide(ItemStack itemStack) {
-+		this.mc.displayGuiScreen(new GuiRecipeGuide(itemStack));
++		if (itemStack != null)
++			this.mc.displayGuiScreen(new GuiRecipeGuide(itemStack));
 +	}
 +
 +	public void displayGUICreative() {
@@ -26585,7 +26631,7 @@
  				if(var2.stackSize <= 0) {
  					var2.onItemDestroyedByUse(this);
  					this.destroyCurrentEquippedItem();
-@@ -105,7 +132,7 @@
+@@ -105,7 +129,7 @@
  		}
  	}
  
@@ -26594,7 +26640,7 @@
  	}
  
  	public void onPlayerUpdate() {
-@@ -113,5 +140,30 @@
+@@ -113,5 +137,30 @@
  
  	public boolean isSneaking() {
  		return this.movementInput.sneak;
@@ -27214,25 +27260,33 @@
  	}
  
  	public void updateRidden() {
-@@ -53,13 +80,80 @@
+@@ -53,13 +80,88 @@
  	}
  
  	public void onLivingUpdate() {
 -		if(this.worldObj.difficultySetting == 0 && this.health < 20 && this.ticksExisted % 20 * 4 == 0) {
 +		this.preUpdateCharms();
 +
-+		for (ItemStack armor : this.inventory.armorInventory) {
++		ItemStack[] armorInventory = this.inventory.armorInventory;
++		for (int i = 0; i < armorInventory.length; i++) {
++			ItemStack armor = armorInventory[i];
 +			if (armor == null) continue;
 +			Item item = Item.itemsList[armor.itemID];
 +			if (item instanceof ItemCharm) {
 +				((ItemCharm) item).updateCharm(this, armor);
 +				if (armor.itemID == Item.slimeShoes.shiftedIndex && this.bounceHeight > 0.0F) {
 +					this.worldObj.playSoundAtEntity(this, "mob.slime", this.getSoundVolume(), ((this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F) * 0.8F);
-+					armor.damageItem(1);
 +					this.motionX *= 2.0;
 +					this.motionZ *= 2.0;
 +					this.motionY = Math.sqrt(2 * 0.08 * this.bounceHeight); // Thanks https://qr.ae/prhm4v
 +					this.bounceHeight = 0.0F;
++
++					armor.damageItem(1);
++				}
++
++				if (armor.stackSize == 0) {
++					armor.onItemDestroyedByUse(this);
++					this.inventory.armorInventory[i] = null;
 +				}
 +			}
 +		}
@@ -27297,7 +27351,7 @@
  		float var1 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
  		float var2 = (float)Math.atan(-this.motionY * (double)0.2F) * 15.0F;
  		if(var1 > 0.1F) {
-@@ -77,34 +171,75 @@
+@@ -77,34 +179,75 @@
  		this.cameraYaw += (var1 - this.cameraYaw) * 0.4F;
  		this.cameraPitch += (var2 - this.cameraPitch) * 0.8F;
  		if(this.health > 0) {
@@ -27383,7 +27437,7 @@
  			this.motionX = (double)(-MathHelper.cos((this.attackedAtYaw + this.rotationYaw) * (float)Math.PI / 180.0F) * 0.1F);
  			this.motionZ = (double)(-MathHelper.sin((this.attackedAtYaw + this.rotationYaw) * (float)Math.PI / 180.0F) * 0.1F);
  		} else {
-@@ -114,49 +249,49 @@
+@@ -114,49 +257,49 @@
  		this.yOffset = 0.1F;
  	}
  
@@ -27460,7 +27514,7 @@
  		if(this.isInsideOfMaterial(Material.water)) {
  			var2 /= 5.0F;
  		}
-@@ -165,74 +300,99 @@
+@@ -165,74 +308,99 @@
  			var2 /= 5.0F;
  		}
  
@@ -27598,7 +27652,7 @@
  	}
  
  	public ItemStack getCurrentEquippedItem() {
-@@ -250,5 +410,40 @@
+@@ -250,5 +418,40 @@
  	public void swingItem() {
  		this.swingProgressInt = -1;
  		this.isSwinging = true;
@@ -29030,13 +29084,18 @@
  import org.w3c.dom.Document;
  import org.w3c.dom.Element;
  import org.w3c.dom.Node;
-@@ -19,11 +18,11 @@
+@@ -19,11 +18,16 @@
  	private Minecraft mc;
  	private boolean closing = false;
  
 -	public ThreadDownloadResources(File var1, Minecraft var2) {
 -		this.mc = var2;
 +	public ThreadDownloadResources(File file, Minecraft minecraft) {
++		if (minecraft.options.betacraftProxy) {
++			System.setProperty("http.proxyHost", "betacraft.uk");
++			System.setProperty("http.proxyPort", "11702");
++		}
++
 +		this.mc = minecraft;
  		this.setName("Resource download thread");
  		this.setDaemon(true);
@@ -29045,7 +29104,7 @@
  		if(!this.resourcesFolder.exists() && !this.resourcesFolder.mkdirs()) {
  			throw new RuntimeException("The working directory could not be created: " + this.resourcesFolder);
  		}
-@@ -31,21 +30,21 @@
+@@ -31,21 +35,21 @@
  
  	public void run() {
  		try {
@@ -29079,7 +29138,7 @@
  							if(this.closing) {
  								return;
  							}
-@@ -53,78 +52,100 @@
+@@ -53,78 +57,100 @@
  					}
  				}
  			}
@@ -31471,7 +31530,7 @@
  		if(this.itemDmg > this.getMaxDamage()) {
  			--this.stackSize;
  			if(this.stackSize < 0) {
-@@ -103,30 +117,60 @@
+@@ -103,30 +117,67 @@
  
  	}
  
@@ -31525,6 +31584,9 @@
 +	}
 +
 +	public ItemTooltip getTooltip() {
++		if (Item.itemsList[this.itemID] == null) {
++			return ItemTooltip.items[0];
++		}
 +		if (ItemTooltip.fromMetadata[this.itemID] != null && ItemTooltip.fromMetadata[this.itemID][Math.max(this.itemMetadata, 0)] != null) {
 +			return ItemTooltip.fromMetadata[this.itemID][Math.max(this.itemMetadata, 0)];
 +		}
@@ -31552,11 +31614,23 @@
 +				}
 +			}
 +		}
++	}
++
++	public boolean isSilk() {
++		return Item.itemsList[this.itemID] != null && Item.itemsList[this.itemID].isSilk();
  	}
  }
 --- net/minecraft/src/Entity.java
 +++ net/minecraft/src/Entity.java
-@@ -67,13 +67,13 @@
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import net.minecraft.server.MinecraftServer;
++
+ import java.util.List;
+ import java.util.Random;
+ 
+@@ -67,13 +69,13 @@
  	public int serverPosY;
  	public int serverPosZ;
  
@@ -31574,7 +31648,7 @@
  	}
  
  	public int hashCode() {
-@@ -100,30 +100,30 @@
+@@ -100,30 +102,30 @@
  		this.isDead = true;
  	}
  
@@ -31623,7 +31697,7 @@
  		if(this.rotationPitch < -90.0F) {
  			this.rotationPitch = -90.0F;
  		}
-@@ -209,139 +209,139 @@
+@@ -209,139 +211,139 @@
  		this.setEntityDead();
  	}
  
@@ -31877,7 +31951,7 @@
  				} else {
  					this.ySize = (float)((double)this.ySize + 0.5D);
  				}
-@@ -350,50 +350,45 @@
+@@ -350,50 +352,45 @@
  			this.posX = (this.boundingBox.minX + this.boundingBox.maxX) / 2.0D;
  			this.posY = this.boundingBox.minY + (double)this.yOffset - (double)this.ySize;
  			this.posZ = (this.boundingBox.minZ + this.boundingBox.maxZ) / 2.0D;
@@ -31948,7 +32022,7 @@
  					}
  
  					Block.blocksList[var28].onEntityWalking(this.worldObj, var38, var26, var40, this);
-@@ -440,33 +435,48 @@
+@@ -440,33 +437,48 @@
  		}
  	}
  
@@ -32004,7 +32078,7 @@
  			float var9 = (float)(var5 + 1) - var8;
  			return var2 < (double)var9;
  		} else {
-@@ -479,46 +489,46 @@
+@@ -479,46 +491,50 @@
  	}
  
  	public boolean handleLavaMovement() {
@@ -32055,7 +32129,11 @@
 -		this.prevPosZ = this.posZ = var5;
 -		this.rotationYaw = var7;
 -		this.rotationPitch = var8;
-+		return this.worldObj.getBrightness(var2, var5, var6) * (1 - RenderGlobal.globalBrightness) + RenderGlobal.globalBrightness;
++		float var7 = this.worldObj.getBrightness(var2, var5, var6);
++		if (MinecraftServer.getInstance() == null) {
++			var7 = var7 * (1 - RenderGlobal.globalBrightness) + RenderGlobal.globalBrightness;
++		}
++		return var7;
 +	}
 +
 +	public void setWorld(World world) {
@@ -32074,7 +32152,7 @@
  		if(var9 < -180.0D) {
  			this.prevRotationYaw += 360.0F;
  		}
-@@ -530,50 +540,50 @@
+@@ -530,50 +546,50 @@
  		this.setPosition(this.posX, this.posY, this.posZ);
  	}
  
@@ -32152,7 +32230,7 @@
  			double var6 = MathHelper.abs_max(var2, var4);
  			if(var6 >= (double)0.01F) {
  				var6 = (double)MathHelper.sqrt_double(var6);
-@@ -591,19 +601,19 @@
+@@ -591,19 +607,19 @@
  				var2 *= (double)(1.0F - this.entityCollisionReduction);
  				var4 *= (double)(1.0F - this.entityCollisionReduction);
  				this.addVelocity(-var2, 0.0D, -var4);
@@ -32178,7 +32256,7 @@
  		return false;
  	}
  
-@@ -615,102 +625,102 @@
+@@ -615,102 +631,102 @@
  		return false;
  	}
  
@@ -32333,7 +32411,7 @@
  	}
  
  	public float getShadowSize() {
-@@ -722,10 +732,10 @@
+@@ -722,10 +738,10 @@
  	}
  
  	public EntityItem entityDropItem(int var1, int var2, float var3) {
@@ -32348,7 +32426,7 @@
  	}
  
  	public boolean isEntityAlive() {
-@@ -736,14 +746,14 @@
+@@ -736,14 +752,14 @@
  		int var1 = MathHelper.floor_double(this.posX);
  		int var2 = MathHelper.floor_double(this.posY + (double)this.getEyeHeight());
  		int var3 = MathHelper.floor_double(this.posZ);
@@ -32366,7 +32444,7 @@
  		return null;
  	}
  
-@@ -811,29 +821,36 @@
+@@ -811,29 +827,36 @@
  		return (double)this.height * 0.75D;
  	}
  
@@ -33108,7 +33186,7 @@
 -			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 2));
 +	public void handleHandshake(Packet2Handshake packet) {
 +		if(packet.username.equals("-")) {
-+			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000001));
++			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000002));
  		} else {
  			try {
 -				URL var2 = new URL("http://www.minecraft.net/game/joinserver.jsp?user=" + this.mc.session.username + "&sessionId=" + this.mc.session.sessionId + "&serverId=" + var1.username);
@@ -33121,7 +33199,7 @@
 +				bufferedReader3.close();
  				if(var4.equalsIgnoreCase("ok")) {
 -					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 2));
-+					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000001));
++					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000002));
  				} else {
  					this.netManager.networkShutdown("Failed to login: " + var4);
  				}
@@ -33649,7 +33727,7 @@
  import net.minecraft.client.Minecraft;
  
  public class PlayerControllerMP extends PlayerController {
-@@ -14,23 +15,23 @@
+@@ -14,23 +15,25 @@
  	private NetClientHandler netClientHandler;
  	private int currentPlayerItem = 0;
  
@@ -33681,19 +33759,25 @@
 +		int var5 = this.mc.theWorld.getBlockId(x, y, z);
 +		int var6 = this.mc.theWorld.getBlockMetadata(x, y, z);
 +		boolean var7 = super.sendBlockRemoved(x, y, z, side);
++		boolean silk = false;
  		ItemStack var8 = this.mc.thePlayer.getCurrentEquippedItem();
  		if(var8 != null) {
 -			var8.onDestroyBlock(var5, var1, var2, var3);
++			silk = var8.isSilk();
 +			var8.onDestroyBlock(var5, x, y, z);
  			if(var8.stackSize == 0) {
  				var8.onItemDestroyedByUse(this.mc.thePlayer);
  				this.mc.thePlayer.destroyCurrentEquippedItem();
-@@ -38,22 +39,22 @@
+@@ -38,22 +41,26 @@
  		}
  
  		if(var7 && this.mc.thePlayer.canHarvestBlock(Block.blocksList[var5])) {
 -			Block.blocksList[var5].dropBlockAsItem(this.mc.theWorld, var1, var2, var3, var6);
-+			Block.blocksList[var5].dropBlockAsItem(this.mc.theWorld, x, y, z, var6);
++			if (silk) {
++				Block.blocksList[var5].dropBlockAsItemWithChanceAndSilk(this.mc.theWorld, x, y, z, var6, 1.0F, true);
++			} else {
++				Block.blocksList[var5].dropBlockAsItem(this.mc.theWorld, x, y, z, var6);
++			}
  		}
  
  		return var7;
@@ -33717,7 +33801,7 @@
  		}
  
  	}
-@@ -67,15 +68,15 @@
+@@ -67,15 +74,15 @@
  		}
  	}
  
@@ -33737,7 +33821,7 @@
  				if(var5 == 0) {
  					return;
  				}
-@@ -83,12 +84,12 @@
+@@ -83,12 +90,12 @@
  				Block var6 = Block.blocksList[var5];
  				this.curBlockDamageMP += var6.blockStrength(this.mc.thePlayer);
  				if(this.stepSoundTickCounter % 4.0F == 0.0F && var6 != null) {
@@ -33752,7 +33836,7 @@
  					this.curBlockDamageMP = 0.0F;
  					this.prevBlockDamageMP = 0.0F;
  					this.stepSoundTickCounter = 0.0F;
-@@ -98,20 +99,20 @@
+@@ -98,20 +105,20 @@
  				this.curBlockDamageMP = 0.0F;
  				this.prevBlockDamageMP = 0.0F;
  				this.stepSoundTickCounter = 0.0F;
@@ -33778,7 +33862,7 @@
  			this.mc.ingameGUI.damageGuiPartialTime = var2;
  			this.mc.renderGlobal.damagePartialTime = var2;
  		}
-@@ -122,8 +123,8 @@
+@@ -122,8 +129,8 @@
  		return 4.0F;
  	}
  
@@ -33789,7 +33873,7 @@
  	}
  
  	public void onUpdate() {
-@@ -145,13 +146,27 @@
+@@ -145,13 +152,27 @@
  
  	}
  
@@ -36932,7 +37016,7 @@
 +	};
 +
 +	public ItemAxe(int id, int var2) {
-+		super(id, 3, Math.abs(var2), blocksEffectiveAgainst);
++		super(id, 3, Math.abs(var2), blocksEffectiveAgainst, var2 < 0);
 +		if (var2 < 0) {
 +			this.efficiencyOnProperMaterial *= 2.5F;
 +			this.maxDamage *= 4;
@@ -37101,7 +37185,7 @@
 +	private final int harvestLevel;
 +
 +	public ItemPickaxe(int id, int harvestLevel) {
-+		super(id, 2, Math.abs(harvestLevel), blocksEffectiveAgainst);
++		super(id, 2, Math.abs(harvestLevel), blocksEffectiveAgainst, harvestLevel < 0);
 +		this.harvestLevel = harvestLevel;
 +		if (harvestLevel < 0) {
 +			this.efficiencyOnProperMaterial *= 2.5F;
@@ -37955,7 +38039,7 @@
  		return this.isCollidable();
  	}
  
-@@ -245,59 +310,71 @@
+@@ -245,59 +310,91 @@
  		return true;
  	}
  
@@ -38022,6 +38106,18 @@
 +		return 0;
 +	}
 +
++	public int quantityDroppedSilk(Random rand) {
++		return quantityDropped(rand);
++	}
++
++	public int idDroppedSilk(int metadata, Random rand) {
++		return idDropped(metadata, rand);
++	}
++
++	public int metadataDroppedSilk(int metadata, Random rand) {
++		return metadataDropped(metadata, rand);
++	}
++
 +	public float blockStrength(EntityPlayer entityPlayer) {
 +		return entityPlayer.creative ? Float.POSITIVE_INFINITY
 +		: this.hardness < 0.0F ? 0.0F
@@ -38030,23 +38126,31 @@
 +	}
 +
 +	public void dropBlockAsItem(World worldObj, int x, int y, int z, int metadata) {
-+		this.dropBlockAsItemWithChance(worldObj, x, y, z, metadata, 1.0F);
++		this.dropBlockAsItemWithChanceAndSilk(worldObj, x, y, z, metadata, 1.0F, false);
 +	}
 +
 +	public void dropBlockAsItemWithChance(World worldObj, int x, int y, int z, int metadata, float chance) {
++		this.dropBlockAsItemWithChanceAndSilk(worldObj, x, y, z, metadata, chance, false);
++	}
++
++	public void dropBlockAsItemWithChanceAndSilk(World worldObj, int x, int y, int z, int metadata, float chance, boolean silk) {
 +		if(worldObj.canDoClientAction()) {
-+			int var7 = this.quantityDropped(worldObj.rand);
++			int var7 = silk
++					? this.quantityDroppedSilk(worldObj.rand)
++					: this.quantityDropped(worldObj.rand);
  
  			for(int var8 = 0; var8 < var7; ++var8) {
 -				if(var1.rand.nextFloat() <= var6) {
 -					int var9 = this.idDropped(var5, var1.rand);
 +				if(worldObj.rand.nextFloat() <= chance) {
-+					int var9 = this.idDropped(metadata, worldObj.rand);
++					int var9 = silk
++							? this.idDroppedSilk(metadata, worldObj.rand)
++							: this.idDropped(metadata, worldObj.rand);
  					if(var9 > 0) {
 +						ItemStack itemStack = new ItemStack(var9);
-+						if(var9 < 256) {
-+							itemStack.itemMetadata = this.metadataDropped(metadata, worldObj.rand);
-+						}
++						itemStack.itemMetadata = silk
++								? this.metadataDroppedSilk(metadata, worldObj.rand)
++								: this.metadataDropped(metadata, worldObj.rand);
 +
  						float var10 = 0.7F;
 -						double var11 = (double)(var1.rand.nextFloat() * var10) + (double)(1.0F - var10) * 0.5D;
@@ -38064,7 +38168,7 @@
  					}
  				}
  			}
-@@ -305,149 +382,149 @@
+@@ -305,149 +402,149 @@
  		}
  	}
  
@@ -38318,7 +38422,7 @@
  		return false;
  	}
  
-@@ -455,21 +532,21 @@
+@@ -455,21 +552,25 @@
  		return false;
  	}
  
@@ -38336,16 +38440,22 @@
  
 -	public void harvestBlock(World var1, int var2, int var3, int var4, int var5) {
 -		this.dropBlockAsItem(var1, var2, var3, var4, var5);
+-	}
+-
+-	public boolean canBlockStay(World var1, int var2, int var3, int var4) {
 +	public void harvestBlock(World worldObj, int x, int y, int z, int metadata) {
 +		this.dropBlockAsItem(worldObj, x, y, z, metadata);
- 	}
- 
--	public boolean canBlockStay(World var1, int var2, int var3, int var4) {
++	}
++
++	public void harvestBlockSilk(World worldObj, int x, int y, int z, int metadata) {
++		this.dropBlockAsItemWithChanceAndSilk(worldObj, x, y, z, metadata, 1.0F, true);
++	}
++
 +	public boolean canBlockStay(World world, int x, int y, int z) {
  		return true;
  	}
  
-@@ -479,6 +556,22 @@
+@@ -479,6 +580,22 @@
  				Item.itemsList[var0] = new ItemBlock(var0 - 256);
  			}
  		}
@@ -39357,7 +39467,7 @@
  	public int getPacketSize() {
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/ItemTooltip.java
-@@ -1,0 +1,475 @@
+@@ -1,0 +1,478 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import java.util.ArrayList;
@@ -39384,6 +39494,7 @@
 +	public static final int LEGENDARY_COL = 0xFF55FF;
 +
 +	static {
++		items[0] = ItemTooltip.invalid("???");
 +		items[1] = new ItemTooltip("Stone");
 +		fromMetadata[1][1] = new ItemTooltip("Marble");
 +		fromMetadata[1][2] = new ItemTooltip("Slate");
@@ -39775,6 +39886,8 @@
 +                "256 max durability", INFO_COL);
 +		items[367] = new ItemTooltip("Sugar");
 +		items[368] = new ItemTooltip("Cookie", Item.cookie);
++		items[369] = new ItemTooltip("Glass Shard");
++		items[370] = new ItemTooltip("Ice Shard");
 +
 +		items[2256] = new ItemTooltip(NOVELTY_GRAD, "Music Disc", RARE_COL, Item.record13);
 +		items[2257] = new ItemTooltip(NOVELTY_GRAD, "Music Disc", RARE_COL, Item.recordCat);
@@ -40026,7 +40139,7 @@
  }
 --- net/minecraft/src/Item.java
 +++ net/minecraft/src/Item.java
-@@ -2,136 +2,169 @@
+@@ -2,136 +2,171 @@
  
  import java.util.Random;
  
@@ -40166,7 +40279,7 @@
 +	public static final Item hoeStone = (new ItemHoe(35, 1)).setIconIndex(129);
 +	public static final Item hoeSteel = (new ItemHoe(36, 2)).setIconIndex(130);
 +	public static final Item hoeDiamond = (new ItemHoe(37, 3)).setIconIndex(131);
-+	public static final Item hoeGold = (new ItemHoe(38, 1)).setIconIndex(132);
++	public static final Item hoeGold = (new ItemHoe(38, -1)).setIconIndex(132);
 +	public static final Item seeds = (new ItemSeeds(39, 59)).setIconIndex(9);
 +	public static final Item wheat = (new Item(40)).setIconIndex(25);
 +	public static final Item bread = (new ItemFood(41, 5)).setIconIndex(41);
@@ -40241,6 +40354,8 @@
 +	public static final Item wings = (new ItemWings(110)).setIconIndex(textureXY(5, 9));
 +	public static final Item sugar = (new Item(111)).setIconIndex(textureXY(12, 1));
 +	public static final Item cookie = (new ItemFood(112, 3, 0.1F)).setIconIndex(textureXY(12, 3));
++	public static final Item shardGlass = (new Item(113)).setIconIndex(textureXY(6, 4));
++	public static final Item shardIce = (new Item(114)).setIconIndex(textureXY(6, 5));
 +	public static final Item record13 = (new ItemRecord(2000, "13", "C418 - 13")).setIconIndex(240);
 +	public static final Item recordCat = (new ItemRecord(2001, "cat", "C418 - cat")).setIconIndex(241);
 +	public static final Item recordMagnet = (new ItemRecord(2002, "diverge.magnet", "Notch - Magnetic Circuit")).setIconIndex(242);
@@ -40301,7 +40416,7 @@
  	}
  
  	public int getItemStackLimit() {
-@@ -142,21 +175,21 @@
+@@ -142,21 +177,21 @@
  		return this.maxDamage;
  	}
  
@@ -40332,11 +40447,10 @@
  	}
  
  	public Item setFull3D() {
-@@ -166,5 +199,25 @@
- 
+@@ -167,4 +202,26 @@
  	public boolean isFull3D() {
  		return this.bFull3D;
-+	}
+ 	}
 +
 +	public ItemTooltip getTooltip() {
 +		return ItemTooltip.items[this.shiftedIndex];
@@ -40356,7 +40470,9 @@
 +
 +	public int[] availableMetadata() {
 +		return new int[] { 0 };
- 	}
++	}
++
++	public boolean isSilk() { return false; }
  }
 --- net/minecraft/src/TileEntityMobSpawnerRenderer.java
 +++ net/minecraft/src/TileEntityMobSpawnerRenderer.java
@@ -42679,12 +42795,10 @@
  	public byte getType() {
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/ModelFox.java
-@@ -1,0 +1,99 @@
+@@ -1,0 +1,97 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import net.minecraft.src.*;
-+
-+import org.lwjgl.opengl.GL11;
 +
 +// Hippity hoppity ReIndev's code is now my property!
 +// Seriously, I don't know how models work ._.
@@ -43470,7 +43584,7 @@
  }
 --- net/minecraft/src/ItemSword.java
 +++ net/minecraft/src/ItemSword.java
-@@ -1,36 +1,48 @@
+@@ -1,36 +1,54 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.ItemTooltip;
@@ -43478,6 +43592,7 @@
  public class ItemSword extends Item {
 -	private int weaponDamage;
 +	private final int weaponDamage;
++	private final boolean silk;
  
 -	public ItemSword(int var1, int var2) {
 -		super(var1);
@@ -43493,10 +43608,17 @@
  		}
  
 -		this.weaponDamage = 4 + var2 * 2;
-+		this.weaponDamage = 4 + strengthAbs * 2;
- 	}
- 
+-	}
+-
 -	public float getStrVsBlock(ItemStack var1, Block var2) {
++		this.weaponDamage = 4 + strengthAbs * 2;
++		this.silk = strength < 0;
++	}
++
++	public boolean isSilk() {
++		return this.silk;
++	}
++
 +	public float getStrVsBlock(ItemStack itemStack, Block block) {
  		return 1.5F;
  	}
@@ -46313,7 +46435,7 @@
  }
 --- net/minecraft/src/ItemTool.java
 +++ net/minecraft/src/ItemTool.java
-@@ -1,28 +1,30 @@
+@@ -1,28 +1,32 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.ItemTooltip;
@@ -46326,12 +46448,13 @@
 +	protected float efficiencyOnProperMaterial;
 +	private final int damageVsEntity;
  	protected int toolMaterial;
++	private final boolean silk;
  
 -	public ItemTool(int var1, int var2, int var3, Block[] var4) {
 -		super(var1);
 -		this.toolMaterial = var3;
 -		this.blocksEffectiveAgainst = var4;
-+	public ItemTool(int id, int attackDmg, int strength, Block[] blocks) {
++	public ItemTool(int id, int attackDmg, int strength, Block[] blocks, boolean silk) {
 +		super(id);
 +		this.toolMaterial = strength;
 +		this.blocksEffectiveAgainst = blocks;
@@ -46347,6 +46470,7 @@
 -		this.damageVsEntity = var2 + var3;
 +		this.efficiencyOnProperMaterial = (float)((strength + 1) * 2);
 +		this.damageVsEntity = attackDmg + strength;
++		this.silk = silk;
  	}
  
 -	public float getStrVsBlock(ItemStack var1, Block var2) {
@@ -46357,7 +46481,7 @@
  				return this.efficiencyOnProperMaterial;
  			}
  		}
-@@ -30,19 +32,39 @@
+@@ -30,19 +34,43 @@
  		return 1.0F;
  	}
  
@@ -46384,6 +46508,10 @@
  
  	public boolean isFull3D() {
  		return true;
++	}
++
++	public boolean isSilk() {
++		return this.silk;
 +	}
 +
 +	public boolean effectiveAgainst(Block block) {
@@ -47442,7 +47570,7 @@
  }
 --- net/minecraft/src/EnumArt.java
 +++ net/minecraft/src/EnumArt.java
-@@ -24,7 +24,13 @@
+@@ -24,7 +24,15 @@
  	Pointer("Pointer", 64, 64, 0, 192),
  	Pigscene("Pigscene", 64, 64, 64, 192),
  	Skeleton("Skeleton", 64, 48, 192, 64),
@@ -47453,11 +47581,13 @@
 +	Tropical("Tropical", 32, 16, 160, 32),
 +	Maple("Maple", 32, 16, 0, 48),
 +	Winter("Winter", 16, 32, 32, 64),
-+	PackPNG("PackPNG", 64, 64, 128, 192);
++	PackPNG("PackPNG", 64, 64, 128, 192),
++	LaunchBase("LaunchBase", 32, 16, 32, 48),
++	ChaotixSpecial("ChaotixSpecial", 32, 32, 0, 160);
  
  	public final String title;
  	public final int sizeX;
-@@ -32,11 +38,11 @@
+@@ -32,11 +40,11 @@
  	public final int offsetX;
  	public final int offsetY;
  
@@ -48261,7 +48391,7 @@
 +
 +	public boolean canSmelt(ItemStack input) {
 +		return this.input.itemID == input.itemID
-+				&& (this.input.itemMetadata < 0
++				&& (this.input.itemMetadata == -1
 +					|| this.input.itemMetadata == input.itemMetadata);
 +	}
 +}
@@ -49469,7 +49599,7 @@
 +		threadCommandReader1.start();
  		ConsoleLogManager.init();
 -		logger.info("Starting minecraft server version 0.2.1");
-+		logger.info("Starting Minecraft Diverge server version 0.2.0");
++		logger.info("Starting Minecraft Diverge server version 0.2.1");
  		if(Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
  			logger.warning("**** NOT ENOUGH RAM!");
  			logger.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
@@ -49759,7 +49889,7 @@
  }
 --- net/minecraft/src/GameSettings.java
 +++ net/minecraft/src/GameSettings.java
-@@ -5,47 +5,70 @@
+@@ -5,47 +5,71 @@
  import java.io.FileReader;
  import java.io.FileWriter;
  import java.io.PrintWriter;
@@ -49801,6 +49931,7 @@
 +	public boolean caveSounds = false;
 +	public boolean creativeDebug = false;
 +	public boolean darkMode = false;
++	public boolean betacraftProxy = true;
 +	public KeyBinding keyBindForward = new KeyBinding("Forward", Keyboard.KEY_W);
 +	public KeyBinding keyBindLeft = new KeyBinding("Left", Keyboard.KEY_A);
 +	public KeyBinding keyBindBack = new KeyBinding("Back", Keyboard.KEY_S);
@@ -49823,7 +49954,7 @@
  	protected Minecraft mc;
  	private File optionsFile;
 -	public int numberOfOptions = 10;
-+	public int numberOfOptions = 16;
++	public int numberOfOptions = 17;
  	public int difficulty = 2;
  	public boolean thirdPersonView = false;
 +	public boolean debugMenu = false;
@@ -49847,7 +49978,7 @@
  	public String getKeyBindingDescription(int var1) {
  		return this.keyBindings[var1].keyDescription + ": " + Keyboard.getKeyName(this.keyBindings[var1].keyCode);
  	}
-@@ -56,134 +79,237 @@
+@@ -56,134 +80,255 @@
  	}
  
  	public void setOptionFloatValue(int var1, float var2) {
@@ -49937,6 +50068,10 @@
 +			this.darkMode = !this.darkMode;
 +		}
 +
++		if (var1 == 16) {
++			this.betacraftProxy = !this.betacraftProxy;
++		}
++
  		this.saveOptions();
  	}
  
@@ -50000,6 +50135,8 @@
 +				return "FOV: " + (int) this.fov;
 +			case 15:
 +				return "FOV Effects: " + (this.fovEffects > 0.0F ? (int) (this.fovEffects * 100.0F) + "%" : "OFF");
++			case 16:
++				return "Betacraft Proxy: " + (this.betacraftProxy ? "ON" : "OFF");
 +			default:
 +				return "NULL";
 +		}
@@ -50107,6 +50244,10 @@
 +					this.fovEffects = this.parseFloat(var3[1]);
 +				}
 +
++				if (var3[0].equals("betacraftProxy")) {
++					this.betacraftProxy = var3[1].equals("true");
++				}
++
 +				for (int var4 = 0; var4 < this.keyBindings.length; ++var4) {
 +					if (var3[0].equals("key_" + this.keyBindings[var4].keyDescription)) {
  						this.keyBindings[var4].keyCode = Integer.parseInt(var3[1]);
@@ -50116,6 +50257,14 @@
 -		} catch (Exception var5) {
 +
 +			bufferedReader1.close();
++
++			if (this.creativeDebug && false) {
++				this.creativeDebug = false;
++				this.saveOptions();
++				throw new RuntimeException("What are you doing!? Creative debug is for BlueStaggo only!");
++			}
++		} catch (RuntimeException e) {
++			throw e;
 +		} catch (Exception exception5) {
  			System.out.println("Failed to load options");
 -			var5.printStackTrace();
@@ -50123,7 +50272,7 @@
  		}
  
  	}
-@@ -194,27 +320,35 @@
+@@ -194,27 +339,36 @@
  
  	public void saveOptions() {
  		try {
@@ -50162,6 +50311,7 @@
 +			printWriter1.println("musicDelay:" + Math.floor(this.musicDelay * 100.0F) / 100.0F);
 +			printWriter1.println("fov:" + Math.floor(this.fov));
 +			printWriter1.println("fovEffects:" + Math.floor(this.fovEffects * 100.0F) / 100.0F);
++			printWriter1.println("betacraftProxy:" + this.betacraftProxy);
 +			if (this.creativeDebug) {
 +				printWriter1.println("creativeDebug:true");
 +			}
@@ -50754,19 +50904,34 @@
  }
 --- net/minecraft/src/BlockGlass.java
 +++ net/minecraft/src/BlockGlass.java
-@@ -3,11 +3,11 @@
+@@ -3,11 +3,23 @@
  import java.util.Random;
  
  public class BlockGlass extends BlockBreakable {
 -	public BlockGlass(int var1, int var2, Material var3, boolean var4) {
 -		super(var1, var2, var3, var4);
+-	}
+-
+-	public int quantityDropped(Random var1) {
+-		return 0;
 +	public BlockGlass(int var1, int var2, Material material3, boolean var4) {
 +		super(var1, var2, material3, var4);
- 	}
- 
--	public int quantityDropped(Random var1) {
++	}
++
 +	public int quantityDropped(Random rand) {
- 		return 0;
++		return rand.nextInt(3) + 2;
++	}
++
++	public int idDropped(int metadata, Random rand) {
++		return Item.shardGlass.shiftedIndex;
++	}
++
++	public int quantityDroppedSilk(Random rand) {
++		return 1;
++	}
++
++	public int idDroppedSilk(int metadata, Random rand) {
++		return this.blockID;
  	}
  }
 --- net/minecraft/src/SpawnerClient.java
