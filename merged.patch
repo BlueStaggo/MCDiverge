@@ -5121,36 +5121,36 @@
 +		PopulatorHost host = new PopulatorHost(this, var4, var5, worldObj, rand, mobSpawnerNoise);
 +
 +		int maxDungeons = this.rand.nextInt(2) + 1;
-+		host.generate(new WorldGenDungeons(), maxDungeons, 16, 64, 8);
++		host.generate(new WorldGenDungeons(), maxDungeons, 16, 96, 8);
 +		host.generate(new WorldGenClay(32), 10, 0, CHUNK_HEIGHT);
 +
 +		host.generateMinable(Block.dirt, 32, 20, 0, CHUNK_HEIGHT);
 +		host.generateMinable(Block.gravel, 32, 10, 0, CHUNK_HEIGHT);
 +		host.generateMinable(Block.stone, 32, 10, 32, CHUNK_HEIGHT, 1);
 +		host.generateMinableInStone(Block.oreCoal, 16, 20, 0, CHUNK_HEIGHT);
-+		host.generateMinableInStone(Block.oreIron, 8, 20, 0, 64);
-+		host.generateMinableInStone(Block.oreGold, 8, 2, 0, 32);
-+		host.generateMinableInStone(Block.oreRedstone, 7, 8, 0, 16);
-+		host.generateMinableInStone(Block.oreDiamond, 7, 1, 0, 16);
-+		host.generateMinableInStone(Block.oreRuby, 4, 1, 0, 24);
-+		host.generateMinableInStone(Block.oreSapphire, 4, 1, 0, 24);
++		host.generateMinableInStone(Block.oreIron, 8, 20, 0, 96);
++		host.generateMinableInStone(Block.oreGold, 8, 2, 0, 51);
++		host.generateMinableInStone(Block.oreRedstone, 7, 8, 0, 24);
++		host.generateMinableInStone(Block.oreDiamond, 7, 1, 0, 24);
++		host.generateMinableInStone(Block.oreRuby, 4, 1, 0, 38);
++		host.generateMinableInStone(Block.oreSapphire, 4, 1, 0, 38);
 +
 +		getBiome(var2 * 16, var3 * 16).populate(host);
 +
 +		host.generate(new WorldGenReed(), 10, 0, CHUNK_HEIGHT, 8);
 +		host.generate(new WorldGenCactus(), 1, 0, CHUNK_HEIGHT, 8);
-+		host.generate(new WorldGenSpeleothems(), 64, 0, 64, 8);
++		host.generate(new WorldGenSpeleothems(), 64, 0, 96, 8);
 +
 +		for(int i = 0; i < 50; ++i) {
 +			int x = var4 + this.rand.nextInt(16) + 8;
-+			int y = this.rand.nextInt(this.rand.nextInt(120) + 8);
++			int y = this.rand.nextInt(this.rand.nextInt(248) + 8);
 +			int z = var5 + this.rand.nextInt(16) + 8;
 +			(new WorldGenLiquids(Block.waterMoving.blockID)).generate(this.worldObj, this.rand, x, y, z);
 +		}
 +
 +		for(int i = 0; i < 20; ++i) {
 +			int x = var4 + this.rand.nextInt(16) + 8;
-+			int y = this.rand.nextInt(this.rand.nextInt(this.rand.nextInt(112) + 8) + 8);
++			int y = this.rand.nextInt(this.rand.nextInt(this.rand.nextInt(240) + 8) + 8);
 +			int z = var5 + this.rand.nextInt(16) + 8;
 +			(new WorldGenLiquids(Block.lavaMoving.blockID)).generate(this.worldObj, this.rand, x, y, z);
 +		}
@@ -7774,7 +7774,7 @@
 +	private static final TreePopulator PLAINS_TREES = new TreePopulator()
 +			.withTree(new WorldGenTrees())
 +			.withBigTree(new WorldGenBigTree(), 20, 2)
-+			.withHighTree(new WorldGenSpruceTrees(), 80, 100)
++			.withHighTree(new WorldGenSpruceTrees(), 128, 160)
 +			.withShrub(new WorldGenShrubs(), 1)
 +			.withDensity(4.0D, 8.0D, 2.0D);
 +
