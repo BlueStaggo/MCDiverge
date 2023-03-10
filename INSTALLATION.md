@@ -20,7 +20,7 @@ Minecraft Diverge appears in the Betacraft mod repository. Pick any specific ver
 3. Minecraft Diverge should now appear in the version list.
 
 ## Server
-1. Download a Minecraft Alpha v1.1.2_01 server jar.
+1. Download a Minecraft Alpha v1.1.2_01 (a0.2.1) server jar.
 2. Download the mcdiverge-server.zip file from [the latest release](https://github.com/BlueStaggo/MCDiverge/releases/latest).
 3. Open the Alpha 1.1.2 jar in a zip file manager (or just rename the extension to .zip and open it that way) alongside mcdiverge-server.zip.
 4. Copy all the contents from Minecraft Diverge over to Minecraft Alpha v1.1.2_01. *Note: Unlike client jars, deleting the META-INF folder will break the jar.*

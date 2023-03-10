@@ -220,6 +220,35 @@
 +		return var1 < var3 * var3;
  	}
  }
+--- net/minecraft/src/ModelRenderer.java
++++ net/minecraft/src/ModelRenderer.java
+@@ -18,6 +18,7 @@
+ 	public boolean mirror = false;
+ 	public boolean showModel = true;
+ 	public boolean isHidden = false;
++	public boolean bigTex = false;
+ 
+ 	public ModelRenderer(int var1, int var2) {
+ 		this.textureOffsetX = var1;
+@@ -62,12 +63,12 @@
+ 		this.corners[5] = var16;
+ 		this.corners[6] = var17;
+ 		this.corners[7] = var18;
+-		this.faces[0] = new TexturedQuad(new PositionTexureVertex[]{var16, var12, var13, var17}, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4 + var6, this.textureOffsetY + var6 + var5);
+-		this.faces[1] = new TexturedQuad(new PositionTexureVertex[]{var20, var15, var18, var14}, this.textureOffsetX + 0, this.textureOffsetY + var6, this.textureOffsetX + var6, this.textureOffsetY + var6 + var5);
+-		this.faces[2] = new TexturedQuad(new PositionTexureVertex[]{var16, var15, var20, var12}, this.textureOffsetX + var6, this.textureOffsetY + 0, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6);
+-		this.faces[3] = new TexturedQuad(new PositionTexureVertex[]{var13, var14, var18, var17}, this.textureOffsetX + var6 + var4, this.textureOffsetY + 0, this.textureOffsetX + var6 + var4 + var4, this.textureOffsetY + var6);
+-		this.faces[4] = new TexturedQuad(new PositionTexureVertex[]{var12, var20, var14, var13}, this.textureOffsetX + var6, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6 + var5);
+-		this.faces[5] = new TexturedQuad(new PositionTexureVertex[]{var15, var16, var17, var18}, this.textureOffsetX + var6 + var4 + var6, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4 + var6 + var4, this.textureOffsetY + var6 + var5);
++		this.faces[0] = new TexturedQuad(new PositionTexureVertex[]{var16, var12, var13, var17}, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4 + var6, this.textureOffsetY + var6 + var5, this.bigTex);
++		this.faces[1] = new TexturedQuad(new PositionTexureVertex[]{var20, var15, var18, var14}, this.textureOffsetX + 0, this.textureOffsetY + var6, this.textureOffsetX + var6, this.textureOffsetY + var6 + var5, this.bigTex);
++		this.faces[2] = new TexturedQuad(new PositionTexureVertex[]{var16, var15, var20, var12}, this.textureOffsetX + var6, this.textureOffsetY + 0, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6, this.bigTex);
++		this.faces[3] = new TexturedQuad(new PositionTexureVertex[]{var13, var14, var18, var17}, this.textureOffsetX + var6 + var4, this.textureOffsetY + 0, this.textureOffsetX + var6 + var4 + var4, this.textureOffsetY + var6, this.bigTex);
++		this.faces[4] = new TexturedQuad(new PositionTexureVertex[]{var12, var20, var14, var13}, this.textureOffsetX + var6, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4, this.textureOffsetY + var6 + var5, this.bigTex);
++		this.faces[5] = new TexturedQuad(new PositionTexureVertex[]{var15, var16, var17, var18}, this.textureOffsetX + var6 + var4 + var6, this.textureOffsetY + var6, this.textureOffsetX + var6 + var4 + var6 + var4, this.textureOffsetY + var6 + var5, this.bigTex);
+ 		if(this.mirror) {
+ 			for(int var19 = 0; var19 < this.faces.length; ++var19) {
+ 				this.faces[var19].flipFace();
 --- net/minecraft/src/SlotInventory.java
 +++ net/minecraft/src/SlotInventory.java
 @@ -1,5 +1,7 @@
@@ -1643,6 +1672,15 @@
  	}
  
  	private void hurtCameraEffect(float var1) {
+@@ -262,7 +279,7 @@
+ 		}
+ 
+ 		if(!this.mc.skipRenderWorld) {
+-			ScaledResolution var7 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++			ScaledResolution var7 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
+ 			int var8 = var7.getScaledWidth();
+ 			int var9 = var7.getScaledHeight();
+ 			int var10 = Mouse.getX() * var8 / this.mc.displayWidth;
 @@ -335,7 +352,7 @@
  			RenderHelper.disableStandardItemLighting();
  			this.setupFog(0);
@@ -1681,6 +1719,15 @@
  			if(!this.mc.options.anaglyph) {
  				return;
  			}
+@@ -495,7 +514,7 @@
+ 	}
+ 
+ 	public void setupOverlayRendering() {
+-		ScaledResolution var1 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++		ScaledResolution var1 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
+ 		int var2 = var1.getScaledWidth();
+ 		int var3 = var1.getScaledHeight();
+ 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 @@ -600,9 +619,9 @@
  		GL11.glColorMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT);
  	}
@@ -2433,6 +2480,15 @@
  		super.drawScreen(var1, var2, var3);
  	}
  
+@@ -137,7 +196,7 @@
+ 		GL11.glMatrixMode(GL11.GL_PROJECTION);
+ 		GL11.glPushMatrix();
+ 		GL11.glLoadIdentity();
+-		ScaledResolution var14 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++		ScaledResolution var14 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
+ 		var3 = 120 * var14.scaleFactor;
+ 		GLU.gluPerspective(70.0F, (float)this.mc.displayWidth / (float)var3, 0.05F, 100.0F);
+ 		GL11.glViewport(0, this.mc.displayHeight - var3, this.mc.displayWidth, var3);
 @@ -189,7 +248,6 @@
  						float var10 = (float)(var9.prevHeight + (var9.height - var9.prevHeight) * (double)var1);
  						float var11 = 1.0F;
@@ -2512,6 +2568,31 @@
  		this.entityRenderMap.put(EntityPlayer.class, new RenderPlayer());
  		this.entityRenderMap.put(EntityGiantZombie.class, new RenderGiantZombie(new ModelZombie(), 0.5F, 6.0F));
  		this.entityRenderMap.put(EntityLiving.class, new RenderLiving(new ModelBiped(), 0.5F));
+--- net/minecraft/src/ScaledResolution.java
++++ net/minecraft/src/ScaledResolution.java
+@@ -5,17 +5,19 @@
+ 	private int scaledHeight;
+ 	public int scaleFactor;
+ 
+-	public ScaledResolution(int var1, int var2) {
++	public ScaledResolution(int var1, int var2, int var3) {
+ 		this.scaledWidth = var1;
+ 		this.scaledHeight = var2;
++		if (var3 <= 0)
++			var3 = 1000;
+ 
+-		for(this.scaleFactor = 1; this.scaledWidth / (this.scaleFactor + 1) >= 320 && this.scaledHeight / (this.scaleFactor + 1) >= 240; ++this.scaleFactor) {
++		while(this.scaleFactor < var3 && this.scaledWidth / (this.scaleFactor + 1) >= 320 && this.scaledHeight / (this.scaleFactor + 1) >= 240) {
++			++this.scaleFactor;
+ 		}
+ 
+ 		this.scaledWidth /= this.scaleFactor;
+ 		this.scaledHeight /= this.scaleFactor;
+ 	}
+-
+ 	public int getScaledWidth() {
+ 		return this.scaledWidth;
+ 	}
 --- net/minecraft/src/Biome.java
 +++ /dev/null
 @@ -1,316 +1,0 @@
@@ -3081,7 +3162,7 @@
 -		return this.worldObj.getBlockId(var1, var2 - 1, var3) == Block.grass.blockID && this.worldObj.getBlockLightValue(var1, var2, var3) > 8 && super.getCanSpawnHere();
 +		int var4 = this.worldObj.getBlockId(var1, var2 - 1, var3);
 +		return (var4 == Block.grass.blockID || var4 == Block.dirt.blockID || var4 == Block.snow.blockID)
-+				&& this.worldObj.getBlockLightValue(var1, var2, var3) > 8 && super.getCanSpawnHere();
++				&& var2 >= 64 && this.worldObj.getBlockLightValue(var1, var2, var3) > 8 && super.getCanSpawnHere();
  	}
  
  	public int getTalkInterval() {
@@ -3117,14 +3198,16 @@
  	public boolean interact(EntityPlayer var1) {
 --- net/minecraft/src/RenderPlayer.java
 +++ net/minecraft/src/RenderPlayer.java
-@@ -1,11 +1,14 @@
+@@ -1,11 +1,16 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.ItemCharm;
++import io.github.bluestaggo.mcdiverge.ModelStaggo;
  import org.lwjgl.opengl.GL11;
  
  public class RenderPlayer extends RenderLiving {
  	private ModelBiped modelBipedMain = (ModelBiped)this.mainModel;
++	private ModelBiped modelStaggo = new ModelStaggo(0.0F);
  	private ModelBiped modelArmorChestplate = new ModelBiped(1.0F);
  	private ModelBiped modelArmor = new ModelBiped(0.5F);
 +	private ModelBiped modelCharmUpper = new ModelBiped(1.1F);
@@ -3132,7 +3215,7 @@
  	private static final String[] armorFilenamePrefix = new String[]{"cloth", "chain", "iron", "diamond", "gold"};
  
  	public RenderPlayer() {
-@@ -13,7 +16,11 @@
+@@ -13,7 +18,11 @@
  	}
  
  	protected boolean setArmorModel(EntityPlayer var1, int var2) {
@@ -3145,8 +3228,15 @@
  		if(var3 != null) {
  			Item var4 = var3.getItem();
  			if(var4 instanceof ItemArmor) {
-@@ -29,6 +36,18 @@
+@@ -27,8 +36,30 @@
+ 				var6.bipedLeftArm.showModel = var2 == 1;
+ 				var6.bipedRightLeg.showModel = var2 == 2 || var2 == 3;
  				var6.bipedLeftLeg.showModel = var2 == 2 || var2 == 3;
++				var6.heldItemLeft = this.modelBipedMain.heldItemLeft;
++				var6.heldItemRight = this.modelBipedMain.heldItemRight;
++				var6.isSneak = this.modelBipedMain.isSneak;
++				var6.swingProgress = this.modelBipedMain.swingProgress;
++				var6.isRiding = true;
  				this.setRenderPassModel(var6);
  				return true;
 +			} else if(var4 instanceof ItemCharm && var2 == 4 && ((ItemCharm) var4).textureName != null) {
@@ -3159,12 +3249,70 @@
 +				modelCharm.bipedLeftArm.showModel = true;
 +				modelCharm.bipedRightLeg.showModel = true;
 +				modelCharm.bipedLeftLeg.showModel = true;
++				modelCharm.heldItemLeft = this.modelBipedMain.heldItemLeft;
++				modelCharm.heldItemRight = this.modelBipedMain.heldItemRight;
++				modelCharm.isSneak = this.modelBipedMain.isSneak;
++				modelCharm.swingProgress = this.modelBipedMain.swingProgress;
++				modelCharm.isRiding = true;
 +				this.setRenderPassModel(modelCharm);
 +				return true;
  			}
  		}
  
-@@ -144,5 +163,9 @@
+@@ -36,12 +67,14 @@
+ 	}
+ 
+ 	public void renderPlayer(EntityPlayer var1, double var2, double var4, double var6, float var8, float var9) {
++		this.mainModel = var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
++//		this.mainModel = this.modelBipedMain;
+ 		ItemStack var10 = var1.inventory.getCurrentItem();
+-		this.modelArmorChestplate.heldItemRight = this.modelArmor.heldItemRight = this.modelBipedMain.heldItemRight = var10 != null;
+-		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = var1.isSneaking();
++		this.modelArmorChestplate.heldItemRight = this.modelArmor.heldItemRight = this.modelStaggo.heldItemRight = this.modelBipedMain.heldItemRight = var10 != null;
++		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelStaggo.isSneak = this.modelBipedMain.isSneak = var1.isSneaking();
+ 		super.doRenderLiving(var1, var2, var4 - (double)var1.yOffset, var6, var8, var9);
+-		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = false;
+-		this.modelArmorChestplate.heldItemRight = this.modelArmor.heldItemRight = this.modelBipedMain.heldItemRight = false;
++		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelStaggo.isSneak = this.modelBipedMain.isSneak = false;
++		this.modelArmorChestplate.heldItemRight = this.modelArmor.heldItemRight = this.modelStaggo.heldItemRight = this.modelBipedMain.heldItemRight = false;
+ 		FontRenderer var11 = this.getFontRendererFromRenderManager();
+ 		float var12 = 1.6F;
+ 		float var13 = (float)(1.0D / 60.0D) * var12;
+@@ -84,7 +117,8 @@
+ 		ItemStack var3 = var1.inventory.getCurrentItem();
+ 		if(var3 != null) {
+ 			GL11.glPushMatrix();
+-			this.modelBipedMain.bipedRightArm.renderWithRotation(1.0F / 16.0F);
++			ModelBiped model = var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
++			model.bipedRightArm.renderWithRotation(1.0F / 16.0F);
+ 			GL11.glTranslatef(-(1.0F / 16.0F), 7.0F / 16.0F, 1.0F / 16.0F);
+ 			float var4;
+ 			if(var3.itemID < 256 && RenderBlocks.renderItemIn3d(Block.blocksList[var3.itemID].getRenderType())) {
+@@ -120,10 +154,19 @@
+ 		GL11.glScalef(var3, var3, var3);
+ 	}
+ 
+-	public void drawFirstPersonHand() {
+-		this.modelBipedMain.swingProgress = 0.0F;
+-		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
+-		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
++	public void drawFirstPersonHand(EntityPlayer var1) {
++		ModelBiped model = var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
++
++		model.swingProgress = 0.0F;
++		model.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
++		model.bipedRightArm.render(1.0F / 16.0F);
++		for (int i = 0; i < this.maxRenderPasses(); i++) {
++			if (this.setArmorModel(var1, i)) {
++				this.renderPassModel.swingProgress = 0.0F;
++				this.renderPassModel.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
++				((ModelBiped)this.renderPassModel).bipedRightArm.render(1.0F / 16.0F);
++			}
++		}
+ 	}
+ 
+ 	protected void preRenderCallback(EntityLiving var1, float var2) {
+@@ -144,5 +187,9 @@
  
  	public void doRender(Entity var1, double var2, double var4, double var6, float var8, float var9) {
  		this.renderPlayer((EntityPlayer)var1, var2, var4, var6, var8, var9);
@@ -3245,17 +3393,19 @@
  import org.lwjgl.opengl.GL11;
  import org.lwjgl.opengl.GL12;
  
-@@ -26,6 +27,10 @@
+@@ -26,7 +27,11 @@
  	}
  
  	public void renderGameOverlay(float var1, boolean var2, int var3, int var4) {
+-		ScaledResolution var5 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
 +		if (!var2 && !this.mc.showHud) {
 +			return;
 +		}
 +
- 		ScaledResolution var5 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++		ScaledResolution var5 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
  		int var6 = var5.getScaledWidth();
  		int var7 = var5.getScaledHeight();
+ 		FontRenderer var8 = this.mc.fontRenderer;
 @@ -54,11 +59,17 @@
  
  		int var11 = this.mc.thePlayer.health;
@@ -3410,6 +3560,69 @@
 +		};
  	}
  }
+--- /dev/null
++++ io/github/bluestaggo/mcdiverge/ModelStaggo.java
+@@ -1,0 +1,60 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.MathHelper;
++import net.minecraft.src.ModelBiped;
++import net.minecraft.src.ModelRenderer;
++
++public class ModelStaggo extends ModelBiped {
++	public ModelRenderer bipedTail;
++	public ModelRenderer bipedSnout;
++	public ModelRenderer bipedEars;
++
++	public ModelStaggo(float var1) {
++		super(var1, true);
++		this.bipedTail = new ModelRenderer(0, 32);
++		this.bipedTail.bigTex = true;
++		this.bipedTail.addBox(-2.0F, -12.0F, 0.0F, 4, 10, 4, var1);
++		this.bipedTail.setRotationPoint(0.0F, 8.0F, 0.0F);
++		this.bipedTail.rotateAngleX = -2.0F;
++		this.bipedSnout = new ModelRenderer(16, 36);
++		this.bipedSnout.bigTex = true;
++		this.bipedSnout.addBox(-2.0F, -2.0F + var1, -6.0F - var1, 4, 2, 2, var1 / 4.0F);
++		this.bipedSnout.setRotationPoint(0.0F, 0.0F, 0.0F);
++		this.bipedEars = new ModelRenderer(16, 32);
++		this.bipedEars.bigTex = true;
++		this.bipedEars.addBox(-4.0F, -10.0F - var1, -1.0F - var1, 8, 2, 1, var1 / 4.0F);
++		this.bipedEars.setRotationPoint(0.0F, 0.0F, 0.0F);
++	}
++
++	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
++		super.render(var1, var2, var3, var4, var5, var6);
++		this.bipedTail.render(var6);
++		this.bipedSnout.render(var6);
++		this.bipedEars.render(var6);
++	}
++
++	public void setRotationAngles(float var1, float var2, float var3, float var4, float var5, float var6) {
++		super.setRotationAngles(var1, var2, var3, var4, var5, var6);
++
++		this.bipedTail.rotateAngleX = this.bipedBody.rotateAngleX;
++		this.bipedTail.rotateAngleY = this.bipedBody.rotateAngleY;
++		this.bipedTail.rotateAngleX -= 2.0F;
++		this.bipedTail.rotateAngleY += MathHelper.cos(var1 * 0.6662F) * 0.1F * var2;
++		this.bipedTail.rotateAngleZ = MathHelper.sin(var3 * 0.2F) * 0.05F;
++
++		this.bipedEars.rotateAngleX = this.bipedSnout.rotateAngleX = this.bipedHead.rotateAngleX;
++		this.bipedEars.rotateAngleY = this.bipedSnout.rotateAngleY = this.bipedHead.rotateAngleY;
++		this.bipedEars.rotateAngleZ = this.bipedSnout.rotateAngleZ = this.bipedHead.rotateAngleZ;
++	}
++
++	public void showHead(boolean var1) {
++		super.showHead(var1);
++		this.bipedSnout.showModel = var1;
++		this.bipedEars.showModel = var1;
++	}
++
++	public void showBody(boolean var1) {
++		super.showBody(var1);
++		this.bipedTail.showModel = var1;
++	}
++}
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/EntityPhantom.java
 @@ -1,0 +1,40 @@
@@ -5967,7 +6180,7 @@
  public class EntityOtherPlayerMP extends EntityPlayer {
  	private int otherPlayerMPPosRotationIncrements;
  	private double otherPlayerMPX;
-@@ -14,9 +16,13 @@
+@@ -14,13 +16,18 @@
  		this.username = var2;
  		this.yOffset = 0.0F;
  		this.stepHeight = 0.0F;
@@ -5975,15 +6188,20 @@
 -			this.skinUrl = "http://www.minecraft.net/skin/" + var2 + ".png";
 -			System.out.println("Loading texture " + this.skinUrl);
 +		if (var2 != null && var2.length() > 0) {
-+			boolean useBlueStagSkin = var2.matches("Player[0-9]{0,4}");
-+			if (useBlueStagSkin) {
-+				this.skinUrl = "https://raw.githubusercontent.com/BlueStaggo/BlueStaggo/main/skin-mc-diverge.png";
++			this.blueStaggo = this.username.equals("BlueStag256");
++			if (this.blueStaggo) {
++				this.texture = "/staggo.png";
 +			} else {
 +				this.skinUrl = "http://www.minecraft.net/skin/" + var2 + ".png";
 +			}
  		}
  
  		this.noClip = true;
+ 		this.renderDistanceWeight = 10.0D;
++
+ 	}
+ 
+ 	public boolean attackEntityFrom(Entity var1, int var2) {
 --- net/minecraft/src/EntityDiggingFX.java
 +++ net/minecraft/src/EntityDiggingFX.java
 @@ -1,9 +1,9 @@
@@ -7910,16 +8128,17 @@
  import org.lwjgl.LWJGLException;
  import org.lwjgl.input.Controllers;
  import org.lwjgl.input.Keyboard;
-@@ -73,6 +27,8 @@
+@@ -73,6 +27,9 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2.1_01";
++	public static final String version = "Minecraft Diverge v0.2.1_02";
++	public static final boolean developmentVersion = false;
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
  	public int displayWidth;
-@@ -124,20 +80,22 @@
+@@ -124,20 +81,22 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
@@ -7952,7 +8171,7 @@
  
  	public void setServer(String var1, int var2) {
  		this.serverName = var1;
-@@ -169,16 +127,16 @@
+@@ -169,16 +128,16 @@
  			Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
  		}
  
@@ -7973,7 +8192,7 @@
  			}
  
  			Display.create();
-@@ -194,10 +152,12 @@
+@@ -194,10 +153,12 @@
  		Mouse.create();
  		this.mouseHelper = new MouseHelper(this.mcCanvas);
  
@@ -7988,7 +8207,7 @@
  		}
  
  		this.checkGLError("Pre startup");
-@@ -229,8 +189,10 @@
+@@ -229,8 +190,10 @@
  		try {
  			this.downloadResourcesThread = new ThreadDownloadResources(this.mcDataDir, this);
  			this.downloadResourcesThread.start();
@@ -8000,7 +8219,7 @@
  
  		this.checkGLError("Post startup");
  		this.ingameGUI = new GuiIngame(this);
-@@ -239,14 +201,13 @@
+@@ -239,14 +202,13 @@
  		} else {
  			this.displayGuiScreen(new GuiMainMenu());
  		}
@@ -8012,14 +8231,14 @@
 -		int var2 = var1.getScaledWidth();
 -		int var3 = var1.getScaledHeight();
 -		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
-+		ScaledResolution scaledResolution1 = new ScaledResolution(this.displayWidth, this.displayHeight);
++		ScaledResolution scaledResolution1 = new ScaledResolution(this.displayWidth, this.displayHeight, this.options.guiScale);
 +		int var2 = scaledResolution1.getScaledWidth();
 +		int var3 = scaledResolution1.getScaledHeight();
 +		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
  		GL11.glMatrixMode(GL11.GL_PROJECTION);
  		GL11.glLoadIdentity();
  		GL11.glOrtho(0.0D, (double)var2, (double)var3, 0.0D, 1000.0D, 3000.0D);
-@@ -255,23 +216,23 @@
+@@ -255,23 +217,23 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glViewport(0, 0, this.displayWidth, this.displayHeight);
  		GL11.glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
@@ -8056,7 +8275,7 @@
  		GL11.glDisable(GL11.GL_LIGHTING);
  		GL11.glDisable(GL11.GL_FOG);
  		GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -280,15 +241,15 @@
+@@ -280,15 +242,15 @@
  	}
  
  	public void scaledTessellator(int var1, int var2, int var3, int var4, int var5, int var6) {
@@ -8081,7 +8300,7 @@
  	}
  
  	public static File getMinecraftDir() {
-@@ -301,31 +262,31 @@
+@@ -301,31 +263,31 @@
  
  	public static File getAppDir(String var0) {
  		String var1 = System.getProperty("user.home", ".");
@@ -8123,7 +8342,7 @@
  		}
  	}
  
-@@ -334,25 +295,25 @@
+@@ -334,25 +296,25 @@
  		return var0.contains("win") ? EnumOS.windows : (var0.contains("mac") ? EnumOS.macos : (var0.contains("solaris") ? EnumOS.solaris : (var0.contains("sunos") ? EnumOS.solaris : (var0.contains("linux") ? EnumOS.linux : (var0.contains("unix") ? EnumOS.linux : EnumOS.unknown)))));
  	}
  
@@ -8153,14 +8372,14 @@
 -				int var3 = var2.getScaledWidth();
 -				int var4 = var2.getScaledHeight();
 -				((GuiScreen)var1).setWorldAndResolution(this, var3, var4);
-+				ScaledResolution scaledResolution2 = new ScaledResolution(this.displayWidth, this.displayHeight);
++				ScaledResolution scaledResolution2 = new ScaledResolution(this.displayWidth, this.displayHeight, this.options.guiScale);
 +				int var3 = scaledResolution2.getScaledWidth();
 +				int var4 = scaledResolution2.getScaledHeight();
 +				((GuiScreen)guiScreen1).setWorldAndResolution(this, var3, var4);
  				this.skipRenderWorld = false;
  			} else {
  				this.setIngameFocus();
-@@ -382,7 +343,7 @@
+@@ -382,7 +344,7 @@
  			if(this.downloadResourcesThread != null) {
  				this.downloadResourcesThread.closeMinecraft();
  			}
@@ -8169,7 +8388,7 @@
  		}
  
  		try {
-@@ -391,7 +352,7 @@
+@@ -391,7 +353,7 @@
  
  			try {
  				GLAllocation.deleteTexturesAndDisplayLists();
@@ -8178,7 +8397,7 @@
  			}
  
  			this.sndManager.closeMinecraft();
-@@ -409,9 +370,9 @@
+@@ -409,9 +371,9 @@
  
  		try {
  			this.startGame();
@@ -8191,7 +8410,7 @@
  			return;
  		}
  
-@@ -440,7 +401,7 @@
+@@ -440,7 +402,7 @@
  
  						try {
  							this.runTick();
@@ -8200,7 +8419,7 @@
  							this.theWorld = null;
  							this.changeWorld1((World)null);
  							this.displayGuiScreen(new GuiConflictWarning());
-@@ -493,9 +454,9 @@
+@@ -493,9 +455,9 @@
  						this.resize(this.displayWidth, this.displayHeight);
  					}
  
@@ -8213,7 +8432,7 @@
  
  					this.checkGLError("Post render");
  					++var3;
-@@ -506,7 +467,7 @@
+@@ -506,7 +468,7 @@
  						var1 += 1000L;
  					}
  				}
@@ -8222,7 +8441,7 @@
  			} catch (Throwable var15) {
  				this.theWorld = null;
  				var15.printStackTrace();
-@@ -534,14 +495,14 @@
+@@ -534,14 +496,14 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glLineWidth(1.0F);
  		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -8245,7 +8464,7 @@
  		long var4 = 0L;
  
  		int var6;
-@@ -550,14 +511,14 @@
+@@ -550,14 +512,14 @@
  		}
  
  		var6 = (int)(var4 / 200000L / (long)frameTimes.length);
@@ -8268,7 +8487,7 @@
  
  		for(int var7 = 0; var7 < frameTimes.length; ++var7) {
  			int var8 = (var7 - numRecordedFrameTimes & frameTimes.length - 1) * 255 / frameTimes.length;
-@@ -565,13 +526,13 @@
+@@ -565,13 +527,13 @@
  			var9 = var9 * var9 / 255;
  			int var10 = var9 * var9 / 255;
  			var10 = var10 * var10 / 255;
@@ -8286,7 +8505,7 @@
  		GL11.glEnable(GL11.GL_TEXTURE_2D);
  	}
  
-@@ -607,10 +568,10 @@
+@@ -607,10 +569,10 @@
  		}
  	}
  
@@ -8300,7 +8519,7 @@
  					int var3 = this.objectMouseOver.blockX;
  					int var4 = this.objectMouseOver.blockY;
  					int var5 = this.objectMouseOver.blockZ;
-@@ -624,23 +585,23 @@
+@@ -624,23 +586,23 @@
  		}
  	}
  
@@ -8331,7 +8550,7 @@
  					this.thePlayer.interactWithEntity(this.objectMouseOver.entityHit);
  				}
  			} else if(this.objectMouseOver.typeOfHit == 0) {
-@@ -649,7 +610,7 @@
+@@ -649,7 +611,7 @@
  				int var4 = this.objectMouseOver.blockZ;
  				int var5 = this.objectMouseOver.sideHit;
  				Block var6 = Block.blocksList[this.theWorld.getBlockId(var2, var3, var4)];
@@ -8340,7 +8559,7 @@
  					this.theWorld.extinguishFire(var2, var3, var4, this.objectMouseOver.sideHit);
  					if(var6 != Block.bedrock || this.thePlayer.unusedMiningCooldown >= 100) {
  						this.playerController.clickBlock(var2, var3, var4, this.objectMouseOver.sideHit);
-@@ -673,18 +634,10 @@
+@@ -673,18 +635,10 @@
  				}
  			}
  
@@ -8362,7 +8581,7 @@
  				}
  			}
  
-@@ -740,27 +693,27 @@
+@@ -740,27 +694,27 @@
  			}
  
  			System.out.println("Size: " + this.displayWidth + ", " + this.displayHeight);
@@ -8400,13 +8619,13 @@
 -			ScaledResolution var3 = new ScaledResolution(var1, var2);
 -			int var4 = var3.getScaledWidth();
 -			int var5 = var3.getScaledHeight();
-+			ScaledResolution scaledResolution3 = new ScaledResolution(width, height);
++			ScaledResolution scaledResolution3 = new ScaledResolution(width, height, this.options.guiScale);
 +			int var4 = scaledResolution3.getScaledWidth();
 +			int var5 = scaledResolution3.getScaledHeight();
  			this.currentScreen.setWorldAndResolution(this, var4, var5);
  		}
  
-@@ -787,6 +740,8 @@
+@@ -787,6 +741,8 @@
  	}
  
  	public void runTick() {
@@ -8415,7 +8634,7 @@
  		this.ingameGUI.updateTick();
  		this.entityRenderer.getMouseOver(1.0F);
  		if(this.thePlayer != null) {
-@@ -870,6 +825,10 @@
+@@ -870,6 +826,10 @@
  													this.options.thirdPersonView = !this.options.thirdPersonView;
  												}
  
@@ -8426,7 +8645,7 @@
  												if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
  													this.displayGuiScreen(new GuiInventory(this.thePlayer.inventory, this.thePlayer.inventory.craftingInventory));
  												}
-@@ -878,9 +837,17 @@
+@@ -878,9 +838,17 @@
  													this.thePlayer.dropPlayerItemWithRandomChoice(this.thePlayer.inventory.decrStackSize(this.thePlayer.inventory.currentItem, 1), false);
  												}
  
@@ -8444,7 +8663,7 @@
  											}
  
  											for(int var4 = 0; var4 < 9; ++var4) {
-@@ -954,6 +921,9 @@
+@@ -954,6 +922,9 @@
  			}
  
  			if(!this.isGamePaused || this.isMultiplayerWorld()) {
@@ -8454,7 +8673,7 @@
  				this.theWorld.tick();
  			}
  
-@@ -980,10 +950,15 @@
+@@ -980,10 +951,15 @@
  		return this.theWorld != null && this.theWorld.multiplayerWorld;
  	}
  
@@ -8472,7 +8691,7 @@
  		if(var2.isNewWorld) {
  			this.changeWorld(var2, "Generating level");
  		} else {
-@@ -992,54 +967,55 @@
+@@ -992,54 +968,56 @@
  
  	}
  
@@ -8485,6 +8704,7 @@
 -	public void changeWorld(World var1, String var2) {
 -		this.sndManager.playStreaming((String)null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
 +	public void changeWorld(World world, String title) {
++		this.sndManager.fadeOutTitleMusic();
 +		this.sndManager.playStreaming(null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
  		if(this.theWorld != null) {
  			this.theWorld.saveWorldIndirectly(this.loadingScreen);
@@ -8547,13 +8767,14 @@
  			this.thePlayer = null;
  		}
  
-@@ -1047,15 +1023,15 @@
+@@ -1047,15 +1025,16 @@
  		this.systemTime = 0L;
  	}
  
 -	private void preloadWorld(String var1) {
 -		this.loadingScreen.resetProgressAndMessage(var1);
 +	private void preloadWorld(String title) {
++		this.sndManager.fadeOutTitleMusic();
 +		this.loadingScreen.resetProgressAndMessage(title);
  		this.loadingScreen.displayLoadingString("Building terrain");
 -		short var2 = 128;
@@ -8568,7 +8789,7 @@
  			int var6 = this.theWorld.spawnX;
  			int var7 = this.theWorld.spawnZ;
  			if(this.thePlayer != null) {
-@@ -1063,7 +1039,7 @@
+@@ -1063,7 +1042,7 @@
  				var7 = (int)this.thePlayer.posZ;
  			}
  
@@ -8577,7 +8798,7 @@
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
  				this.theWorld.getBlockId(var6 + var5, 64, var7 + var8);
  
-@@ -1077,20 +1053,26 @@
+@@ -1077,20 +1056,26 @@
  		this.theWorld.dropOldChunks();
  	}
  
@@ -8614,7 +8835,7 @@
  		}
  
  	}
-@@ -1099,6 +1081,12 @@
+@@ -1099,6 +1084,12 @@
  		return this.glCapabilities;
  	}
  
@@ -8627,7 +8848,7 @@
  	public String debugInfoRenders() {
  		return this.renderGlobal.getDebugInfoRenders();
  	}
-@@ -1111,6 +1099,15 @@
+@@ -1111,6 +1102,15 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
  	}
  
@@ -8643,7 +8864,7 @@
  	public void respawn() {
  		this.theWorld.setSpawnLocation();
  		if(this.thePlayer != null) {
-@@ -1126,51 +1123,78 @@
+@@ -1126,51 +1126,78 @@
  		this.preloadWorld("Respawning");
  	}
  
@@ -9060,13 +9281,13 @@
 -			this.skinUrl = "http://www.minecraft.net/skin/" + var3.username + ".png";
 -			System.out.println("Loading texture " + this.skinUrl);
 +		if (var3 != null && var3.username != null && var3.username.length() > 0) {
-+			boolean useBlueStagSkin = var3.username.matches("Player[0-9]{0,4}");
-+			if (useBlueStagSkin) {
-+				this.skinUrl = "https://raw.githubusercontent.com/BlueStaggo/BlueStaggo/main/skin-mc-diverge.png";
-+			} else {
-+				this.skinUrl = "http://www.minecraft.net/skin/" + var3.username + ".png";
-+			}
 +			this.username = var3.username;
++			this.blueStaggo = this.username.equals("BlueStag256");
++			if (this.blueStaggo) {
++				this.texture = "/staggo.png";
++			} else {
++				this.skinUrl = "http://www.minecraft.net/skin/" + var2 + ".png";
++			}
  		}
 -
 -		this.username = var3.username;
@@ -9254,7 +9475,7 @@
  import java.util.List;
  
  public class EntityPlayer extends EntityLiving {
-@@ -12,6 +15,17 @@
+@@ -12,6 +15,18 @@
  	public int swingProgressInt = 0;
  	public String username;
  	private int damageRemainder = 0;
@@ -9269,10 +9490,11 @@
 +	public float bounce = 0.0F;
 +	private float bounceHeight = 0.0F;
 +	protected boolean justJumped = false;
++	public boolean blueStaggo = false;
  
  	public EntityPlayer(World var1) {
  		super(var1);
-@@ -22,6 +36,19 @@
+@@ -22,6 +37,19 @@
  		this.unusedRotation = 180.0F;
  		this.fireResistance = 20;
  		this.texture = "/char.png";
@@ -9292,7 +9514,7 @@
  	}
  
  	public void updateRidden() {
-@@ -53,13 +80,88 @@
+@@ -53,13 +81,88 @@
  	}
  
  	public void onLivingUpdate() {
@@ -9383,7 +9605,7 @@
  		float var1 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
  		float var2 = (float)Math.atan(-this.motionY * (double)0.2F) * 15.0F;
  		if(var1 > 0.1F) {
-@@ -85,6 +187,44 @@
+@@ -85,6 +188,44 @@
  			}
  		}
  
@@ -9428,7 +9650,7 @@
  	}
  
  	private void collideWithPlayer(Entity var1) {
-@@ -102,6 +242,9 @@
+@@ -102,6 +243,9 @@
  		if(this.username.equals("Notch")) {
  			this.dropPlayerItemWithRandomChoice(new ItemStack(Item.appleRed, 1), true);
  		}
@@ -9438,7 +9660,7 @@
  
  		this.inventory.dropAllItems();
  		if(var1 != null) {
-@@ -165,22 +308,42 @@
+@@ -165,22 +309,42 @@
  			var2 /= 5.0F;
  		}
  
@@ -9482,7 +9704,7 @@
  	}
  
  	public void displayGUIChest(IInventory var1) {
-@@ -198,9 +361,7 @@
+@@ -198,9 +362,7 @@
  
  	public boolean attackEntityFrom(Entity var1, int var2) {
  		this.entityAge = 0;
@@ -9493,7 +9715,7 @@
  			return false;
  		} else {
  			if(var1 instanceof EntityMob || var1 instanceof EntityArrow) {
-@@ -217,12 +378,7 @@
+@@ -217,12 +379,7 @@
  				}
  			}
  
@@ -9507,7 +9729,7 @@
  		}
  	}
  
-@@ -232,6 +388,15 @@
+@@ -232,6 +389,15 @@
  	public void displayGUIEditSign(TileEntitySign var1) {
  	}
  
@@ -9523,7 +9745,7 @@
  	public void interactWithEntity(Entity var1) {
  	}
  
-@@ -250,5 +415,40 @@
+@@ -250,5 +416,40 @@
  	public void swingItem() {
  		this.swingProgressInt = -1;
  		this.isSwinging = true;
@@ -11144,7 +11366,15 @@
  	private double oldPosX;
  	private double oldBasePos;
  	private double oldPosY;
-@@ -90,5 +93,25 @@
+@@ -72,7 +75,6 @@
+ 	}
+ 
+ 	protected void joinEntityItemWithWorld(EntityItem var1) {
+-		System.out.println("Dropping?");
+ 		Packet21PickupSpawn var2 = new Packet21PickupSpawn(var1);
+ 		this.sendQueue.addToSendQueue(var2);
+ 		var1.posX = (double)var2.xPosition / 32.0D;
+@@ -90,5 +92,25 @@
  	public void swingItem() {
  		super.swingItem();
  		this.sendQueue.addToSendQueue(new Packet18ArmAnimation(this, 1));
@@ -11555,7 +11785,7 @@
  		boolean var2 = this.mcServer.worldMngr.disableSpawnProtection = this.mcServer.configManager.isOp(this.playerEntity.username);
  		int var3 = var1.xPosition;
  		int var4 = var1.yPosition;
-@@ -194,7 +205,7 @@
+@@ -194,11 +205,35 @@
  		}
  
  		if(var8 > 16 || var2) {
@@ -11564,7 +11794,35 @@
  			this.playerEntity.theItemInWorldManager.activeBlockOrUseItem(this.playerEntity, this.mcServer.worldMngr, var9, var3, var4, var5, var6);
  		}
  
-@@ -234,7 +245,7 @@
+ 		this.playerEntity.playerNetServerHandler.sendPacket(new Packet53BlockChange(var3, var4, var5, this.mcServer.worldMngr));
++		if(var6 == 0) {
++			--var4;
++		}
++
++		if(var6 == 1) {
++			++var4;
++		}
++
++		if(var6 == 2) {
++			--var5;
++		}
++
++		if(var6 == 3) {
++			++var5;
++		}
++
++		if(var6 == 4) {
++			--var3;
++		}
++
++		if(var6 == 5) {
++			++var3;
++		}
++		this.playerEntity.playerNetServerHandler.sendPacket(new Packet53BlockChange(var3, var4, var5, this.mcServer.worldMngr));
+ 		this.mcServer.worldMngr.disableSpawnProtection = false;
+ 	}
+ 
+@@ -234,7 +269,7 @@
  		double var2 = (double)var1.xPosition / 32.0D;
  		double var4 = (double)var1.yPosition / 32.0D;
  		double var6 = (double)var1.zPosition / 32.0D;
@@ -11573,7 +11831,7 @@
  		var8.motionX = (double)var1.rotation / 128.0D;
  		var8.motionY = (double)var1.pitch / 128.0D;
  		var8.motionZ = (double)var1.roll / 128.0D;
-@@ -378,6 +389,24 @@
+@@ -378,6 +413,24 @@
  			var2.readFromNBT(var1.tileEntityNBT);
  			var2.onInventoryChanged();
  		}
@@ -12356,7 +12614,15 @@
  	public void drawScreen(int var1, int var2, float var3) {
  		for(int var4 = 0; var4 < this.controlList.size(); ++var4) {
  			GuiButton var5 = (GuiButton)this.controlList.get(var4);
-@@ -141,19 +147,25 @@
+@@ -78,6 +84,7 @@
+ 		this.fontRenderer = var1.fontRenderer;
+ 		this.width = var2;
+ 		this.height = var3;
++		this.controlList.clear();
+ 		this.initGui();
+ 	}
+ 
+@@ -141,19 +148,25 @@
  
  	}
  
@@ -13420,6 +13686,92 @@
 +	}
 +	//#endregion Generate Methods
 +}
+--- net/minecraft/src/ModelBiped.java
++++ net/minecraft/src/ModelBiped.java
+@@ -17,36 +17,43 @@
+ 	}
+ 
+ 	public ModelBiped(float var1) {
+-		this(var1, 0.0F);
++		this(var1, false);
+ 	}
+ 
+-	public ModelBiped(float var1, float var2) {
++	public ModelBiped(float var1, boolean var2) {
+ 		this.heldItemLeft = false;
+ 		this.heldItemRight = false;
+ 		this.isSneak = false;
+ 		this.bipedHead = new ModelRenderer(0, 0);
++		this.bipedHead.bigTex = var2;
+ 		this.bipedHead.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, var1);
+-		this.bipedHead.setRotationPoint(0.0F, 0.0F + var2, 0.0F);
++		this.bipedHead.setRotationPoint(0.0F, 0.0F, 0.0F);
+ 		this.bipedHeadwear = new ModelRenderer(32, 0);
++		this.bipedHeadwear.bigTex = var2;
+ 		this.bipedHeadwear.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, var1 + 0.5F);
+-		this.bipedHeadwear.setRotationPoint(0.0F, 0.0F + var2, 0.0F);
++		this.bipedHeadwear.setRotationPoint(0.0F, 0.0F, 0.0F);
+ 		this.bipedBody = new ModelRenderer(16, 16);
++		this.bipedBody.bigTex = var2;
+ 		this.bipedBody.addBox(-4.0F, 0.0F, -2.0F, 8, 12, 4, var1);
+-		this.bipedBody.setRotationPoint(0.0F, 0.0F + var2, 0.0F);
++		this.bipedBody.setRotationPoint(0.0F, 0.0F, 0.0F);
+ 		this.bipedRightArm = new ModelRenderer(40, 16);
++		this.bipedRightArm.bigTex = var2;
+ 		this.bipedRightArm.addBox(-3.0F, -2.0F, -2.0F, 4, 12, 4, var1);
+-		this.bipedRightArm.setRotationPoint(-5.0F, 2.0F + var2, 0.0F);
++		this.bipedRightArm.setRotationPoint(-5.0F, 2.0F, 0.0F);
+ 		this.bipedLeftArm = new ModelRenderer(40, 16);
++		this.bipedLeftArm.bigTex = var2;
+ 		this.bipedLeftArm.mirror = true;
+ 		this.bipedLeftArm.addBox(-1.0F, -2.0F, -2.0F, 4, 12, 4, var1);
+-		this.bipedLeftArm.setRotationPoint(5.0F, 2.0F + var2, 0.0F);
++		this.bipedLeftArm.setRotationPoint(5.0F, 2.0F, 0.0F);
+ 		this.bipedRightLeg = new ModelRenderer(0, 16);
++		this.bipedRightLeg.bigTex = var2;
+ 		this.bipedRightLeg.addBox(-2.0F, 0.0F, -2.0F, 4, 12, 4, var1);
+-		this.bipedRightLeg.setRotationPoint(-2.0F, 12.0F + var2, 0.0F);
++		this.bipedRightLeg.setRotationPoint(-2.0F, 12.0F, 0.0F);
+ 		this.bipedLeftLeg = new ModelRenderer(0, 16);
++		this.bipedLeftLeg.bigTex = var2;
+ 		this.bipedLeftLeg.mirror = true;
+ 		this.bipedLeftLeg.addBox(-2.0F, 0.0F, -2.0F, 4, 12, 4, var1);
+-		this.bipedLeftLeg.setRotationPoint(2.0F, 12.0F + var2, 0.0F);
++		this.bipedLeftLeg.setRotationPoint(2.0F, 12.0F, 0.0F);
+ 	}
+ 
+ 	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
+@@ -137,5 +144,30 @@
+ 		this.bipedLeftArm.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
+ 		this.bipedRightArm.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
+ 		this.bipedLeftArm.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
++	}
++
++	public void showHead(boolean var1) {
++		this.bipedHead.showModel = var1;
++		this.bipedHeadwear.showModel = var1;
++	}
++
++	public void showBody(boolean var1) {
++		this.bipedBody.showModel = var1;
++	}
++
++	public void showRightArm(boolean var1) {
++		this.bipedRightArm.showModel = var1;
++	}
++
++	public void showLeftArm(boolean var1) {
++		this.bipedLeftArm.showModel = var1;
++	}
++
++	public void showRightLeg(boolean var1) {
++		this.bipedRightLeg.showModel = var1;
++	}
++
++	public void showLeftLeg(boolean var1) {
++		this.bipedLeftLeg.showModel = var1;
+ 	}
+ }
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/GuiSliderGeneric.java
 @@ -1,0 +1,132 @@
@@ -14424,6 +14776,26 @@
 +		this.itemMetadata = var1.itemMetadata;
  	}
  }
+--- net/minecraft/src/EntitySlime.java
++++ net/minecraft/src/EntitySlime.java
+@@ -84,7 +84,7 @@
+ 
+ 	}
+ 
+-	public void setEntityDead() {
++	public void onDeath(Entity var0) {
+ 		if(this.size > 1 && this.health == 0) {
+ 			for(int var1 = 0; var1 < 4; ++var1) {
+ 				float var2 = ((float)(var1 % 2) - 0.5F) * (float)this.size / 4.0F;
+@@ -96,7 +96,7 @@
+ 			}
+ 		}
+ 
+-		super.setEntityDead();
++		super.onDeath(var0);
+ 	}
+ 
+ 	public void onCollideWithPlayer(EntityPlayer var1) {
 --- net/minecraft/src/ItemRenderer.java
 +++ net/minecraft/src/ItemRenderer.java
 @@ -1,6 +1,7 @@
@@ -14453,6 +14825,15 @@
  		GL11.glColor4f(var4, var4, var4, 1.0F);
  		float var5;
  		float var6;
+@@ -183,7 +185,7 @@
+ 			RenderPlayer var10 = (RenderPlayer)var9;
+ 			var8 = 1.0F;
+ 			GL11.glScalef(var8, var8, var8);
+-			var10.drawFirstPersonHand();
++			var10.drawFirstPersonHand(var3);
+ 			GL11.glPopMatrix();
+ 		}
+ 
 @@ -232,7 +234,7 @@
  		float var7 = -1.0F;
  		float var8 = 1.0F;
@@ -15494,6 +15875,59 @@
  		GuiStatsComponent.update(this.component);
  	}
  }
+--- net/minecraft/src/TexturedQuad.java
++++ net/minecraft/src/TexturedQuad.java
+@@ -6,20 +6,24 @@
+ 	private boolean invertNormal;
+ 
+ 	public TexturedQuad(PositionTexureVertex[] var1) {
+-		this.nVertices = 0;
+ 		this.invertNormal = false;
+ 		this.vertexPositions = var1;
+ 		this.nVertices = var1.length;
+ 	}
+ 
+ 	public TexturedQuad(PositionTexureVertex[] var1, int var2, int var3, int var4, int var5) {
++		this(var1, var2, var3, var4, var5, false);
++	}
++
++	public TexturedQuad(PositionTexureVertex[] var1, int var2, int var3, int var4, int var5, boolean bigTex) {
+ 		this(var1);
+ 		float var6 = 0.0015625F;
+-		float var7 = 0.003125F;
+-		var1[0] = var1[0].setTexturePosition((float)var4 / 64.0F - var6, (float)var3 / 32.0F + var7);
+-		var1[1] = var1[1].setTexturePosition((float)var2 / 64.0F + var6, (float)var3 / 32.0F + var7);
+-		var1[2] = var1[2].setTexturePosition((float)var2 / 64.0F + var6, (float)var5 / 32.0F - var7);
+-		var1[3] = var1[3].setTexturePosition((float)var4 / 64.0F - var6, (float)var5 / 32.0F - var7);
++		float var7 = bigTex ? 0.0015625F : 0.003125F;
++		float var8 = bigTex ? 64.0F : 32.0F;
++		var1[0] = var1[0].setTexturePosition((float)var4 / 64.0F - var6, (float)var3 / var8 + var7);
++		var1[1] = var1[1].setTexturePosition((float)var2 / 64.0F + var6, (float)var3 / var8 + var7);
++		var1[2] = var1[2].setTexturePosition((float)var2 / 64.0F + var6, (float)var5 / var8 - var7);
++		var1[3] = var1[3].setTexturePosition((float)var4 / 64.0F - var6, (float)var5 / var8 - var7);
+ 	}
+ 
+ 	public void flipFace() {
+--- net/minecraft/src/LoadingScreenRenderer.java
++++ net/minecraft/src/LoadingScreenRenderer.java
+@@ -32,7 +32,7 @@
+ 			}
+ 		} else {
+ 			this.currentlyDisplayedText = var1;
+-			ScaledResolution var2 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++			ScaledResolution var2 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
+ 			int var3 = var2.getScaledWidth();
+ 			int var4 = var2.getScaledHeight();
+ 			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+@@ -67,7 +67,7 @@
+ 			long var2 = System.currentTimeMillis();
+ 			if(var2 - this.systemTime >= 20L) {
+ 				this.systemTime = var2;
+-				ScaledResolution var4 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight);
++				ScaledResolution var4 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.mc.options.guiScale);
+ 				int var5 = var4.getScaledWidth();
+ 				int var6 = var4.getScaledHeight();
+ 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 --- net/minecraft/src/WorldManager.java
 +++ net/minecraft/src/WorldManager.java
 @@ -33,7 +33,7 @@
@@ -16324,7 +16758,7 @@
  }
 --- net/minecraft/src/GameSettings.java
 +++ net/minecraft/src/GameSettings.java
-@@ -7,35 +7,53 @@
+@@ -7,35 +7,55 @@
  import java.io.PrintWriter;
  import net.minecraft.client.Minecraft;
  import org.lwjgl.input.Keyboard;
@@ -16333,6 +16767,7 @@
  public class GameSettings {
  	private static final String[] RENDER_DISTANCES = new String[]{"FAR", "NORMAL", "SHORT", "TINY"};
  	private static final String[] DIFFICULTY_LEVELS = new String[]{"Peaceful", "Easy", "Normal", "Hard"};
++	private static final String[] GUI_SCALES = new String[]{"Auto", "Small", "Normal", "Large"};
  	public float musicVolume = 1.0F;
  	public float soundVolume = 1.0F;
 +	public float musicDelay = 1.0F;
@@ -16361,6 +16796,7 @@
 +	public boolean creativeDebug = false;
 +	public boolean darkMode = false;
 +	public boolean betacraftProxy = true;
++	public int guiScale = 0;
 +	public KeyBinding keyBindForward = new KeyBinding("Forward", Keyboard.KEY_W);
 +	public KeyBinding keyBindLeft = new KeyBinding("Left", Keyboard.KEY_A);
 +	public KeyBinding keyBindBack = new KeyBinding("Back", Keyboard.KEY_S);
@@ -16383,14 +16819,14 @@
  	protected Minecraft mc;
  	private File optionsFile;
 -	public int numberOfOptions = 10;
-+	public int numberOfOptions = 17;
++	public int numberOfOptions = 18;
  	public int difficulty = 2;
  	public boolean thirdPersonView = false;
 +	public boolean debugMenu = false;
  
  	public GameSettings(Minecraft var1, File var2) {
  		this.mc = var1;
-@@ -46,6 +64,10 @@
+@@ -46,6 +66,10 @@
  	public GameSettings() {
  	}
  
@@ -16401,7 +16837,7 @@
  	public String getKeyBindingDescription(int var1) {
  		return this.keyBindings[var1].keyDescription + ": " + Keyboard.getKeyName(this.keyBindings[var1].keyCode);
  	}
-@@ -56,131 +78,252 @@
+@@ -56,131 +80,260 @@
  	}
  
  	public void setOptionFloatValue(int var1, float var2) {
@@ -16495,6 +16931,16 @@
 +			this.betacraftProxy = !this.betacraftProxy;
 +		}
 +
++		if (var1 == 17) {
++			this.guiScale = (this.guiScale + var2) % GUI_SCALES.length;
++			if (this.mc.currentScreen != null) {
++				ScaledResolution scaledResolution2 = new ScaledResolution(this.mc.displayWidth, this.mc.displayHeight, this.guiScale);
++				int var3 = scaledResolution2.getScaledWidth();
++				int var4 = scaledResolution2.getScaledHeight();
++				this.mc.currentScreen.setWorldAndResolution(this.mc, var3, var4);
++			}
++		}
++
  		this.saveOptions();
  	}
  
@@ -16560,6 +17006,8 @@
 +				return "FOV Effects: " + (this.fovEffects > 0.0F ? (int) (this.fovEffects * 100.0F) + "%" : "OFF");
 +			case 16:
 +				return "Betacraft Proxy: " + (this.betacraftProxy ? "ON" : "OFF");
++			case 17:
++				return "Gui Scale: " + GUI_SCALES[this.guiScale];
 +			default:
 +				return "NULL";
 +		}
@@ -16654,10 +17102,6 @@
 +					this.darkMode = var3[1].equals("true");
 +				}
 +
-+				if (var3[0].equals("creativeDebug")) {
-+					this.creativeDebug = var3[1].equals("true");
-+				}
-+
 +				if (var3[0].equals("fov")) {
 +					this.fov = this.parseFloat(var3[1]);
 +				}
@@ -16670,6 +17114,10 @@
 +					this.betacraftProxy = var3[1].equals("true");
 +				}
 +
++				if (var3[0].equals("guiScale")) {
++					this.guiScale = Integer.parseInt(var3[1]);
++				}
++
 +				for (int var4 = 0; var4 < this.keyBindings.length; ++var4) {
 +					if (var3[0].equals("key_" + this.keyBindings[var4].keyDescription)) {
  						this.keyBindings[var4].keyCode = Integer.parseInt(var3[1]);
@@ -16679,17 +17127,13 @@
 +
 +			var1.close();
 +
-+			if (this.creativeDebug) {
-+				this.creativeDebug = false;
-+				this.saveOptions();
-+				throw new RuntimeException("What are you doing!? Creative debug is for BlueStaggo only!");
-+			}
++			this.creativeDebug = Minecraft.developmentVersion;
 +		} catch (RuntimeException e) {
 +			throw e;
  		} catch (Exception var5) {
  			System.out.println("Failed to load options");
  			var5.printStackTrace();
-@@ -194,27 +337,36 @@
+@@ -194,27 +347,34 @@
  
  	public void saveOptions() {
  		try {
@@ -16704,12 +17148,6 @@
 -			var1.println("limitFramerate:" + this.limitFramerate);
 -			var1.println("difficulty:" + this.difficulty);
 -			var1.println("fancyGraphics:" + this.fancyGraphics);
--
--			for(int var2 = 0; var2 < this.keyBindings.length; ++var2) {
--				var1.println("key_" + this.keyBindings[var2].keyDescription + ":" + this.keyBindings[var2].keyCode);
--			}
--
--			var1.close();
 +			PrintWriter printWriter1 = new PrintWriter(new FileWriter(this.optionsFile));
 +			printWriter1.println("music:" + Math.floor(this.musicVolume * 100.0F) / 100.0F);
 +			printWriter1.println("sound:" + Math.floor(this.soundVolume * 100.0F) / 100.0F);
@@ -16728,14 +17166,15 @@
 +			printWriter1.println("fov:" + Math.floor(this.fov));
 +			printWriter1.println("fovEffects:" + Math.floor(this.fovEffects * 100.0F) / 100.0F);
 +			printWriter1.println("betacraftProxy:" + this.betacraftProxy);
-+			if (this.creativeDebug) {
-+				printWriter1.println("creativeDebug:true");
-+			}
-+
++			printWriter1.println("guiScale:" + this.guiScale);
+ 
+-			for(int var2 = 0; var2 < this.keyBindings.length; ++var2) {
+-				var1.println("key_" + this.keyBindings[var2].keyDescription + ":" + this.keyBindings[var2].keyCode);
 +			for (int var2 = 0; var2 < this.keyBindings.length; ++var2) {
 +				printWriter1.println("key_" + this.keyBindings[var2].keyDescription + ":" + this.keyBindings[var2].keyCode);
-+			}
-+
+ 			}
+ 
+-			var1.close();
 +			printWriter1.close();
  		} catch (Exception var3) {
  			System.out.println("Failed to save options");
