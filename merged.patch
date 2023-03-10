@@ -3297,18 +3297,18 @@
 -		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
 -		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
 +	public void drawFirstPersonHand(EntityPlayer var1) {
-+		ModelBiped model = var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
-+
++		ModelBiped model = var1 != null && var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
 +		model.swingProgress = 0.0F;
 +		model.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
 +		model.bipedRightArm.render(1.0F / 16.0F);
-+		for (int i = 0; i < this.maxRenderPasses(); i++) {
-+			if (this.setArmorModel(var1, i)) {
-+				this.renderPassModel.swingProgress = 0.0F;
-+				this.renderPassModel.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
-+				((ModelBiped)this.renderPassModel).bipedRightArm.render(1.0F / 16.0F);
++		if (var1 != null)
++			for (int i = 0; i < this.maxRenderPasses(); i++) {
++				if (this.setArmorModel(var1, i)) {
++					this.renderPassModel.swingProgress = 0.0F;
++					this.renderPassModel.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
++					((ModelBiped)this.renderPassModel).bipedRightArm.render(1.0F / 16.0F);
++				}
 +			}
-+		}
  	}
  
  	protected void preRenderCallback(EntityLiving var1, float var2) {
