@@ -3236,7 +3236,7 @@
 +				var6.heldItemRight = this.modelBipedMain.heldItemRight;
 +				var6.isSneak = this.modelBipedMain.isSneak;
 +				var6.swingProgress = this.modelBipedMain.swingProgress;
-+				var6.isRiding = true;
++				var6.isRiding = this.modelBipedMain.isRiding;
  				this.setRenderPassModel(var6);
  				return true;
 +			} else if(var4 instanceof ItemCharm && var2 == 4 && ((ItemCharm) var4).textureName != null) {
@@ -3253,7 +3253,7 @@
 +				modelCharm.heldItemRight = this.modelBipedMain.heldItemRight;
 +				modelCharm.isSneak = this.modelBipedMain.isSneak;
 +				modelCharm.swingProgress = this.modelBipedMain.swingProgress;
-+				modelCharm.isRiding = true;
++				modelCharm.isRiding = this.modelBipedMain.isRiding;
 +				this.setRenderPassModel(modelCharm);
 +				return true;
  			}
