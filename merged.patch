@@ -3259,12 +3259,11 @@
  			}
  		}
  
-@@ -36,12 +67,14 @@
+@@ -36,12 +67,13 @@
  	}
  
  	public void renderPlayer(EntityPlayer var1, double var2, double var4, double var6, float var8, float var9) {
 +		this.mainModel = var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
-+//		this.mainModel = this.modelBipedMain;
  		ItemStack var10 = var1.inventory.getCurrentItem();
 -		this.modelArmorChestplate.heldItemRight = this.modelArmor.heldItemRight = this.modelBipedMain.heldItemRight = var10 != null;
 -		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = var1.isSneaking();
@@ -3278,7 +3277,7 @@
  		FontRenderer var11 = this.getFontRendererFromRenderManager();
  		float var12 = 1.6F;
  		float var13 = (float)(1.0D / 60.0D) * var12;
-@@ -84,7 +117,8 @@
+@@ -84,14 +116,15 @@
  		ItemStack var3 = var1.inventory.getCurrentItem();
  		if(var3 != null) {
  			GL11.glPushMatrix();
@@ -3288,7 +3287,28 @@
  			GL11.glTranslatef(-(1.0F / 16.0F), 7.0F / 16.0F, 1.0F / 16.0F);
  			float var4;
  			if(var3.itemID < 256 && RenderBlocks.renderItemIn3d(Block.blocksList[var3.itemID].getRenderType())) {
-@@ -144,5 +178,9 @@
+ 				var4 = 0.5F;
+ 				GL11.glTranslatef(0.0F, 3.0F / 16.0F, -(5.0F / 16.0F));
+ 				var4 *= 12.0F / 16.0F;
+-				GL11.glRotatef(20.0F, 1.0F, 0.0F, 0.0F);
++				GL11.glRotatef(20.0F, 1.0F, 0.0F, 0.0F) ;
+ 				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+ 				GL11.glScalef(var4, -var4, var4);
+ 			} else if(Item.itemsList[var3.itemID].isFull3D()) {
+@@ -121,9 +154,9 @@
+ 	}
+ 
+ 	public void drawFirstPersonHand() {
+-		this.modelBipedMain.swingProgress = 0.0F;
+-		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
+-		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
++		this.mainModel.swingProgress = 0.0F;
++		this.mainModel.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
++		((ModelBiped)this.mainModel).bipedRightArm.render(1.0F / 16.0F);
+ 	}
+ 
+ 	protected void preRenderCallback(EntityLiving var1, float var2) {
+@@ -144,5 +177,9 @@
  
  	public void doRender(Entity var1, double var2, double var4, double var6, float var8, float var9) {
  		this.renderPlayer((EntityPlayer)var1, var2, var4, var6, var8, var9);
