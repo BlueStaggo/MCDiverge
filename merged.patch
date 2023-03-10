@@ -3288,31 +3288,7 @@
  			GL11.glTranslatef(-(1.0F / 16.0F), 7.0F / 16.0F, 1.0F / 16.0F);
  			float var4;
  			if(var3.itemID < 256 && RenderBlocks.renderItemIn3d(Block.blocksList[var3.itemID].getRenderType())) {
-@@ -120,10 +154,19 @@
- 		GL11.glScalef(var3, var3, var3);
- 	}
- 
--	public void drawFirstPersonHand() {
--		this.modelBipedMain.swingProgress = 0.0F;
--		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
--		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
-+	public void drawFirstPersonHand(EntityPlayer var1) {
-+		ModelBiped model = var1 != null && var1.blueStaggo ? this.modelStaggo : this.modelBipedMain;
-+		model.swingProgress = 0.0F;
-+		model.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
-+		model.bipedRightArm.render(1.0F / 16.0F);
-+		if (var1 != null)
-+			for (int i = 0; i < this.maxRenderPasses(); i++) {
-+				if (this.setArmorModel(var1, i)) {
-+					this.renderPassModel.swingProgress = 0.0F;
-+					this.renderPassModel.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
-+					((ModelBiped)this.renderPassModel).bipedRightArm.render(1.0F / 16.0F);
-+				}
-+			}
- 	}
- 
- 	protected void preRenderCallback(EntityLiving var1, float var2) {
-@@ -144,5 +187,9 @@
+@@ -144,5 +178,9 @@
  
  	public void doRender(Entity var1, double var2, double var4, double var6, float var8, float var9) {
  		this.renderPlayer((EntityPlayer)var1, var2, var4, var6, var8, var9);
@@ -14825,15 +14801,6 @@
  		GL11.glColor4f(var4, var4, var4, 1.0F);
  		float var5;
  		float var6;
-@@ -183,7 +185,7 @@
- 			RenderPlayer var10 = (RenderPlayer)var9;
- 			var8 = 1.0F;
- 			GL11.glScalef(var8, var8, var8);
--			var10.drawFirstPersonHand();
-+			var10.drawFirstPersonHand(var3);
- 			GL11.glPopMatrix();
- 		}
- 
 @@ -232,7 +234,7 @@
  		float var7 = -1.0F;
  		float var8 = 1.0F;
