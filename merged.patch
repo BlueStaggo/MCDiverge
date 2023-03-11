@@ -6922,38 +6922,6 @@
  	}
  
  	public void removeChunkBlockTileEntity(int var1, int var2, int var3) {
-@@ -539,6 +560,15 @@
- 			}
- 		}
- 
-+		for(var9 = var2; var9 < var5; ++var9) {
-+			for(var10 = var4; var10 < var7; ++var10) {
-+				var11 = var10 << 4 | var9;
-+				var12 = 1;
-+				System.arraycopy(this.biomes, var11, var1, var8, var12);
-+				var8 += var12;
-+			}
-+		}
-+
- 		return var8;
- 	}
- 
-@@ -581,6 +611,15 @@
- 				var11 = (var9 << 11 | var10 << 7 | var3) >> 1;
- 				var12 = (var6 - var3) / 2;
- 				System.arraycopy(var1, var8, this.skylightMap.data, var11, var12);
-+				var8 += var12;
-+			}
-+		}
-+
-+		for(var9 = var2; var9 < var5; ++var9) {
-+			for(var10 = var4; var10 < var7; ++var10) {
-+				var11 = var10 << 4 | var9;
-+				var12 = 1;
-+				System.arraycopy(var1, var8, this.biomes, var11, var12);
- 				var8 += var12;
- 			}
- 		}
 --- net/minecraft/src/RecipesArmor.java
 +++ net/minecraft/src/RecipesArmor.java
 @@ -4,13 +4,13 @@
@@ -15993,26 +15961,6 @@
 -
 -	}
 -}
---- net/minecraft/src/Packet51MapChunk.java
-+++ net/minecraft/src/Packet51MapChunk.java
-@@ -31,7 +31,7 @@
- 		int var2 = var1.readInt();
- 		byte[] var3 = new byte[var2];
- 		var1.readFully(var3);
--		this.chunkData = new byte[this.xSize * this.ySize * this.zSize * 5 / 2];
-+		this.chunkData = new byte[this.xSize * this.ySize * this.zSize * 7 / 2 + this.xSize * this.zSize];
- 		Inflater var4 = new Inflater();
- 		var4.setInput(var3);
- 
-@@ -78,7 +78,7 @@
- 		try {
- 			var9.setInput(var8);
- 			var9.finish();
--			this.chunkData = new byte[var4 * var5 * var6 * 5 / 2];
-+			this.chunkData = new byte[var4 * var5 * var6 * 7 / 2 + var4 * var6];
- 			this.tempLength = var9.deflate(this.chunkData);
- 		} finally {
- 			var9.end();
 --- net/minecraft/src/GuiGameOver.java
 +++ net/minecraft/src/GuiGameOver.java
 @@ -10,7 +10,6 @@
