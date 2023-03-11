@@ -8377,7 +8377,7 @@
  
  public abstract class Minecraft implements Runnable {
 +	public static final String version = "Minecraft Diverge v0.2.2_01";
-+	public static final boolean developmentVersion = true;
++	public static final boolean developmentVersion = false;
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
