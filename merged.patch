@@ -3331,6 +3331,23 @@
  	static {
  		for(int var0 = 0; var0 < 65536; ++var0) {
  			SIN_TABLE[var0] = (float)Math.sin((double)var0 * Math.PI * 2.0D / 65536.0D);
+--- net/minecraft/src/ItemPainting.java
++++ net/minecraft/src/ItemPainting.java
+@@ -3,10 +3,13 @@
+ public class ItemPainting extends Item {
+ 	public ItemPainting(int var1) {
+ 		super(var1);
+-		this.maxDamage = 64;
+ 	}
+ 
+ 	public boolean onItemUse(ItemStack var1, EntityPlayer var2, World var3, int var4, int var5, int var6, int var7) {
++		if (var3.multiplayerWorld) {
++			return false;
++		}
++
+ 		if(var7 == 0) {
+ 			return false;
+ 		} else if(var7 == 1) {
 --- net/minecraft/src/EntityCow.java
 +++ net/minecraft/src/EntityCow.java
 @@ -33,8 +33,8 @@
@@ -5252,7 +5269,7 @@
  		this.caveGenerator.generate(this, this.worldObj, var1, var2, var3);
  		var4.generateSkylightMap();
  		return var4;
-@@ -299,160 +317,63 @@
+@@ -299,163 +317,63 @@
  		long var6 = this.rand.nextLong() / 2L * 2L + 1L;
  		long var8 = this.rand.nextLong() / 2L * 2L + 1L;
  		this.rand.setSeed((long)var2 * var6 + (long)var3 * var8 ^ this.worldObj.randomSeed);
@@ -5448,17 +5465,6 @@
 +			(new WorldGenLiquids(Block.lavaMoving.blockID)).generate(this.worldObj, this.rand, x, y, z);
 +		}
 +
-+		/*if (this.worldObj.snowCovered) {
-+			for(int x = var4 + 8; x < var4 + 24; ++x) {
-+				for(int z = var5 + 8; z < var5 + 24; ++z) {
-+					int y = this.worldObj.getTopSolidOrLiquidBlock(x, z);
-+					if(y > 0 && y < 128 && this.worldObj.getBlockId(x, y, z) == 0 && this.worldObj.getBlockMaterial(x, y - 1, z).getIsSolid() && this.worldObj.getBlockMaterial(x, y - 1, z) != Material.ice) {
-+						this.worldObj.setBlockWithNotify(x, y, z, Block.snow.blockID);
-+					}
-+				}
-+			}
-+		}*/
-+
 +		for(int x = var4 + 8; x < var4 + 24; ++x) {
 +			for(int z = var5 + 8; z < var5 + 24; ++z) {
 +				int y = this.worldObj.getTopSolidOrLiquidBlock(x, z);
@@ -5470,6 +5476,17 @@
  				}
  			}
  		}
++
++		for(int x = var4 + 8; x < var4 + 24; ++x)
++			for(int z = var5 + 8; z < var5 + 24; ++z)
++				for (int y = 0; y < 8; y++) {
++					if (!this.worldObj.isBlockNormalCube(x, y, z)) {
++						this.worldObj.setBlockWithNotify(x, y, z, Block.lavaStill.blockID);
++					}
++				}
+ 
+ 		BlockSand.fallInstantly = false;
+ 	}
 --- net/minecraft/src/EntitySnowball.java
 +++ net/minecraft/src/EntitySnowball.java
 @@ -12,6 +12,10 @@
@@ -6124,16 +6141,18 @@
  							int var34 = MathHelper.floor_double(var29);
 --- net/minecraft/src/BlockChest.java
 +++ net/minecraft/src/BlockChest.java
-@@ -127,7 +127,7 @@
+@@ -127,7 +127,9 @@
  	}
  
  	public void onBlockRemoval(World var1, int var2, int var3, int var4) {
 -		TileEntityChest var5 = (TileEntityChest)var1.getBlockTileEntity(var2, var3, var4);
 +		TileEntityChest var5 = (TileEntityChest) var1.getBlockTileEntity(var2, var3, var4);
++
++		if (!var1.canDoClientAction()) return;
  
  		for(int var6 = 0; var6 < var5.getSizeInventory(); ++var6) {
  			ItemStack var7 = var5.getStackInSlot(var6);
-@@ -143,7 +143,7 @@
+@@ -143,7 +145,7 @@
  					}
  
  					var7.stackSize -= var11;
@@ -6142,7 +6161,7 @@
  					float var13 = 0.05F;
  					var12.motionX = (double)((float)this.random.nextGaussian() * var13);
  					var12.motionY = (double)((float)this.random.nextGaussian() * var13 + 0.2F);
-@@ -157,7 +157,7 @@
+@@ -157,7 +159,7 @@
  	}
  
  	public boolean blockActivated(World var1, int var2, int var3, int var4, EntityPlayer var5) {
@@ -6151,7 +6170,7 @@
  		if(var1.isBlockNormalCube(var2, var3 + 1, var4)) {
  			return true;
  		} else if(var1.getBlockId(var2 - 1, var3, var4) == this.blockID && var1.isBlockNormalCube(var2 - 1, var3 + 1, var4)) {
-@@ -170,19 +170,19 @@
+@@ -170,19 +172,19 @@
  			return true;
  		} else {
  			if(var1.getBlockId(var2 - 1, var3, var4) == this.blockID) {
@@ -6465,7 +6484,11 @@
  				}
  			} else {
  				this.curBlockDamage = 0.0F;
-@@ -119,6 +140,25 @@
+@@ -116,9 +137,29 @@
+ 	}
+ 
+ 	public void onUpdate() {
++		this.mc.sndManager.fadeOutTitleMusic();
  		this.prevBlockDamage = this.curBlockDamage;
  		this.monsterSpawner.onUpdate(this.mc.theWorld);
  		this.animalSpawner.onUpdate(this.mc.theWorld);
@@ -8353,8 +8376,8 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2.2";
-+	public static final boolean developmentVersion = false;
++	public static final String version = "Minecraft Diverge v0.2.2_01";
++	public static final boolean developmentVersion = true;
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
@@ -8896,7 +8919,7 @@
  				this.theWorld.tick();
  			}
  
-@@ -980,10 +951,15 @@
+@@ -980,10 +951,14 @@
  		return this.theWorld != null && this.theWorld.multiplayerWorld;
  	}
  
@@ -8906,7 +8929,6 @@
 +	}
 +
 +	public void startWorld(String worldName, CreateWorldInfo info) {
-+		this.sndManager.fadeOutTitleMusic();
  		this.changeWorld1((World)null);
  		System.gc();
 -		World var2 = new World(new File(getMinecraftDir(), "saves"), var1);
@@ -8914,7 +8936,7 @@
  		if(var2.isNewWorld) {
  			this.changeWorld(var2, "Generating level");
  		} else {
-@@ -992,54 +968,56 @@
+@@ -992,54 +967,55 @@
  
  	}
  
@@ -8927,7 +8949,6 @@
 -	public void changeWorld(World var1, String var2) {
 -		this.sndManager.playStreaming((String)null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
 +	public void changeWorld(World world, String title) {
-+		this.sndManager.fadeOutTitleMusic();
 +		this.sndManager.playStreaming(null, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
  		if(this.theWorld != null) {
  			this.theWorld.saveWorldIndirectly(this.loadingScreen);
@@ -8990,7 +9011,7 @@
  			this.thePlayer = null;
  		}
  
-@@ -1047,15 +1025,15 @@
+@@ -1047,15 +1023,15 @@
  		this.systemTime = 0L;
  	}
  
@@ -9011,7 +9032,7 @@
  			int var6 = this.theWorld.spawnX;
  			int var7 = this.theWorld.spawnZ;
  			if(this.thePlayer != null) {
-@@ -1063,7 +1041,7 @@
+@@ -1063,7 +1039,7 @@
  				var7 = (int)this.thePlayer.posZ;
  			}
  
@@ -9020,7 +9041,7 @@
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
  				this.theWorld.getBlockId(var6 + var5, 64, var7 + var8);
  
-@@ -1077,20 +1055,26 @@
+@@ -1077,20 +1053,26 @@
  		this.theWorld.dropOldChunks();
  	}
  
@@ -9057,7 +9078,7 @@
  		}
  
  	}
-@@ -1099,6 +1083,12 @@
+@@ -1099,6 +1081,12 @@
  		return this.glCapabilities;
  	}
  
@@ -9070,7 +9091,7 @@
  	public String debugInfoRenders() {
  		return this.renderGlobal.getDebugInfoRenders();
  	}
-@@ -1111,6 +1101,15 @@
+@@ -1111,6 +1099,15 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
  	}
  
@@ -9086,7 +9107,7 @@
  	public void respawn() {
  		this.theWorld.setSpawnLocation();
  		if(this.thePlayer != null) {
-@@ -1126,51 +1125,78 @@
+@@ -1126,51 +1123,78 @@
  		this.preloadWorld("Respawning");
  	}
  
@@ -11506,8 +11527,11 @@
  		}
  
  		return var7;
-@@ -129,6 +136,26 @@
+@@ -127,8 +134,29 @@
+ 	}
+ 
  	public void onUpdate() {
++		this.mc.sndManager.fadeOutTitleMusic();
  		this.syncCurrentPlayItem();
  		this.prevBlockDamageMP = this.curBlockDamageMP;
 +
@@ -11533,7 +11557,7 @@
  	}
  
  	private void syncCurrentPlayItem() {
-@@ -147,11 +174,24 @@
+@@ -147,11 +175,24 @@
  
  	public boolean onPlayerRightClick(EntityPlayer var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7) {
  		this.syncCurrentPlayItem();
@@ -16877,7 +16901,7 @@
 +		threadCommandReader1.start();
  		ConsoleLogManager.init();
 -		logger.info("Starting minecraft server version 0.2.1");
-+		logger.info("Starting Minecraft Diverge server version 0.2.1");
++		logger.info("Starting Minecraft Diverge server version 0.2.2_01");
  		if(Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
  			logger.warning("**** NOT ENOUGH RAM!");
  			logger.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
