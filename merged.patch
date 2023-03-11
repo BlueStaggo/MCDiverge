@@ -207,7 +207,21 @@
  }
 --- net/minecraft/src/EntityItem.java
 +++ net/minecraft/src/EntityItem.java
-@@ -177,14 +177,23 @@
+@@ -29,6 +29,13 @@
+ 
+ 	public void onUpdate() {
+ 		super.onUpdate();
++
++		if(this.item != null && this.item.itemID == Item.starChunk.shiftedIndex
++			&& this.worldObj.isDaytime()) {
++			this.setEntityDead();
++			return;
++		}
++
+ 		if(this.delayBeforeCanPickup > 0) {
+ 			--this.delayBeforeCanPickup;
+ 		}
+@@ -177,14 +184,23 @@
  	}
  
  	public void onCollideWithPlayer(EntityPlayer var1) {
@@ -991,7 +1005,7 @@
  	public void handleLogin(Packet1Login var1) {
  		this.username = var1.username;
 -		if(var1.protocolVersion != 2) {
-+		if(var1.protocolVersion != 85000003) {
++		if(var1.protocolVersion != 85000005) {
  			this.kickUser("Outdated client!");
  		} else {
  			if(!this.mcServer.onlineMode) {
@@ -1203,16 +1217,20 @@
  		var1.setLong("LastPlayed", System.currentTimeMillis());
  		EntityPlayer var2 = null;
  		if(this.playerEntities.size() > 0) {
-@@ -352,7 +397,7 @@
+@@ -352,7 +397,11 @@
  	}
  
  	public boolean blockExists(int var1, int var2, int var3) {
 -		return var2 >= 0 && var2 < 128 ? this.chunkExists(var1 >> 4, var3 >> 4) : false;
 +		return var2 >= 0 && var2 < 128 && this.chunkExists(var1 >> 4, var3 >> 4);
++	}
++
++	public Biome getBiome(int x, int z) {
++		return this.getChunkFromChunkCoords(x >> 4, z >> 4).getBiome(x & 15, z & 15);
  	}
  
  	public boolean checkChunksExist(int var1, int var2, int var3, int var4, int var5, int var6) {
-@@ -521,7 +566,7 @@
+@@ -521,7 +570,7 @@
  	}
  
  	private void notifyBlockOfNeighborChange(int var1, int var2, int var3, int var4) {
@@ -1221,7 +1239,7 @@
  			Block var5 = Block.blocksList[this.getBlockId(var1, var2, var3)];
  			if(var5 != null) {
  				var5.onNeighborBlockChange(this, var1, var2, var3, var4);
-@@ -543,7 +588,8 @@
+@@ -543,7 +592,8 @@
  			int var5;
  			if(var4) {
  				var5 = this.getBlockId(var1, var2, var3);
@@ -1231,7 +1249,7 @@
  					int var6 = this.getBlockLightValue_do(var1, var2 + 1, var3, false);
  					int var7 = this.getBlockLightValue_do(var1 + 1, var2, var3, false);
  					int var8 = this.getBlockLightValue_do(var1 - 1, var2, var3, false);
-@@ -838,9 +884,9 @@
+@@ -838,9 +888,9 @@
  
  	}
  
@@ -1243,7 +1261,7 @@
  		}
  
  	}
-@@ -1455,7 +1501,7 @@
+@@ -1455,7 +1505,7 @@
  
  	public boolean isBlockNormalCube(int var1, int var2, int var3) {
  		Block var4 = Block.blocksList[this.getBlockId(var1, var2, var3)];
@@ -1252,7 +1270,7 @@
  	}
  
  	public void saveWorldIndirectly(IProgressUpdate var1) {
-@@ -1501,11 +1547,11 @@
+@@ -1501,11 +1551,11 @@
  			}
  
  			this.lightingToUpdate.add(new MetadataChunkBlock(var1, var2, var3, var4, var5, var6, var7));
@@ -1269,7 +1287,7 @@
  
  		}
  	}
-@@ -1534,6 +1580,7 @@
+@@ -1534,6 +1584,7 @@
  			this.saveWorld(false, (IProgressUpdate)null);
  		}
  
@@ -1277,16 +1295,24 @@
  		this.tickUpdates(false);
  		this.updateBlocksAndPlayCaveSounds();
  	}
-@@ -1590,7 +1637,7 @@
+@@ -1590,13 +1641,14 @@
  				}
  			}
  
 -			if(this.snowCovered && this.rand.nextInt(4) == 0) {
-+			if(this.worldType == WorldType.WINTER && this.rand.nextInt(4) == 0) {
++			if(this.rand.nextInt(4) == 0) {
  				this.updateLCG = this.updateLCG * 3 + this.DIST_HASH_MAGIC;
  				var6 = this.updateLCG >> 2;
  				var7 = var6 & 15;
-@@ -1968,6 +2015,94 @@
+ 				var8 = var6 >> 8 & 15;
+ 				var9 = this.getTopSolidOrLiquidBlock(var7 + var3, var8 + var4);
+-				if(var9 >= 0 && var9 < 128 && var14.getSavedLightValue(EnumSkyBlock.Block, var7, var9, var8) < 10) {
++				if((this.worldType == WorldType.WINTER || this.getBiome(var7, var8) == Biome.TUNDRA)
++						&& var9 >= 0 && var9 < 128 && var14.getSavedLightValue(EnumSkyBlock.Block, var7, var9, var8) < 10) {
+ 					var10 = var14.getBlockID(var7, var9 - 1, var8);
+ 					if(var14.getBlockID(var7, var9, var8) == 0 && Block.snow.canPlaceBlockAt(this, var7 + var3, var9, var8 + var4)) {
+ 						this.setBlockWithNotify(var7 + var3, var9, var8 + var4, Block.snow.blockID);
+@@ -1968,6 +2020,93 @@
  			this.loadedEntityList.add(var1);
  		}
  
@@ -1321,7 +1347,6 @@
 +						new ItemStack(Item.starChunk)
 +				);
 +				this.spawnEntityInWorld(star);
-+				star.age = 6000 - (23000 - ((int) this.worldTime % 24000));
 +			}
 +		} else if (this.worldTime % 24000 < 13000) {
 +			this.starfallChance = rand.nextInt(750) + 250;
@@ -1347,7 +1372,7 @@
 +		this.releaseEntitySkin(var1);
 +	}
 +
-+	public Biome getBiome(int x, int z) {
++	public Biome generateBiome(int x, int z) {
 +		if (this.worldType == WorldType.CLASSIC) {
 +			return Biome.PLAINS;
 +		}
@@ -1658,7 +1683,7 @@
 -		if(var2.health <= 0) {
 +		float var3 = this.mc.options.fov;
 +
-+		if (Keyboard.isKeyDown(this.mc.options.keyBindZoom.keyCode)) {
++		if (Keyboard.isKeyDown(this.mc.options.keyBindZoom.keyCode) && this.mc.currentScreen == null) {
 +			var3 = 30.0F;
 +		}
 +
@@ -1685,7 +1710,96 @@
  	}
  
  	private void hurtCameraEffect(float var1) {
-@@ -262,7 +279,7 @@
+@@ -131,7 +148,7 @@
+ 	}
+ 
+ 	private void setupViewBobbing(float var1) {
+-		if(!this.mc.options.thirdPersonView) {
++		if(this.mc.options.thirdPersonView == 0) {
+ 			EntityPlayerSP var2 = this.mc.thePlayer;
+ 			float var3 = var2.distanceWalkedModified - var2.prevDistanceWalkedModified;
+ 			float var4 = var2.distanceWalkedModified + var3 * var1;
+@@ -149,21 +166,34 @@
+ 		double var3 = var2.prevPosX + (var2.posX - var2.prevPosX) * (double)var1;
+ 		double var5 = var2.prevPosY + (var2.posY - var2.prevPosY) * (double)var1;
+ 		double var7 = var2.prevPosZ + (var2.posZ - var2.prevPosZ) * (double)var1;
+-		if(this.mc.options.thirdPersonView) {
++		if (this.mc.options.thirdPersonView > 0) {
+ 			double var9 = 4.0D;
+ 			float var11 = var2.rotationYaw;
+ 			float var12 = var2.rotationPitch;
++			float var4 = 0.0F;
+ 			double var13 = (double)(-MathHelper.sin(var11 / 180.0F * (float)Math.PI) * MathHelper.cos(var12 / 180.0F * (float)Math.PI)) * var9;
+ 			double var15 = (double)(MathHelper.cos(var11 / 180.0F * (float)Math.PI) * MathHelper.cos(var12 / 180.0F * (float)Math.PI)) * var9;
+ 			double var17 = (double)(-MathHelper.sin(var12 / 180.0F * (float)Math.PI)) * var9;
+ 
++			if (this.mc.options.thirdPersonView == 2) {
++				var13 = (double)(-MathHelper.sin((var11 + 180.0F) / 180.0F * (float)Math.PI) * MathHelper.cos(-var12 / 180.0F * (float)Math.PI)) * var9;
++				var15 = (double)(MathHelper.cos((var11 + 180.0F) / 180.0F * (float)Math.PI) * MathHelper.cos(-var12 / 180.0F * (float)Math.PI)) * var9;
++				var17 = (double)(-MathHelper.sin(-var12 / 180.0F * (float)Math.PI)) * var9;
++			}
++
+ 			for(int var19 = 0; var19 < 8; ++var19) {
+ 				float var20 = (float)((var19 & 1) * 2 - 1);
+ 				float var21 = (float)((var19 >> 1 & 1) * 2 - 1);
+ 				float var22 = (float)((var19 >> 2 & 1) * 2 - 1);
+-				var20 *= 0.1F;
+-				var21 *= 0.1F;
+-				var22 *= 0.1F;
++				if (this.mc.options.thirdPersonView == 2) {
++					var20 *= -0.1F;
++					var21 *= -0.1F;
++					var22 *= -0.1F;
++				} else {
++					var20 *= 0.1F;
++					var21 *= 0.1F;
++					var22 *= 0.1F;
++				}
+ 				MovingObjectPosition var23 = this.mc.theWorld.rayTraceBlocks(Vec3D.createVector(var3 + (double)var20, var5 + (double)var21, var7 + (double)var22), Vec3D.createVector(var3 - var13 + (double)var20 + (double)var22, var5 - var17 + (double)var21, var7 - var15 + (double)var22));
+ 				if(var23 != null) {
+ 					double var24 = var23.hitVec.distanceTo(Vec3D.createVector(var3, var5, var7));
+@@ -173,8 +203,13 @@
+ 				}
+ 			}
+ 
++			if (this.mc.options.thirdPersonView == 2) {
++				var4 = 180.0F;
++				var9 *= -1.0D;
++			}
++
+ 			GL11.glRotatef(var2.rotationPitch - var12, 1.0F, 0.0F, 0.0F);
+-			GL11.glRotatef(var2.rotationYaw - var11, 0.0F, 1.0F, 0.0F);
++			GL11.glRotatef(var2.rotationYaw - var11 + var4, 0.0F, 1.0F, 0.0F);
+ 			GL11.glTranslatef(0.0F, 0.0F, (float)(-var9));
+ 			GL11.glRotatef(var11 - var2.rotationYaw, 0.0F, 1.0F, 0.0F);
+ 			GL11.glRotatef(var12 - var2.rotationPitch, 1.0F, 0.0F, 0.0F);
+@@ -222,12 +257,12 @@
+ 			this.setupViewBobbing(var1);
+ 		}
+ 
+-		if(!this.mc.options.thirdPersonView) {
++		if(this.mc.options.thirdPersonView == 0) {
+ 			this.itemRenderer.renderItemInFirstPerson(var1);
+ 		}
+ 
+ 		GL11.glPopMatrix();
+-		if(!this.mc.options.thirdPersonView) {
++		if(this.mc.options.thirdPersonView == 0) {
+ 			this.itemRenderer.renderOverlays(var1);
+ 			this.hurtCameraEffect(var1);
+ 		}
+@@ -253,16 +288,15 @@
+ 			float var3 = var2 * var2 * var2 * 8.0F;
+ 			float var4 = (float)this.mc.mouseHelper.deltaX * var3;
+ 			float var5 = (float)this.mc.mouseHelper.deltaY * var3;
+-			byte var6 = 1;
+ 			if(this.mc.options.invertMouse) {
+-				var6 = -1;
++				var5 *= -1.0F;
+ 			}
+ 
+-			this.mc.thePlayer.setAngles(var4, var5 * (float)var6);
++			this.mc.thePlayer.setAngles(var4, var5);
  		}
  
  		if(!this.mc.skipRenderWorld) {
@@ -1694,7 +1808,7 @@
  			int var8 = var7.getScaledWidth();
  			int var9 = var7.getScaledHeight();
  			int var10 = Mouse.getX() * var8 / this.mc.displayWidth;
-@@ -335,7 +352,7 @@
+@@ -335,7 +369,7 @@
  			RenderHelper.disableStandardItemLighting();
  			this.setupFog(0);
  			var4.renderParticles(var2, var1);
@@ -1703,7 +1817,7 @@
  				GL11.glDisable(GL11.GL_ALPHA_TEST);
  				var3.drawBlockBreaking(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
  				var3.drawSelectionBox(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
-@@ -369,7 +386,7 @@
+@@ -369,7 +403,7 @@
  			GL11.glDepthMask(true);
  			GL11.glEnable(GL11.GL_CULL_FACE);
  			GL11.glDisable(GL11.GL_BLEND);
@@ -1712,7 +1826,7 @@
  				GL11.glDisable(GL11.GL_ALPHA_TEST);
  				var3.drawBlockBreaking(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
  				var3.drawSelectionBox(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
-@@ -377,7 +394,7 @@
+@@ -377,7 +411,7 @@
  			}
  
  			GL11.glDisable(GL11.GL_FOG);
@@ -1721,7 +1835,7 @@
  				this.renderSnow(var1);
  			}
  
-@@ -390,7 +407,9 @@
+@@ -390,7 +424,9 @@
  			GL11.glDisable(GL11.GL_FOG);
  			this.setupFog(1);
  			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
@@ -1732,7 +1846,7 @@
  			if(!this.mc.options.anaglyph) {
  				return;
  			}
-@@ -495,7 +514,7 @@
+@@ -495,7 +531,7 @@
  	}
  
  	public void setupOverlayRendering() {
@@ -1741,7 +1855,7 @@
  		int var2 = var1.getScaledWidth();
  		int var3 = var1.getScaledHeight();
  		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-@@ -600,9 +619,9 @@
+@@ -600,9 +636,9 @@
  		GL11.glColorMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT);
  	}
  
@@ -2187,7 +2301,7 @@
  								}
  
  								++var17;
-@@ -95,22 +140,69 @@
+@@ -95,22 +140,70 @@
  				}
  			}
  
@@ -2249,6 +2363,7 @@
 +			return new ItemStack(Item.saddle);
 +		}
 +		if (var2 == 12 && !this.pickedCharm && var1.nextInt(5) == 0) {
++			this.pickedCharm = true;
 +			return new ItemStack(charms[var1.nextInt(charms.length)]);
 +		}
 +		return null;
@@ -3228,11 +3343,12 @@
  	private static final String[] armorFilenamePrefix = new String[]{"cloth", "chain", "iron", "diamond", "gold"};
  
  	public RenderPlayer() {
-@@ -13,7 +18,11 @@
+@@ -13,7 +18,12 @@
  	}
  
  	protected boolean setArmorModel(EntityPlayer var1, int var2) {
 -		ItemStack var3 = var1.inventory.armorItemInSlot(3 - var2);
++		ModelBiped mainModelBiped = (ModelBiped)this.mainModel;
 +		boolean charmUpper = var2 == 5;
 +		if (charmUpper) {
 +			var2 = 4;
@@ -3241,15 +3357,15 @@
  		if(var3 != null) {
  			Item var4 = var3.getItem();
  			if(var4 instanceof ItemArmor) {
-@@ -27,8 +36,30 @@
+@@ -27,8 +37,30 @@
  				var6.bipedLeftArm.showModel = var2 == 1;
  				var6.bipedRightLeg.showModel = var2 == 2 || var2 == 3;
  				var6.bipedLeftLeg.showModel = var2 == 2 || var2 == 3;
-+				var6.heldItemLeft = this.modelBipedMain.heldItemLeft;
-+				var6.heldItemRight = this.modelBipedMain.heldItemRight;
-+				var6.isSneak = this.modelBipedMain.isSneak;
-+				var6.swingProgress = this.modelBipedMain.swingProgress;
-+				var6.isRiding = this.modelBipedMain.isRiding;
++				var6.heldItemLeft = mainModelBiped.heldItemLeft;
++				var6.heldItemRight = mainModelBiped.heldItemRight;
++				var6.isSneak = mainModelBiped.isSneak;
++				var6.swingProgress = mainModelBiped.swingProgress;
++				var6.isRiding = mainModelBiped.isRiding;
  				this.setRenderPassModel(var6);
  				return true;
 +			} else if(var4 instanceof ItemCharm && var2 == 4 && ((ItemCharm) var4).textureName != null) {
@@ -3262,17 +3378,17 @@
 +				modelCharm.bipedLeftArm.showModel = true;
 +				modelCharm.bipedRightLeg.showModel = true;
 +				modelCharm.bipedLeftLeg.showModel = true;
-+				modelCharm.heldItemLeft = this.modelBipedMain.heldItemLeft;
-+				modelCharm.heldItemRight = this.modelBipedMain.heldItemRight;
-+				modelCharm.isSneak = this.modelBipedMain.isSneak;
-+				modelCharm.swingProgress = this.modelBipedMain.swingProgress;
-+				modelCharm.isRiding = this.modelBipedMain.isRiding;
++				modelCharm.heldItemLeft = mainModelBiped.heldItemLeft;
++				modelCharm.heldItemRight = mainModelBiped.heldItemRight;
++				modelCharm.isSneak = mainModelBiped.isSneak;
++				modelCharm.swingProgress = mainModelBiped.swingProgress;
++				modelCharm.isRiding = mainModelBiped.isRiding;
 +				this.setRenderPassModel(modelCharm);
 +				return true;
  			}
  		}
  
-@@ -36,12 +67,13 @@
+@@ -36,12 +68,13 @@
  	}
  
  	public void renderPlayer(EntityPlayer var1, double var2, double var4, double var6, float var8, float var9) {
@@ -3290,7 +3406,7 @@
  		FontRenderer var11 = this.getFontRendererFromRenderManager();
  		float var12 = 1.6F;
  		float var13 = (float)(1.0D / 60.0D) * var12;
-@@ -84,14 +116,15 @@
+@@ -84,14 +117,15 @@
  		ItemStack var3 = var1.inventory.getCurrentItem();
  		if(var3 != null) {
  			GL11.glPushMatrix();
@@ -3308,7 +3424,7 @@
  				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
  				GL11.glScalef(var4, -var4, var4);
  			} else if(Item.itemsList[var3.itemID].isFull3D()) {
-@@ -120,10 +153,11 @@
+@@ -120,10 +154,11 @@
  		GL11.glScalef(var3, var3, var3);
  	}
  
@@ -3324,7 +3440,7 @@
  	}
  
  	protected void preRenderCallback(EntityLiving var1, float var2) {
-@@ -144,5 +178,9 @@
+@@ -144,5 +179,9 @@
  
  	public void doRender(Entity var1, double var2, double var4, double var6, float var8, float var9) {
  		this.renderPlayer((EntityPlayer)var1, var2, var4, var6, var8, var9);
@@ -3574,7 +3690,7 @@
  }
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/ModelStaggo.java
-@@ -1,0 +1,60 @@
+@@ -1,0 +1,61 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import net.minecraft.src.MathHelper;
@@ -3622,6 +3738,7 @@
 +		this.bipedEars.rotateAngleX = this.bipedSnout.rotateAngleX = this.bipedHead.rotateAngleX;
 +		this.bipedEars.rotateAngleY = this.bipedSnout.rotateAngleY = this.bipedHead.rotateAngleY;
 +		this.bipedEars.rotateAngleZ = this.bipedSnout.rotateAngleZ = this.bipedHead.rotateAngleZ;
++		this.bipedEars.rotationPointY = this.bipedSnout.rotationPointY = this.bipedHead.rotationPointY;
 +	}
 +
 +	public void showHead(boolean var1) {
@@ -4152,7 +4269,7 @@
  	}
  
  	private int getItemBurnTime(ItemStack var1) {
-@@ -181,7 +205,12 @@
+@@ -181,7 +205,13 @@
  			return 0;
  		} else {
  			int var2 = var1.getItem().shiftedIndex;
@@ -4162,6 +4279,7 @@
 +			: var2 == Item.coal.shiftedIndex ? 1600
 +			: var2 == Item.bucketLava.shiftedIndex ? 20000
 +			: var2 == Item.starDust.shiftedIndex ? 6400
++			: var2 == Block.blockCoal.blockID ? 14400
 +			: 0;
  		}
  	}
@@ -4663,6 +4781,15 @@
  
 --- net/minecraft/src/BlockIce.java
 +++ net/minecraft/src/BlockIce.java
+@@ -5,7 +5,7 @@
+ public class BlockIce extends BlockBreakable {
+ 	public BlockIce(int var1, int var2) {
+ 		super(var1, var2, Material.ice, false);
+-		this.slipperiness = 0.98F;
++		this.slipperiness = 0.9F;
+ 		this.setTickOnLoad(true);
+ 	}
+ 
 @@ -26,7 +26,19 @@
  	}
  
@@ -4957,15 +5084,16 @@
  		this.noiseGen1 = new NoiseGeneratorOctaves(this.rand, 16);
  		this.noiseGen2 = new NoiseGeneratorOctaves(this.rand, 16);
  		this.noiseGen3 = new NoiseGeneratorOctaves(this.rand, 8);
-@@ -48,6 +52,7 @@
+@@ -38,7 +42,7 @@
+ 		this.mobSpawnerNoise = new NoiseGeneratorOctaves(this.rand, 8);
+ 	}
  
- 		for(int var9 = 0; var9 < var4; ++var9) {
- 			for(int var10 = 0; var10 < var4; ++var10) {
-+				Biome biome = this.getBiome(var9 * 4 + var1 * 16, var10 * 4 + var2 * 16);
- 				for(int var11 = 0; var11 < 16; ++var11) {
- 					double var12 = 0.125D;
- 					double var14 = this.noiseArray[((var9 + 0) * var8 + var10 + 0) * var7 + var11 + 0];
-@@ -68,17 +73,18 @@
+-	public void generateTerrain(int var1, int var2, byte[] var3) {
++	public void generateTerrain(int var1, int var2, byte[] var3, byte[] biomes) {
+ 		byte var4 = 4;
+ 		byte var5 = 64;
+ 		int var6 = var4 + 1;
+@@ -68,17 +72,19 @@
  
  						for(int var41 = 0; var41 < 4; ++var41) {
  							int var42 = var41 + var9 * 4 << 11 | 0 + var10 * 4 << 7 | var11 * 8 + var30;
@@ -4974,13 +5102,14 @@
  							double var44 = 0.25D;
  							double var46 = var33;
  							double var48 = (var35 - var33) * var44;
++							byte biome = biomes[var41 + var9 * 4 << 4 | var30 + var10 * 4];
  
  							for(int var50 = 0; var50 < 4; ++var50) {
 +
  								int var51 = 0;
  								if(var11 * 8 + var30 < var5) {
 -									if(this.worldObj.snowCovered && var11 * 8 + var30 >= var5 - 1) {
-+									if (biome == Biome.TUNDRA) {
++									if (biome == Biome.TUNDRA.id) {
  										var51 = Block.ice.blockID;
 -									} else {
 +									} else if (this.worldObj.worldType != WorldType.ARID) {
@@ -5001,7 +5130,7 @@
  	}
  
 -	public void replaceSurfaceBlocks(int var1, int var2, byte[] var3) {
-+	public void replaceSurfaceBlocks(int var1, int var2, byte[] var3, NibbleArray metadata) {
++	public void replaceSurfaceBlocks(int var1, int var2, byte[] var3, NibbleArray metadata, byte[] biomes) {
  		byte var4 = 64;
 -		double var5 = 1.0D / 32.0D;
 -		this.sandNoise = this.noiseGen4.generateNoiseOctaves(this.sandNoise, (double)(var1 * 16), (double)(var2 * 16), 0.0D, 16, 16, 1, var5, var5, 1.0D);
@@ -5013,7 +5142,7 @@
 -				boolean var9 = this.sandNoise[var7 + var8 * 16] + this.rand.nextDouble() * 0.2D > 0.0D;
 -				boolean var10 = this.gravelNoise[var7 + var8 * 16] + this.rand.nextDouble() * 0.2D > 3.0D;
 -				int var11 = (int)(this.stoneNoise[var7 + var8 * 16] / 3.0D + 3.0D + this.rand.nextDouble() * 0.25D);
-+				Biome biome = getBiome(var7 + var1 * 16, var8 + var2 * 16);
++				Biome biome = Biome.fromId(biomes[var8 << 4 | var7]);
 +
 +				boolean var9 = SimplexOctaves.noise2(seed, (var7 + var1 * 16) / 2048.0D, (var8 + var2 * 16) / 2048.0D, 4)
 +						/ 4 + this.rand.nextFloat() * 0.2F > 0.0F;
@@ -5056,7 +5185,7 @@
  									if(var10) {
  										var13 = 0;
  									}
-@@ -163,32 +176,40 @@
+@@ -163,27 +176,32 @@
  								var12 = var11;
  								if(var15 >= var4 - 1) {
  									var3[var16] = var13;
@@ -5085,22 +5214,15 @@
 -		byte[] var3 = new byte[-Short.MIN_VALUE];
 +		byte[] var3 = new byte[32768];
  		Chunk var4 = new Chunk(this.worldObj, var3, var1, var2);
- 		this.generateTerrain(var1, var2, var3);
+-		this.generateTerrain(var1, var2, var3);
 -		this.replaceSurfaceBlocks(var1, var2, var3);
-+		this.replaceSurfaceBlocks(var1, var2, var3, var4.data);
++		var4.generateBiomes(this.worldObj);
++		this.generateTerrain(var1, var2, var3, var4.biomes);
++		this.replaceSurfaceBlocks(var1, var2, var3, var4.data, var4.biomes);
  		this.caveGenerator.generate(this, this.worldObj, var1, var2, var3);
  		var4.generateSkylightMap();
  		return var4;
- 	}
- 
-+	public Biome getBiome(int x, int z) {
-+		return this.worldObj.getBiome(x, z);
-+	}
-+
- 	private double[] initializeNoiseField(double[] var1, int var2, int var3, int var4, int var5, int var6, int var7) {
- 		if(var1 == null) {
- 			var1 = new double[var5 * var6 * var7];
-@@ -299,163 +320,62 @@
+@@ -299,160 +317,63 @@
  		long var6 = this.rand.nextLong() / 2L * 2L + 1L;
  		long var8 = this.rand.nextLong() / 2L * 2L + 1L;
  		this.rand.setSeed((long)var2 * var6 + (long)var3 * var8 ^ this.worldObj.randomSeed);
@@ -5276,7 +5398,7 @@
 +		host.generateMinableInStone(Block.oreRuby, 4, 1, 0, 24);
 +		host.generateMinableInStone(Block.oreSapphire, 4, 1, 0, 24);
 +
-+		getBiome(var2 * 16, var3 * 16).populate(host);
++		this.worldObj.getBiome(var2 * 16, var3 * 16).populate(host);
 +
 +		host.generate(new WorldGenReed(), 10, 0, 128, 8);
 +		host.generate(new WorldGenCactus(), 1, 0, 128, 8);
@@ -5303,21 +5425,21 @@
 +					if(y > 0 && y < 128 && this.worldObj.getBlockId(x, y, z) == 0 && this.worldObj.getBlockMaterial(x, y - 1, z).getIsSolid() && this.worldObj.getBlockMaterial(x, y - 1, z) != Material.ice) {
 +						this.worldObj.setBlockWithNotify(x, y, z, Block.snow.blockID);
 +					}
- 				}
- 			}
--		}
++				}
++			}
 +		}*/
 +
-+		for(int x = var4 + 8; x < var4 + 24; ++x)
-+			for(int z = var5 + 8; z < var5 + 24; ++z)
-+				for (int y = 0; y < 8; y++) {
-+					if (!this.worldObj.isBlockNormalCube(x, y, z)) {
-+						this.worldObj.setBlockWithNotify(x, y, z, Block.lavaStill.blockID);
-+					}
-+				}
- 
- 		BlockSand.fallInstantly = false;
- 	}
++		for(int x = var4 + 8; x < var4 + 24; ++x) {
++			for(int z = var5 + 8; z < var5 + 24; ++z) {
++				int y = this.worldObj.getTopSolidOrLiquidBlock(x, z);
++				if(this.worldObj.getBiome(x - 8, z - 8) == Biome.TUNDRA
++						&& y > 0 && y < 128 && this.worldObj.getBlockId(x, y, z) == 0
++						&& this.worldObj.getBlockMaterial(x, y - 1, z).getIsSolid()
++						&& this.worldObj.getBlockMaterial(x, y - 1, z) != Material.ice) {
++					this.worldObj.setBlockWithNotify(x, y, z, Block.snow.blockID);
+ 				}
+ 			}
+ 		}
 --- net/minecraft/src/EntitySnowball.java
 +++ net/minecraft/src/EntitySnowball.java
 @@ -12,6 +12,10 @@
@@ -6192,7 +6314,14 @@
  public class EntityOtherPlayerMP extends EntityPlayer {
  	private int otherPlayerMPPosRotationIncrements;
  	private double otherPlayerMPX;
-@@ -14,13 +16,18 @@
+@@ -8,19 +10,25 @@
+ 	private double otherPlayerMPYaw;
+ 	private double otherPlayerMPPitch;
+ 	float unusedFloat = 0.0F;
++	public boolean sneaking;
+ 
+ 	public EntityOtherPlayerMP(World var1, String var2) {
+ 		super(var1);
  		this.username = var2;
  		this.yOffset = 0.0F;
  		this.stepHeight = 0.0F;
@@ -6214,6 +6343,16 @@
  	}
  
  	public boolean attackEntityFrom(Entity var1, int var2) {
+@@ -94,5 +102,9 @@
+ 
+ 		this.cameraYaw += (var9 - this.cameraYaw) * 0.4F;
+ 		this.cameraPitch += (var2 - this.cameraPitch) * 0.8F;
++	}
++
++	public boolean isSneaking() {
++		return sneaking;
+ 	}
+ }
 --- net/minecraft/src/EntityDiggingFX.java
 +++ net/minecraft/src/EntityDiggingFX.java
 @@ -1,9 +1,9 @@
@@ -6669,7 +6808,15 @@
  }
 --- net/minecraft/src/Chunk.java
 +++ net/minecraft/src/Chunk.java
-@@ -7,6 +7,10 @@
+@@ -1,5 +1,7 @@
+ package net.minecraft.src;
+ 
++import io.github.bluestaggo.mcdiverge.Biome;
++
+ import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.List;
+@@ -7,8 +9,13 @@
  import java.util.Random;
  
  public class Chunk {
@@ -6679,8 +6826,11 @@
 +
  	public static boolean isLit;
  	public byte[] blocks;
++	public byte[] biomes;
  	public boolean isChunkLoaded;
-@@ -43,7 +47,7 @@
+ 	public World worldObj;
+ 	public NibbleArray data;
+@@ -43,7 +50,7 @@
  		for(int var4 = 0; var4 < this.entities.length; ++var4) {
  			this.entities[var4] = new ArrayList();
  		}
@@ -6689,7 +6839,34 @@
  	}
  
  	public Chunk(World var1, byte[] var2, int var3, int var4) {
-@@ -221,7 +225,7 @@
+@@ -52,6 +59,7 @@
+ 		this.data = new NibbleArray(var2.length);
+ 		this.skylightMap = new NibbleArray(var2.length);
+ 		this.blocklightMap = new NibbleArray(var2.length);
++		this.biomes = new byte[256];
+ 	}
+ 
+ 	public boolean isAtLocation(int var1, int var2) {
+@@ -112,6 +120,18 @@
+ 		this.isModified = true;
+ 	}
+ 
++	public void generateBiomes(World worldObj) {
++		for (int x = 0; x < 16; x++) {
++			for (int z = 0; z < 16; z++) {
++				this.biomes[z << 4 | x] = worldObj.generateBiome((this.xPosition << 4) + x, (this.zPosition << 4) + z).id;
++			}
++		}
++	}
++
++	public Biome getBiome(int x, int z) {
++		return this.biomes == null ? Biome.PLAINS : Biome.fromId(this.biomes[z << 4 | x]);
++	}
++
+ 	private void updateSkylight_do(int var1, int var2) {
+ 		int var3 = this.getHeightValue(var1, var2);
+ 		int var4 = this.xPosition * 16 + var1;
+@@ -221,7 +241,7 @@
  			int var9 = this.xPosition * 16 + var1;
  			int var10 = this.zPosition * 16 + var3;
  			this.blocks[var1 << 11 | var3 << 7 | var2] = var6;
@@ -6698,7 +6875,7 @@
  				Block.blocksList[var8].onBlockRemoval(this.worldObj, var9, var2, var10);
  			}
  
-@@ -272,7 +276,7 @@
+@@ -272,7 +292,7 @@
  			this.worldObj.scheduleLightingUpdate(EnumSkyBlock.Sky, var8, var2, var9, var8, var2, var9);
  			this.worldObj.scheduleLightingUpdate(EnumSkyBlock.Block, var8, var2, var9, var8, var2, var9);
  			this.updateSkylight_do(var1, var3);
@@ -6707,7 +6884,7 @@
  				Block.blocksList[var4].onBlockAdded(this.worldObj, var8, var2, var9);
  			}
  
-@@ -412,6 +416,7 @@
+@@ -412,6 +432,7 @@
  		} else {
  			System.out.println("Attempted to place a tile entity where there was no entity tile!");
  		}
@@ -7601,7 +7778,7 @@
 +}
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/Biome.java
-@@ -1,0 +1,316 @@
+@@ -1,0 +1,318 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import net.minecraft.src.*;
@@ -7619,7 +7796,7 @@
 +import java.util.Random;
 +
 +public enum Biome {
-+	DESERT(0.75F, 0.00F, 1.00F, 0.25F) {
++	DESERT(5, 0.75F, 0.00F, 1.00F, 0.25F) {
 +		public void populate(PopulatorHost host) {
 +			int cactiCount = host.rand.nextInt(5) - 2;
 +			if (cactiCount > 0)
@@ -7642,42 +7819,27 @@
 +			return new int[] { 255, 128, 0 };
 +		}
 +	},
-+	TUNDRA(0.00F, 0.00F, 0.30F, 1.00F) {
++	TUNDRA(4, 0.00F, 0.00F, 0.30F, 1.00F) {
 +		public void populate(PopulatorHost host) {
 +			TUNDRA_TREES.populate(host);
-+
-+			for(int x = host.x + 8; x < host.x + 24; ++x) {
-+				for(int z = host.z + 8; z < host.z + 24; ++z) {
-+					int y = host.worldObj.getTopSolidOrLiquidBlock(x, z);
-+					if(	   (host.chunkProvider.getBiome(x - 16, z - 16) == this
-+							&& host.chunkProvider.getBiome(x - 16, z + 16) == this
-+							&& host.chunkProvider.getBiome(x + 16, z - 16) == this
-+							&& host.chunkProvider.getBiome(x + 16, z + 16) == this)
-+
-+							&& y > 0 && y < 128 && host.worldObj.getBlockId(x, y, z) == 0
-+							&& host.worldObj.getBlockMaterial(x, y - 1, z).getIsSolid()
-+							&& host.worldObj.getBlockMaterial(x, y - 1, z) != Material.ice) {
-+						host.worldObj.setBlockWithNotify(x, y, z, Block.snow.blockID);
-+					}
-+				}
-+			}
 +		}
 +
 +		public int[] getMapColor() {
 +			return new int[] { 0, 128, 255 };
 +		}
 +	},
-+	RAINFOREST(0.75F, 0.60F, 1.00F, 1.00F) {
++	RAINFOREST(3, 0.75F, 0.60F, 1.00F, 1.00F) {
 +		public void populate(PopulatorHost host) {
 +			host.generateSurface(new WorldGenShrubs().withMetadata(3), 4, 8);
 +			RAINFOREST_TREES.populate(host);
++			host.generateFlowers(1);
 +		}
 +
 +		public int[] getMapColor() {
 +			return new int[] { 128, 255, 0 };
 +		}
 +	},
-+	SAVANNA(0.50F, 0.00F, 1.00F, 0.40F) {
++	SAVANNA(2, 0.50F, 0.00F, 1.00F, 0.40F) {
 +		public void populate(PopulatorHost host) {
 +			SAVANNA_TREES.populate(host);
 +		}
@@ -7698,7 +7860,7 @@
 +			return new int[] { 255, 255, 0 };
 +		}
 +	},
-+	SEASONAL_FOREST(0.60F, 0.40F, 1.00F, 1.00F) {
++	SEASONAL_FOREST(1, 0.60F, 0.40F, 1.00F, 1.00F) {
 +		public void populate(PopulatorHost host) {
 +			SEASONAL_FOREST_TREES.populate(host);
 +			host.generateFlowers(4);
@@ -7708,7 +7870,7 @@
 +			return new int[] { 0, 200, 100 };
 +		}
 +	},
-+	PLAINS(0.00F, 0.00F, 1.00F, 1.00F) {
++	PLAINS(0, 0.00F, 0.00F, 1.00F, 1.00F) {
 +		public void populate(PopulatorHost host) {
 +			PLAINS_TREES.populate(host);
 +			host.generateFlowers(2);
@@ -7720,6 +7882,8 @@
 +	};
 +
 +	//#region Biome Properties
++	private static Biome[] biomesById = new Biome[256];
++
 +	private static final TreePopulator PLAINS_TREES = new TreePopulator()
 +			.withTree(new WorldGenTrees())
 +			.withBigTree(new WorldGenBigTree(), 20, 2)
@@ -7750,6 +7914,7 @@
 +
 +	//#region Properties
 +	private final float minTemperature, minHumidity, maxTemperature, maxHumidity;
++	public final byte id;
 +
 +	public float getMinTemperature() {
 +		return minTemperature;
@@ -7791,7 +7956,11 @@
 +		};
 +	}
 +
-+	Biome(float minTemperature, float minHumidity, float maxTemperature, float maxHumidity) {
++	Biome(int id, float minTemperature, float minHumidity, float maxTemperature, float maxHumidity) {
++		if (id < 0 || id > Byte.MAX_VALUE) {
++			throw new IllegalArgumentException("Biome ID is invalid!");
++		}
++		this.id = (byte)id;
 +		this.minTemperature = minTemperature;
 +		this.minHumidity = minHumidity;
 +		this.maxTemperature = maxTemperature;
@@ -7811,6 +7980,11 @@
 +			}
 +		}
 +		return Biome.PLAINS;
++	}
++
++	public static Biome fromId(int id) {
++		Biome biome = Biome.biomesById[id];
++		return biome == null ? Biome.PLAINS : biome;
 +	}
 +
 +	//#region Biome Maps
@@ -7876,7 +8050,6 @@
 +		final int size = 2048;
 +		final int scale = 16;
 +		final double biomeSize = 250000.0D / scale;
-+//		final float biomeBlend = 0.005F / scale;
 +		final float biomeBlend = 0.0F;
 +		Random rand = new Random();
 +
@@ -7917,6 +8090,12 @@
 +				+ Duration.between(generationBegin, generationEnd).toMillis() + "ms");
 +	}
 +	//#endregion Biome Maps
++
++	static {
++		for (Biome biome : Biome.values()) {
++			Biome.biomesById[biome.id] = biome;
++		}
++	}
 +}
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/WorldGenMahoganyTrees.java
@@ -8144,7 +8323,7 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.2.1_02";
++	public static final String version = "Minecraft Diverge v0.2.2";
 +	public static final boolean developmentVersion = false;
 +
  	public PlayerController playerController;
@@ -8646,17 +8825,19 @@
  		this.ingameGUI.updateTick();
  		this.entityRenderer.getMouseOver(1.0F);
  		if(this.thePlayer != null) {
-@@ -870,6 +826,10 @@
- 													this.options.thirdPersonView = !this.options.thirdPersonView;
+@@ -867,7 +823,11 @@
  												}
  
-+												if(Keyboard.getEventKey() == Keyboard.KEY_F3) {
-+													this.options.debugMenu = !this.options.debugMenu;
+ 												if(Keyboard.getEventKey() == Keyboard.KEY_F5) {
+-													this.options.thirdPersonView = !this.options.thirdPersonView;
++													this.options.thirdPersonView = (this.options.thirdPersonView + 1) % 3;
 +												}
 +
- 												if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
- 													this.displayGuiScreen(new GuiInventory(this.thePlayer.inventory, this.thePlayer.inventory.craftingInventory));
++												if(Keyboard.getEventKey() == Keyboard.KEY_F3) {
++													this.options.debugMenu = !this.options.debugMenu;
  												}
+ 
+ 												if(Keyboard.getEventKey() == this.options.keyBindInventory.keyCode) {
 @@ -878,9 +838,17 @@
  													this.thePlayer.dropPlayerItemWithRandomChoice(this.thePlayer.inventory.decrStackSize(this.thePlayer.inventory.currentItem, 1), false);
  												}
@@ -9835,14 +10016,60 @@
  		addIdClassMapping(20, Packet20NamedEntitySpawn.class);
  		addIdClassMapping(21, Packet21PickupSpawn.class);
  		addIdClassMapping(22, Packet22Collect.class);
-@@ -93,6 +99,7 @@
+@@ -93,6 +99,8 @@
  		addIdClassMapping(32, Packet32EntityLook.class);
  		addIdClassMapping(33, Packet33RelEntityMoveLook.class);
  		addIdClassMapping(34, Packet34EntityTeleport.class);
 +		addIdClassMapping(38, Packet38EntityStatus.class);
++		addIdClassMapping(39, Packet39PlayerSneak.class);
  		addIdClassMapping(50, Packet50PreChunk.class);
  		addIdClassMapping(51, Packet51MapChunk.class);
  		addIdClassMapping(52, Packet52MultiBlockChange.class);
+--- /dev/null
++++ io/github/bluestaggo/mcdiverge/Packet39PlayerSneak.java
+@@ -1,0 +1,42 @@
++package io.github.bluestaggo.mcdiverge;
++
++import net.minecraft.src.Entity;
++import net.minecraft.src.NetHandler;
++import net.minecraft.src.Packet;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet39PlayerSneak extends Packet {
++	public int entityId;
++	public boolean isSneaking;
++
++	public Packet39PlayerSneak() {
++		this.entityId = 0;
++		this.isSneaking = false;
++	}
++
++	public Packet39PlayerSneak(Entity entity, boolean isSneaking) {
++		this.entityId = entity.entityID;
++		this.isSneaking = isSneaking;
++	}
++
++	public void readPacketData(DataInputStream var1) throws IOException {
++		this.entityId = var1.readInt();
++		this.isSneaking = var1.readByte() == 1;
++	}
++
++	public void writePacket(DataOutputStream var1) throws IOException {
++		var1.writeInt(this.entityId);
++		var1.writeByte(this.isSneaking ? 1 : 0);
++	}
++
++	public void processPacket(NetHandler var1) {
++		var1.handleSneak(this);
++	}
++
++	public int getPacketSize() {
++		return 5;
++	}
++}
 --- /dev/null
 +++ net/minecraft/src/GuiTextField.java
 @@ -1,0 +1,100 @@
@@ -9964,6 +10191,15 @@
  
  	public RenderGlobal(Minecraft var1, RenderEngine var2) {
  		this.mc = var1;
+@@ -271,7 +273,7 @@
+ 			int var6;
+ 			for(var6 = 0; var6 < var5.size(); ++var6) {
+ 				Entity var7 = (Entity)var5.get(var6);
+-				if(var7.isInRangeToRenderVec3D(var1) && var2.isBoundingBoxInFrustum(var7.boundingBox) && (var7 != this.mc.thePlayer || this.mc.options.thirdPersonView)) {
++				if(var7.isInRangeToRenderVec3D(var1) && var2.isBoundingBoxInFrustum(var7.boundingBox) && (var7 != this.mc.thePlayer || this.mc.options.thirdPersonView > 0)) {
+ 					++this.countEntitiesRendered;
+ 					RenderManager.instance.renderEntity(var7, var3);
+ 				}
 @@ -594,6 +596,15 @@
  		GL11.glRotatef(0.0F, 0.0F, 0.0F, 1.0F);
  		GL11.glRotatef(this.theWorld.getCelestialAngle(var1) * 360.0F, 1.0F, 0.0F, 0.0F);
@@ -10177,15 +10413,37 @@
 +}
 --- net/minecraft/src/ChunkLoader.java
 +++ net/minecraft/src/ChunkLoader.java
-@@ -112,6 +112,7 @@
+@@ -111,7 +111,9 @@
+ 		var3.setByteArray("SkyLight", var1.skylightMap.data);
  		var3.setByteArray("BlockLight", var1.blocklightMap.data);
  		var3.setByteArray("HeightMap", var1.heightMap);
++		var3.setByteArray("Biomes", var1.biomes);
  		var3.setBoolean("TerrainPopulated", var1.isTerrainPopulated);
 +		var3.setInteger("ChunkVersion", Chunk.CHUNK_VERSION_CURRENT);
  		var1.hasEntities = false;
  		NBTTagList var4 = new NBTTagList();
  
-@@ -190,6 +191,25 @@
+@@ -153,6 +155,7 @@
+ 		var4.skylightMap = new NibbleArray(var1.getByteArray("SkyLight"));
+ 		var4.blocklightMap = new NibbleArray(var1.getByteArray("BlockLight"));
+ 		var4.heightMap = var1.getByteArray("HeightMap");
++		var4.biomes = var1.getByteArray("Biomes");
+ 		var4.isTerrainPopulated = var1.getBoolean("TerrainPopulated");
+ 		if(!var4.data.isValid()) {
+ 			var4.data = new NibbleArray(var4.blocks.length);
+@@ -169,6 +172,11 @@
+ 			var4.doNothing();
+ 		}
+ 
++		if (var4.biomes == null || var4.biomes.length != 256) {
++			var4.biomes = new byte[256];
++			var4.generateBiomes(var0);
++		}
++
+ 		NBTTagList var5 = var1.getTagList("Entities");
+ 		if(var5 != null) {
+ 			for(int var6 = 0; var6 < var5.tagCount(); ++var6) {
+@@ -190,6 +198,25 @@
  					var4.addTileEntity(var9);
  				}
  			}
@@ -10364,13 +10622,6 @@
  public interface IChunkProvider {
  	boolean chunkExists(int var1, int var2);
  
-@@ -12,4 +14,6 @@
- 	boolean unload100OldestChunks();
- 
- 	boolean canSave();
-+
-+	default Biome getBiome(int x, int z) { return Biome.PLAINS; }
- }
 --- net/minecraft/client/MinecraftApplet.java
 +++ net/minecraft/client/MinecraftApplet.java
 @@ -3,6 +3,7 @@
@@ -10988,9 +11239,17 @@
  		var8.motionX = (double)var1.rotation / 128.0D;
  		var8.motionY = (double)var1.pitch / 128.0D;
  		var8.motionZ = (double)var1.roll / 128.0D;
-@@ -271,12 +273,12 @@
+@@ -270,13 +272,20 @@
+ 		}
  	}
  
++	public void handleSneak(Packet39PlayerSneak var1) {
++		Entity var2 = this.worldClient.getEntityByID(var1.entityId);
++		if(var2 instanceof EntityOtherPlayerMP) {
++			((EntityOtherPlayerMP) var2).sneaking = var1.isSneaking;
++		}
++	}
++
  	public void handleAddToInventory(Packet17AddToInventory var1) {
 -		this.mc.thePlayer.inventory.addItemStackToInventory(new ItemStack(var1.itemID, var1.count, var1.itemDamage));
 +		this.mc.thePlayer.inventory.addItemStackToInventory(new ItemStack(var1.itemID, var1.count, var1.itemDamage).withMetadata(var1.itemMetadata));
@@ -10999,20 +11258,20 @@
  	public void handleHandshake(Packet2Handshake var1) {
  		if(var1.username.equals("-")) {
 -			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 2));
-+			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000003));
++			this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000005));
  		} else {
  			try {
  				URL var2 = new URL("http://www.minecraft.net/game/joinserver.jsp?user=" + this.mc.session.username + "&sessionId=" + this.mc.session.sessionId + "&serverId=" + var1.username);
-@@ -284,7 +286,7 @@
+@@ -284,7 +293,7 @@
  				String var4 = var3.readLine();
  				var3.close();
  				if(var4.equalsIgnoreCase("ok")) {
 -					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 2));
-+					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000003));
++					this.addToSendQueue(new Packet1Login(this.mc.session.username, "Password", 85000005));
  				} else {
  					this.netManager.networkShutdown("Failed to login: " + var4);
  				}
-@@ -311,6 +313,7 @@
+@@ -311,6 +320,7 @@
  		var10.serverPosX = var1.xPosition;
  		var10.serverPosY = var1.yPosition;
  		var10.serverPosZ = var1.zPosition;
@@ -11020,7 +11279,7 @@
  		var10.setPositionAndRotation(var2, var4, var6, var8, var9);
  		var10.isAIEnabled = true;
  		this.worldClient.addEntityToWorld(var1.entityId, var10);
-@@ -349,5 +352,30 @@
+@@ -349,5 +359,30 @@
  		this.worldClient.spawnX = var1.xPosition;
  		this.worldClient.spawnY = var1.yPosition;
  		this.worldClient.spawnZ = var1.zPosition;
@@ -11246,7 +11505,7 @@
  }
 --- net/minecraft/src/RecipesIngots.java
 +++ net/minecraft/src/RecipesIngots.java
-@@ -1,15 +1,20 @@
+@@ -1,15 +1,22 @@
  package net.minecraft.src;
  
  public class RecipesIngots {
@@ -11256,7 +11515,9 @@
 +	{Block.blockSteel, Item.ingotIron},
 +	{Block.blockDiamond, Item.diamond},
 +	{Block.blockRuby, Item.ruby},
-+	{Block.blockSapphire, Item.sapphire}
++	{Block.blockSapphire, Item.sapphire},
++	{Block.blockRedstone, Item.redstone},
++	{Block.blockCoal, Item.coal}
 +	};
  
 -	public void addRecipes(CraftingManager var1) {
@@ -11364,9 +11625,10 @@
  	}
 --- net/minecraft/src/EntityClientPlayerMP.java
 +++ net/minecraft/src/EntityClientPlayerMP.java
-@@ -1,10 +1,13 @@
+@@ -1,10 +1,14 @@
  package net.minecraft.src;
  
++import io.github.bluestaggo.mcdiverge.Packet39PlayerSneak;
 +import io.github.bluestaggo.mcdiverge.Packet8UpdateHealth;
 +import io.github.bluestaggo.mcdiverge.Packet9Respawn;
  import net.minecraft.client.Minecraft;
@@ -11378,7 +11640,27 @@
  	private double oldPosX;
  	private double oldBasePos;
  	private double oldPosY;
-@@ -72,7 +75,6 @@
+@@ -12,6 +16,7 @@
+ 	private float oldRotationYaw;
+ 	private float oldRotationPitch;
+ 	private InventoryPlayer serverSideInventory = new InventoryPlayer((EntityPlayer)null);
++	private boolean wasSneaking = false;
+ 
+ 	public EntityClientPlayerMP(Minecraft var1, World var2, Session var3, NetClientHandler var4) {
+ 		super(var1, var2, var3);
+@@ -57,6 +62,11 @@
+ 			this.sendQueue.addToSendQueue(new Packet10Flying(this.onGround));
+ 		}
+ 
++		if (this.isSneaking() != this.wasSneaking) {
++			this.sendQueue.addToSendQueue(new Packet39PlayerSneak(this, this.isSneaking()));
++			this.wasSneaking = this.isSneaking();
++		}
++
+ 		if(var13) {
+ 			this.oldPosX = this.posX;
+ 			this.oldBasePos = this.boundingBox.minY;
+@@ -72,7 +82,6 @@
  	}
  
  	protected void joinEntityItemWithWorld(EntityItem var1) {
@@ -11386,7 +11668,7 @@
  		Packet21PickupSpawn var2 = new Packet21PickupSpawn(var1);
  		this.sendQueue.addToSendQueue(var2);
  		var1.posX = (double)var2.xPosition / 32.0D;
-@@ -90,5 +92,25 @@
+@@ -90,5 +99,25 @@
  	public void swingItem() {
  		super.swingItem();
  		this.sendQueue.addToSendQueue(new Packet18ArmAnimation(this, 1));
@@ -11513,7 +11795,7 @@
  public class NetHandler {
  	public void handleMapChunk(Packet51MapChunk var1) {
  	}
-@@ -107,6 +109,26 @@
+@@ -107,6 +109,30 @@
  	}
  
  	public void handleSpawnPosition(Packet6SpawnPosition var1) {
@@ -11537,6 +11819,10 @@
 +	}
 +
 +	public void handleRespawnPacket(Packet9Respawn var1) {
++		this.registerPacket(var1);
++	}
++
++	public void handleSneak(Packet39PlayerSneak var1) {
  		this.registerPacket(var1);
  	}
  }
@@ -11761,11 +12047,12 @@
 +}
 --- net/minecraft/src/NetServerHandler.java
 +++ net/minecraft/src/NetServerHandler.java
-@@ -2,9 +2,12 @@
+@@ -2,9 +2,13 @@
  
  import java.io.IOException;
  import java.util.logging.Logger;
 +
++import io.github.bluestaggo.mcdiverge.Packet39PlayerSneak;
 +import io.github.bluestaggo.mcdiverge.Packet7UseEntity;
 +import io.github.bluestaggo.mcdiverge.Packet9Respawn;
  import net.minecraft.server.MinecraftServer;
@@ -11775,7 +12062,7 @@
  	public static Logger logger = Logger.getLogger("Minecraft");
  	public NetworkManager netManager;
  	public boolean connectionClosed = false;
-@@ -109,6 +112,7 @@
+@@ -109,6 +113,7 @@
  
  			this.playerEntity.onGround = var1.onGround;
  			this.mcServer.configManager.serverUpdateMountedMovingPlayer(this.playerEntity);
@@ -11783,7 +12070,7 @@
  		}
  
  	}
-@@ -182,6 +186,13 @@
+@@ -182,6 +187,13 @@
  	}
  
  	public void handlePlace(Packet15Place var1) {
@@ -11797,7 +12084,7 @@
  		boolean var2 = this.mcServer.worldMngr.disableSpawnProtection = this.mcServer.configManager.isOp(this.playerEntity.username);
  		int var3 = var1.xPosition;
  		int var4 = var1.yPosition;
-@@ -194,11 +205,35 @@
+@@ -194,11 +206,35 @@
  		}
  
  		if(var8 > 16 || var2) {
@@ -11834,7 +12121,7 @@
  		this.mcServer.worldMngr.disableSpawnProtection = false;
  	}
  
-@@ -234,7 +269,7 @@
+@@ -234,7 +270,7 @@
  		double var2 = (double)var1.xPosition / 32.0D;
  		double var4 = (double)var1.yPosition / 32.0D;
  		double var6 = (double)var1.zPosition / 32.0D;
@@ -11843,7 +12130,18 @@
  		var8.motionX = (double)var1.rotation / 128.0D;
  		var8.motionY = (double)var1.pitch / 128.0D;
  		var8.motionZ = (double)var1.roll / 128.0D;
-@@ -378,6 +413,24 @@
+@@ -332,7 +368,10 @@
+ 		if(var1.animate == 1) {
+ 			this.playerEntity.swingItem();
+ 		}
++	}
+ 
++	public void handleSneak(Packet39PlayerSneak var1) {
++		this.playerEntity.sneaking = var1.isSneaking;
+ 	}
+ 
+ 	public void handleKickDisconnect(Packet255KickDisconnect var1) {
+@@ -378,6 +417,24 @@
  			var2.readFromNBT(var1.tileEntityNBT);
  			var2.onInventoryChanged();
  		}
@@ -11967,7 +12265,7 @@
  }
 --- net/minecraft/src/ItemPickaxe.java
 +++ net/minecraft/src/ItemPickaxe.java
-@@ -1,15 +1,96 @@
+@@ -1,15 +1,98 @@
  package net.minecraft.src;
  
 +import java.util.Arrays;
@@ -12008,6 +12306,8 @@
 +			Block.oreGold,
 +			Block.oreDiamond,
 +			Block.blockDiamond,
++			Block.oreRedstone,
++			Block.oreRedstoneGlowing,
 +			Block.ice,
 +			Block.mobSpawner,
 +			Block.stoneOvenIdle,
@@ -12281,7 +12581,7 @@
  	public static final Block torchRedstoneIdle = (new BlockRedstoneTorch(75, 115, false)).setHardness(0.0F).setStepSound(soundWoodFootstep);
  	public static final Block torchRedstoneActive = (new BlockRedstoneTorch(76, 99, true)).setHardness(0.0F).setLightValue(0.5F).setStepSound(soundWoodFootstep);
  	public static final Block button = (new BlockButton(77, stone.blockIndexInTexture)).setHardness(0.5F).setStepSound(soundStoneFootstep);
-@@ -105,6 +152,16 @@
+@@ -105,6 +152,18 @@
  	public static final Block reed = (new BlockReed(83, 73)).setHardness(0.0F).setStepSound(soundGrassFootstep);
  	public static final Block jukebox = (new BlockJukeBox(84, 74)).setHardness(2.0F).setResistance(10.0F).setStepSound(soundStoneFootstep);
  	public static final Block fence = (new BlockFence(85, 4)).setHardness(2.0F).setResistance(5.0F).setStepSound(soundWoodFootstep);
@@ -12295,10 +12595,12 @@
 +	public static final Block refabricator = (new BlockRefabricator(93)).setHardness(10.0F).setResistance(10.0F).setStepSound(soundMetalFootstep).setLightValue(0.5F);
 +	public static final Block boosterTrack = (new BlockMinecartTrack(94, 129)).setHardness(0.7F).setStepSound(soundMetalFootstep);
 +	public static final Block starLantern = (new Block(95, textureXY(3, 8), Material.glass)).setHardness(0.5F).setStepSound(soundGlassFootstep).setLightValue(1.0F);
++	public static final Block blockRedstone = (new BlockOreBlock(96, textureXY(12, 10))).setHardness(5.0F).setResistance(10.0F).setStepSound(soundMetalFootstep);
++	public static final Block blockCoal = (new Block(97, textureXY(13, 9), Material.rock)).setHardness(2.0F).setResistance(10.0F).setStepSound(soundStoneFootstep);
  	public int blockIndexInTexture;
  	public final int blockID;
  	protected float hardness;
-@@ -120,6 +177,10 @@
+@@ -120,6 +179,10 @@
  	public final Material material;
  	public float slipperiness;
  
@@ -12309,7 +12611,7 @@
  	protected Block(int var1, Material var2) {
  		this.stepSound = soundPowderFootstep;
  		this.blockParticleGravity = 1.0F;
-@@ -201,8 +262,12 @@
+@@ -201,8 +264,12 @@
  		return var1.getBrightness(var2, var3, var4);
  	}
  
@@ -12323,7 +12625,7 @@
  	}
  
  	public int getBlockTexture(IBlockAccess var1, int var2, int var3, int var4, int var5) {
-@@ -275,27 +340,59 @@
+@@ -275,27 +342,59 @@
  		return this.blockID;
  	}
  
@@ -12389,7 +12691,7 @@
  						var17.delayBeforeCanPickup = 10;
  						var1.spawnEntityInWorld(var17);
  					}
-@@ -469,6 +566,10 @@
+@@ -469,6 +568,10 @@
  		this.dropBlockAsItem(var1, var2, var3, var4, var5);
  	}
  
@@ -12400,7 +12702,7 @@
  	public boolean canBlockStay(World var1, int var2, int var3, int var4) {
  		return true;
  	}
-@@ -479,6 +580,22 @@
+@@ -479,6 +582,22 @@
  				Item.itemsList[var0] = new ItemBlock(var0 - 256);
  			}
  		}
@@ -12533,24 +12835,27 @@
 +}
 --- net/minecraft/src/EntityPlayerMP.java
 +++ net/minecraft/src/EntityPlayerMP.java
-@@ -4,6 +4,8 @@
+@@ -4,6 +4,9 @@
  import java.util.LinkedList;
  import java.util.List;
  import java.util.Set;
 +
++import io.github.bluestaggo.mcdiverge.Packet39PlayerSneak;
 +import io.github.bluestaggo.mcdiverge.Packet8UpdateHealth;
  import net.minecraft.server.MinecraftServer;
  
  public class EntityPlayerMP extends EntityPlayer {
-@@ -15,6 +17,7 @@
+@@ -15,6 +18,9 @@
  	public List loadedChunks = new LinkedList();
  	public Set loadChunks = new HashSet();
  	public double managedPosY;
 +	private int lastHealth = -99999999;
++	public boolean wasSneaking;
++	public boolean sneaking;
  
  	public EntityPlayerMP(MinecraftServer var1, World var2, String var3, ItemInWorldManager var4) {
  		super(var2);
-@@ -30,21 +33,19 @@
+@@ -30,21 +36,19 @@
  		this.yOffset = 0.0F;
  	}
  
@@ -12577,13 +12882,18 @@
  		ChunkCoordIntPair var1 = null;
  		double var2 = 0.0D;
  
-@@ -79,6 +80,17 @@
+@@ -79,6 +83,22 @@
  			}
  		}
  
 +		if (this.health != this.lastHealth) {
 +			this.playerNetServerHandler.sendPacket(new Packet8UpdateHealth(this.health));
 +			this.lastHealth = this.health;
++		}
++
++		if (this.sneaking != this.wasSneaking) {
++			this.mcServer.entityTracker.sendPacketToTrackedPlayers(this, new Packet39PlayerSneak(this, this.sneaking));
++			this.wasSneaking = this.sneaking;
 +		}
 +	}
 +
@@ -12595,7 +12905,7 @@
  	}
  
  	public void onLivingUpdate() {
-@@ -89,7 +101,7 @@
+@@ -89,7 +109,7 @@
  
  	public void onItemPickup(Entity var1, int var2) {
  		if(!var1.isDead && var1 instanceof EntityItem) {
@@ -12604,6 +12914,17 @@
  			this.mcServer.entityTracker.sendPacketToTrackedPlayers(var1, new Packet22Collect(var1.entityID, this.entityID));
  		}
  
+@@ -103,6 +123,10 @@
+ 			this.mcServer.entityTracker.sendPacketToTrackedPlayers(this, new Packet18ArmAnimation(this, 1));
+ 		}
+ 
++	}
++
++	public boolean isSneaking() {
++		return sneaking;
+ 	}
+ 
+ 	protected float getEyeHeight() {
 --- net/minecraft/src/GuiScreen.java
 +++ net/minecraft/src/GuiScreen.java
 @@ -11,6 +11,8 @@
@@ -12668,7 +12989,7 @@
  
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/ItemTooltip.java
-@@ -1,0 +1,478 @@
+@@ -1,0 +1,481 @@
 +package io.github.bluestaggo.mcdiverge;
 +
 +import java.util.ArrayList;
@@ -12906,6 +13227,8 @@
 +		items[94] = new ItemTooltip(LEGENDARY_GRAD, "Booster Track", LEGENDARY_COL,
 +				"Makes minecarts move faster", DESCRIPTION_COL);
 +		items[95] = new ItemTooltip("Star Lantern", RARE_COL);
++		items[96] = new ItemTooltip("Redstone Block", RARE_COL);
++		items[97] = new ItemTooltip("Coal Block");
 +
 +		items[256] = new ItemTooltip("Iron Shovel", UNCOMMON_COL, Item.shovel);
 +		items[257] = new ItemTooltip("Iron Pickaxe", UNCOMMON_COL, Item.pickaxeSteel);
@@ -13045,7 +13368,8 @@
 +		items[360] = new ItemTooltip("Star Chunk", RARE_COL,
 +				"A fallen star from the", DESCRIPTION_COL,
 +				"night sky; provides great", DESCRIPTION_COL,
-+				"energy when heated", DESCRIPTION_COL);
++				"energy when heated", DESCRIPTION_COL,
++				"Disappears at daytime", INFO_COL);
 +		items[361] = new ItemTooltip("Star Dust", RARE_COL,
 +				"This extraterrestrial dust", DESCRIPTION_COL,
 +				"emanates powerful energy", DESCRIPTION_COL);
@@ -13534,8 +13858,8 @@
 +	public static final Item compass = (new Item(89)).setIconIndex(54);
 +	public static final Item fishingRod = (new Item(90)).setIconIndex(69);
 +	public static final Item quiver = (new ItemQuiver(91)).setIconIndex(textureXY(6, 2));
-+	public static final Item staffRuby = (new ItemStaff(92, 8.0F, 10, 1024, 100, 1.0F)).setIconIndex(textureXY(10, 6));
-+	public static final Item staffSapphire = (new ItemStaff(93, 4.0F, 6, 1024, 0, 5.0F)).setIconIndex(textureXY(11, 6));
++	public static final Item staffRuby = (new ItemStaff(92, 10.0F, 10, 1024, 100, 1.0F)).setIconIndex(textureXY(10, 6));
++	public static final Item staffSapphire = (new ItemStaff(93, 6.0F, 6, 1024, 0, 5.0F)).setIconIndex(textureXY(11, 6));
 +	public static final Item ruby = (new Item(94)).setIconIndex(textureXY(10, 5));
 +	public static final Item sapphire = (new Item(95)).setIconIndex(textureXY(11, 5));
 +	public static final Item beefRaw = (new ItemFood(96, 3)).setIconIndex(textureXY(8, 9));
@@ -13753,7 +14077,22 @@
  	}
  
  	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
-@@ -137,5 +144,30 @@
+@@ -124,6 +131,7 @@
+ 			this.bipedRightLeg.rotationPointY = 9.0F;
+ 			this.bipedLeftLeg.rotationPointY = 9.0F;
+ 			this.bipedHead.rotationPointY = 1.0F;
++			this.bipedHeadwear.rotationPointY = 1.0F;
+ 		} else {
+ 			this.bipedBody.rotateAngleX = 0.0F;
+ 			this.bipedRightLeg.rotationPointZ = 0.0F;
+@@ -131,11 +139,37 @@
+ 			this.bipedRightLeg.rotationPointY = 12.0F;
+ 			this.bipedLeftLeg.rotationPointY = 12.0F;
+ 			this.bipedHead.rotationPointY = 0.0F;
++			this.bipedHeadwear.rotationPointY = 0.0F;
+ 		}
+ 
+ 		this.bipedRightArm.rotateAngleZ += MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
  		this.bipedLeftArm.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
  		this.bipedRightArm.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
  		this.bipedLeftArm.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
@@ -14017,14 +14356,24 @@
  	protected void drawGuiContainerBackgroundLayer(float var1) {
 --- net/minecraft/src/EntitySheep.java
 +++ net/minecraft/src/EntitySheep.java
-@@ -46,4 +46,8 @@
+@@ -10,7 +10,7 @@
+ 	}
+ 
+ 	public boolean attackEntityFrom(Entity var1, int var2) {
+-		if(!this.sheared && var1 instanceof EntityLiving) {
++		if(!this.sheared && var1 instanceof EntityLiving && this.worldObj.canDoClientAction()) {
+ 			this.sheared = true;
+ 			int var3 = 1 + this.rand.nextInt(3);
+ 
+@@ -45,5 +45,9 @@
+ 
  	protected String getDeathSound() {
  		return "mob.sheep";
- 	}
++	}
 +
 +	protected int getDropItemId() {
 +		return Item.muttonRaw.shiftedIndex;
-+	}
+ 	}
  }
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/WorldGenSpruceTrees.java
@@ -16833,7 +17182,8 @@
 -	public int numberOfOptions = 10;
 +	public int numberOfOptions = 18;
  	public int difficulty = 2;
- 	public boolean thirdPersonView = false;
+-	public boolean thirdPersonView = false;
++	public int thirdPersonView = 0;
 +	public boolean debugMenu = false;
  
  	public GameSettings(Minecraft var1, File var2) {
