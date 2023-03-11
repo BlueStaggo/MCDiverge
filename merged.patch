@@ -1300,18 +1300,27 @@
  			}
  
 -			if(this.snowCovered && this.rand.nextInt(4) == 0) {
-+			if(this.rand.nextInt(4) == 0) {
++			if(this.rand.nextInt(16) == 0) {
  				this.updateLCG = this.updateLCG * 3 + this.DIST_HASH_MAGIC;
  				var6 = this.updateLCG >> 2;
  				var7 = var6 & 15;
  				var8 = var6 >> 8 & 15;
  				var9 = this.getTopSolidOrLiquidBlock(var7 + var3, var8 + var4);
 -				if(var9 >= 0 && var9 < 128 && var14.getSavedLightValue(EnumSkyBlock.Block, var7, var9, var8) < 10) {
-+				if((this.worldType == WorldType.WINTER || this.getBiome(var7, var8) == Biome.TUNDRA)
++				if((this.worldType == WorldType.WINTER || var14.getBiome(var7, var8) == Biome.TUNDRA)
 +						&& var9 >= 0 && var9 < 128 && var14.getSavedLightValue(EnumSkyBlock.Block, var7, var9, var8) < 10) {
  					var10 = var14.getBlockID(var7, var9 - 1, var8);
  					if(var14.getBlockID(var7, var9, var8) == 0 && Block.snow.canPlaceBlockAt(this, var7 + var3, var9, var8 + var4)) {
  						this.setBlockWithNotify(var7 + var3, var9, var8 + var4, Block.snow.blockID);
+@@ -1837,7 +1889,7 @@
+ 	}
+ 
+ 	public byte[] getChunkData(int var1, int var2, int var3, int var4, int var5, int var6) {
+-		byte[] var7 = new byte[var4 * var5 * var6 * 5 / 2];
++		byte[] var7 = new byte[var4 * var5 * var6 * 7 / 2 + var4 * var6];
+ 		int var8 = var1 >> 4;
+ 		int var9 = var3 >> 4;
+ 		int var10 = var1 + var4 - 1 >> 4;
 @@ -1968,6 +2020,93 @@
  			this.loadedEntityList.add(var1);
  		}
@@ -1869,7 +1878,7 @@
  	}
 --- net/minecraft/src/BlockOre.java
 +++ net/minecraft/src/BlockOre.java
-@@ -1,17 +1,51 @@
+@@ -1,17 +1,63 @@
  package net.minecraft.src;
  
  import java.util.Random;
@@ -1902,12 +1911,23 @@
  	}
  
  	public int quantityDropped(Random var1) {
--		return 1;
 +		return var1.nextInt(this.dropExtra + 1) + 1;
 +	}
 +
 +	public int metadataDropped(int var1, Random var2) {
 +		return this.dropId == this.blockID ? var1 : 0;
++	}
++
++	public int idDroppedSilk(int var1, Random var2) {
++		return this.blockID;
++	}
++
++	public int quantityDroppedSilk(Random var1) {
+ 		return 1;
++	}
++
++	public int metadataDroppedSilk(int var1, Random var2) {
++		return var1;
 +	}
 +
 +	public int[] availableMetadata() {
@@ -3924,7 +3944,17 @@
  
 --- net/minecraft/src/BlockJukeBox.java
 +++ net/minecraft/src/BlockJukeBox.java
-@@ -20,7 +20,7 @@
+@@ -12,7 +12,8 @@
+ 	public boolean blockActivated(World var1, int var2, int var3, int var4, EntityPlayer var5) {
+ 		int var6 = var1.getBlockMetadata(var2, var3, var4);
+ 		if(var6 > 0) {
+-			this.ejectRecord(var1, var2, var3, var4, var6);
++			if (var1.canDoClientAction())
++				this.ejectRecord(var1, var2, var3, var4, var6);
+ 			return true;
+ 		} else {
+ 			return false;
+@@ -20,7 +21,7 @@
  	}
  
  	public void ejectRecord(World var1, int var2, int var3, int var4, int var5) {
@@ -3933,7 +3963,7 @@
  		var1.setBlockMetadataWithNotify(var2, var3, var4, 0);
  		int var6 = Item.record13.shiftedIndex + var5 - 1;
  		float var7 = 0.7F;
-@@ -33,12 +33,12 @@
+@@ -33,12 +34,12 @@
  	}
  
  	public void dropBlockAsItemWithChance(World var1, int var2, int var3, int var4, int var5, float var6) {
@@ -4795,7 +4825,7 @@
  
  	public int quantityDropped(Random var1) {
 -		return 0;
-+		return var1.nextInt(3) + 2;
++		return var1.nextInt(3) + 1;
 +	}
 +
 +	public int idDropped(int var1, Random var2) {
@@ -5102,9 +5132,9 @@
  							double var44 = 0.25D;
  							double var46 = var33;
  							double var48 = (var35 - var33) * var44;
-+							byte biome = biomes[var41 + var9 * 4 << 4 | var30 + var10 * 4];
  
  							for(int var50 = 0; var50 < 4; ++var50) {
++								byte biome = biomes[(var10 * 4 + var50) << 4 | (var9 * 4) + var41];
 +
  								int var51 = 0;
  								if(var11 * 8 + var30 < var5) {
@@ -6892,6 +6922,38 @@
  	}
  
  	public void removeChunkBlockTileEntity(int var1, int var2, int var3) {
+@@ -539,6 +560,15 @@
+ 			}
+ 		}
+ 
++		for(var9 = var2; var9 < var5; ++var9) {
++			for(var10 = var4; var10 < var7; ++var10) {
++				var11 = var10 << 4 | var9;
++				var12 = 1;
++				System.arraycopy(this.biomes, var11, var1, var8, var12);
++				var8 += var12;
++			}
++		}
++
+ 		return var8;
+ 	}
+ 
+@@ -581,6 +611,15 @@
+ 				var11 = (var9 << 11 | var10 << 7 | var3) >> 1;
+ 				var12 = (var6 - var3) / 2;
+ 				System.arraycopy(var1, var8, this.skylightMap.data, var11, var12);
++				var8 += var12;
++			}
++		}
++
++		for(var9 = var2; var9 < var5; ++var9) {
++			for(var10 = var4; var10 < var7; ++var10) {
++				var11 = var10 << 4 | var9;
++				var12 = 1;
++				System.arraycopy(var1, var8, this.biomes, var11, var12);
+ 				var8 += var12;
+ 			}
+ 		}
 --- net/minecraft/src/RecipesArmor.java
 +++ net/minecraft/src/RecipesArmor.java
 @@ -4,13 +4,13 @@
@@ -8960,14 +9022,13 @@
  			this.thePlayer = null;
  		}
  
-@@ -1047,15 +1025,16 @@
+@@ -1047,15 +1025,15 @@
  		this.systemTime = 0L;
  	}
  
 -	private void preloadWorld(String var1) {
 -		this.loadingScreen.resetProgressAndMessage(var1);
 +	private void preloadWorld(String title) {
-+		this.sndManager.fadeOutTitleMusic();
 +		this.loadingScreen.resetProgressAndMessage(title);
  		this.loadingScreen.displayLoadingString("Building terrain");
 -		short var2 = 128;
@@ -8982,7 +9043,7 @@
  			int var6 = this.theWorld.spawnX;
  			int var7 = this.theWorld.spawnZ;
  			if(this.thePlayer != null) {
-@@ -1063,7 +1042,7 @@
+@@ -1063,7 +1041,7 @@
  				var7 = (int)this.thePlayer.posZ;
  			}
  
@@ -8991,7 +9052,7 @@
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
  				this.theWorld.getBlockId(var6 + var5, 64, var7 + var8);
  
-@@ -1077,20 +1056,26 @@
+@@ -1077,20 +1055,26 @@
  		this.theWorld.dropOldChunks();
  	}
  
@@ -9028,7 +9089,7 @@
  		}
  
  	}
-@@ -1099,6 +1084,12 @@
+@@ -1099,6 +1083,12 @@
  		return this.glCapabilities;
  	}
  
@@ -9041,7 +9102,7 @@
  	public String debugInfoRenders() {
  		return this.renderGlobal.getDebugInfoRenders();
  	}
-@@ -1111,6 +1102,15 @@
+@@ -1111,6 +1101,15 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
  	}
  
@@ -9057,7 +9118,7 @@
  	public void respawn() {
  		this.theWorld.setSpawnLocation();
  		if(this.thePlayer != null) {
-@@ -1126,51 +1126,78 @@
+@@ -1126,51 +1125,78 @@
  		this.preloadWorld("Respawning");
  	}
  
@@ -11477,7 +11538,34 @@
  		}
  
  		return var7;
-@@ -147,11 +154,24 @@
+@@ -129,6 +136,26 @@
+ 	public void onUpdate() {
+ 		this.syncCurrentPlayItem();
+ 		this.prevBlockDamageMP = this.curBlockDamageMP;
++
++		EntityPlayer plr = this.mc.thePlayer;
++		int ix = (int)plr.posX;
++		int iy = (int)plr.posY;
++		int iz = (int)plr.posZ;
++
++		this.mc.sndManager.tickMusic();
++		if (iy < 64
++				&& this.mc.theWorld.getSavedLightValue(EnumSkyBlock.Sky, ix, iy, iz) <= 0
++				&& this.mc.theWorld.hasSolidCeiling(ix, iy, iz)) {
++			if (this.mc.sndManager.getMusicType() != SoundManager.MusicType.CAVE) {
++				this.mc.sndManager.fadeOutBackgroundMusic();
++			}
++			this.mc.sndManager.playRandomCaveMusicIfReady();
++		} else {
++			if (this.mc.sndManager.getMusicType() != SoundManager.MusicType.NORMAL) {
++				this.mc.sndManager.fadeOutBackgroundMusic();
++			}
++			this.mc.sndManager.playRandomMusicIfReady();
++		}
+ 	}
+ 
+ 	private void syncCurrentPlayItem() {
+@@ -147,11 +174,24 @@
  
  	public boolean onPlayerRightClick(EntityPlayer var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7) {
  		this.syncCurrentPlayItem();
@@ -15905,6 +15993,26 @@
 -
 -	}
 -}
+--- net/minecraft/src/Packet51MapChunk.java
++++ net/minecraft/src/Packet51MapChunk.java
+@@ -31,7 +31,7 @@
+ 		int var2 = var1.readInt();
+ 		byte[] var3 = new byte[var2];
+ 		var1.readFully(var3);
+-		this.chunkData = new byte[this.xSize * this.ySize * this.zSize * 5 / 2];
++		this.chunkData = new byte[this.xSize * this.ySize * this.zSize * 7 / 2 + this.xSize * this.zSize];
+ 		Inflater var4 = new Inflater();
+ 		var4.setInput(var3);
+ 
+@@ -78,7 +78,7 @@
+ 		try {
+ 			var9.setInput(var8);
+ 			var9.finish();
+-			this.chunkData = new byte[var4 * var5 * var6 * 5 / 2];
++			this.chunkData = new byte[var4 * var5 * var6 * 7 / 2 + var4 * var6];
+ 			this.tempLength = var9.deflate(this.chunkData);
+ 		} finally {
+ 			var9.end();
 --- net/minecraft/src/GuiGameOver.java
 +++ net/minecraft/src/GuiGameOver.java
 @@ -10,7 +10,6 @@
