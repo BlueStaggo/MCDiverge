@@ -542,14 +542,22 @@
  	public boolean getIsMouseOverSlot(int var1, int var2) {
 --- net/minecraft/src/NetworkAcceptThread.java
 +++ net/minecraft/src/NetworkAcceptThread.java
-@@ -2,6 +2,7 @@
+@@ -2,11 +2,12 @@
  
  import java.io.IOException;
  import java.net.Socket;
 +
  import net.minecraft.server.MinecraftServer;
  
- class NetworkAcceptThread extends Thread {
+-class NetworkAcceptThread extends Thread {
+-	final MinecraftServer minecraftServer;
+-	final NetworkListenThread networkListenThread;
++public class NetworkAcceptThread extends Thread {
++	public final MinecraftServer minecraftServer;
++	public final NetworkListenThread networkListenThread;
+ 
+ 	NetworkAcceptThread(NetworkListenThread var1, String var2, MinecraftServer var3) {
+ 		super(var2);
 --- net/minecraft/src/NBTTagString.java
 +++ net/minecraft/src/NBTTagString.java
 @@ -17,11 +17,11 @@
@@ -5030,6 +5038,17 @@
  }
 --- net/minecraft/src/GuiLogFormatter.java
 +++ net/minecraft/src/GuiLogFormatter.java
+@@ -6,8 +6,8 @@
+ import java.util.logging.Level;
+ import java.util.logging.LogRecord;
+ 
+-class GuiLogFormatter extends Formatter {
+-	final GuiLogOutputHandler handler;
++public class GuiLogFormatter extends Formatter {
++	public final GuiLogOutputHandler handler;
+ 
+ 	GuiLogFormatter(GuiLogOutputHandler var1) {
+ 		this.handler = var1;
 @@ -28,8 +28,6 @@
  			var2.append("[WARNING] ");
  		} else if(var3 == Level.SEVERE) {
@@ -9999,6 +10018,19 @@
  			var5 = var5 + "OS: " + System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version") + "\n";
  			var5 = var5 + "Java: " + System.getProperty("java.version") + ", " + System.getProperty("java.vendor") + "\n";
  			var5 = var5 + "VM: " + System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor") + "\n";
+--- net/minecraft/src/RecipeSorter.java
++++ net/minecraft/src/RecipeSorter.java
+@@ -2,8 +2,8 @@
+ 
+ import java.util.Comparator;
+ 
+-class RecipeSorter implements Comparator {
+-	final CraftingManager craftingManager;
++public class RecipeSorter implements Comparator {
++	public final CraftingManager craftingManager;
+ 
+ 	RecipeSorter(CraftingManager var1) {
+ 		this.craftingManager = var1;
 --- /dev/null
 +++ net/minecraft/src/CraftingInventoryChestCB.java
 @@ -1,0 +1,34 @@
@@ -13841,7 +13873,11 @@
  import org.lwjgl.LWJGLException;
  import org.lwjgl.input.Controllers;
  import org.lwjgl.input.Keyboard;
-@@ -73,6 +23,10 @@
+@@ -70,9 +20,14 @@
+ import org.lwjgl.opengl.Display;
+ import org.lwjgl.opengl.DisplayMode;
+ import org.lwjgl.opengl.GL11;
++import org.lwjgl.opengl.PixelFormat;
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
@@ -13852,7 +13888,7 @@
  	public PlayerController playerController;
  	private boolean fullscreen = false;
  	public int displayWidth;
-@@ -105,6 +59,7 @@
+@@ -105,6 +60,7 @@
  	public ModelBiped playerModelBiped = new ModelBiped(0.0F);
  	public MovingObjectPosition objectMouseOver = null;
  	public GameSettings options;
@@ -13860,7 +13896,7 @@
  	protected MinecraftApplet mcApplet;
  	public SoundManager sndManager = new SoundManager();
  	public MouseHelper mouseHelper;
-@@ -124,20 +79,27 @@
+@@ -124,20 +80,27 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
@@ -13900,7 +13936,7 @@
  
  	public void setServer(String var1, int var2) {
  		this.serverName = var1;
-@@ -169,24 +131,26 @@
+@@ -169,24 +132,28 @@
  			Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
  		}
  
@@ -13908,9 +13944,11 @@
 +		Display.setTitle("Minecraft " + Minecraft.version);
  
  		try {
- 			Display.create();
+-			Display.create();
 -		} catch (LWJGLException var6) {
 -			var6.printStackTrace();
++			Display.create(new PixelFormat()
++					.withDepthBits(24));
 +		} catch (LWJGLException lWJGLException6) {
 +			lWJGLException6.printStackTrace();
  
@@ -13920,7 +13958,9 @@
 +			} catch (InterruptedException interruptedException5) {
  			}
  
- 			Display.create();
+-			Display.create();
++			Display.create(new PixelFormat()
++					.withDepthBits(24));
  		}
  
 +		OpenGlHelper.initializeTextures();
@@ -13931,7 +13971,7 @@
  		this.renderEngine = new RenderEngine(this.options);
  		this.fontRenderer = new FontRenderer(this.options, "/default.png", this.renderEngine);
  		this.loadScreen();
-@@ -194,10 +158,12 @@
+@@ -194,10 +161,12 @@
  		Mouse.create();
  		this.mouseHelper = new MouseHelper(this.mcCanvas);
  
@@ -13946,7 +13986,7 @@
  		}
  
  		this.checkGLError("Pre startup");
-@@ -229,7 +195,14 @@
+@@ -229,7 +198,14 @@
  		try {
  			this.downloadResourcesThread = new ThreadDownloadResources(this.mcDataDir, this);
  			this.downloadResourcesThread.start();
@@ -13962,7 +14002,7 @@
  		}
  
  		this.checkGLError("Post startup");
-@@ -237,16 +210,15 @@
+@@ -237,16 +213,15 @@
  		if(this.serverName != null) {
  			this.displayGuiScreen(new GuiConnecting(this, this.serverName, this.serverPort));
  		} else {
@@ -13984,7 +14024,7 @@
  		GL11.glMatrixMode(GL11.GL_PROJECTION);
  		GL11.glLoadIdentity();
  		GL11.glOrtho(0.0D, (double)var2, (double)var3, 0.0D, 1000.0D, 3000.0D);
-@@ -255,23 +227,23 @@
+@@ -255,23 +230,23 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glViewport(0, 0, this.displayWidth, this.displayHeight);
  		GL11.glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
@@ -14021,7 +14061,7 @@
  		GL11.glDisable(GL11.GL_LIGHTING);
  		GL11.glDisable(GL11.GL_FOG);
  		GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -280,15 +252,15 @@
+@@ -280,15 +255,15 @@
  	}
  
  	public void scaledTessellator(int var1, int var2, int var3, int var4, int var5, int var6) {
@@ -14046,7 +14086,7 @@
  	}
  
  	public static File getMinecraftDir() {
-@@ -301,31 +273,31 @@
+@@ -301,31 +276,31 @@
  
  	public static File getAppDir(String var0) {
  		String var1 = System.getProperty("user.home", ".");
@@ -14088,7 +14128,7 @@
  		}
  	}
  
-@@ -334,25 +306,25 @@
+@@ -334,25 +309,25 @@
  		return var0.contains("win") ? EnumOS.windows : (var0.contains("mac") ? EnumOS.macos : (var0.contains("solaris") ? EnumOS.solaris : (var0.contains("sunos") ? EnumOS.solaris : (var0.contains("linux") ? EnumOS.linux : (var0.contains("unix") ? EnumOS.linux : EnumOS.unknown)))));
  	}
  
@@ -14125,7 +14165,7 @@
  				this.skipRenderWorld = false;
  			} else {
  				this.setIngameFocus();
-@@ -382,7 +354,7 @@
+@@ -382,7 +357,7 @@
  			if(this.downloadResourcesThread != null) {
  				this.downloadResourcesThread.closeMinecraft();
  			}
@@ -14134,7 +14174,7 @@
  		}
  
  		try {
-@@ -391,7 +363,7 @@
+@@ -391,7 +366,7 @@
  
  			try {
  				GLAllocation.deleteTexturesAndDisplayLists();
@@ -14143,7 +14183,7 @@
  			}
  
  			this.sndManager.closeMinecraft();
-@@ -409,9 +381,9 @@
+@@ -409,9 +384,9 @@
  
  		try {
  			this.startGame();
@@ -14156,7 +14196,7 @@
  			return;
  		}
  
-@@ -440,7 +412,7 @@
+@@ -440,7 +415,7 @@
  
  						try {
  							this.runTick();
@@ -14165,7 +14205,7 @@
  							this.theWorld = null;
  							this.changeWorld1((World)null);
  							this.displayGuiScreen(new GuiConflictWarning());
-@@ -493,9 +465,9 @@
+@@ -493,9 +468,9 @@
  						this.resize(this.displayWidth, this.displayHeight);
  					}
  
@@ -14178,7 +14218,7 @@
  
  					this.checkGLError("Post render");
  					++var3;
-@@ -506,7 +478,7 @@
+@@ -506,7 +481,7 @@
  						var1 += 1000L;
  					}
  				}
@@ -14187,7 +14227,7 @@
  			} catch (Throwable var15) {
  				this.theWorld = null;
  				var15.printStackTrace();
-@@ -514,6 +486,7 @@
+@@ -514,6 +489,7 @@
  			}
  
  		} finally {
@@ -14195,7 +14235,7 @@
  		}
  	}
  
-@@ -534,14 +507,14 @@
+@@ -534,14 +510,14 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glLineWidth(1.0F);
  		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -14218,7 +14258,7 @@
  		long var4 = 0L;
  
  		int var6;
-@@ -550,14 +523,14 @@
+@@ -550,14 +526,14 @@
  		}
  
  		var6 = (int)(var4 / 200000L / (long)frameTimes.length);
@@ -14241,7 +14281,7 @@
  
  		for(int var7 = 0; var7 < frameTimes.length; ++var7) {
  			int var8 = (var7 - numRecordedFrameTimes & frameTimes.length - 1) * 255 / frameTimes.length;
-@@ -565,13 +538,13 @@
+@@ -565,13 +541,13 @@
  			var9 = var9 * var9 / 255;
  			int var10 = var9 * var9 / 255;
  			var10 = var10 * var10 / 255;
@@ -14259,7 +14299,7 @@
  		GL11.glEnable(GL11.GL_TEXTURE_2D);
  	}
  
-@@ -607,10 +580,10 @@
+@@ -607,10 +583,10 @@
  		}
  	}
  
@@ -14273,7 +14313,7 @@
  					int var3 = this.objectMouseOver.blockX;
  					int var4 = this.objectMouseOver.blockY;
  					int var5 = this.objectMouseOver.blockZ;
-@@ -620,27 +593,30 @@
+@@ -620,27 +596,30 @@
  					this.playerController.resetBlockRemoving();
  				}
  
@@ -14311,7 +14351,7 @@
  					this.thePlayer.interactWithEntity(this.objectMouseOver.entityHit);
  				}
  			} else if(this.objectMouseOver.typeOfHit == 0) {
-@@ -649,7 +625,7 @@
+@@ -649,7 +628,7 @@
  				int var4 = this.objectMouseOver.blockZ;
  				int var5 = this.objectMouseOver.sideHit;
  				Block var6 = Block.blocksList[this.theWorld.getBlockId(var2, var3, var4)];
@@ -14320,7 +14360,7 @@
  					this.theWorld.extinguishFire(var2, var3, var4, this.objectMouseOver.sideHit);
  					if(var6 != Block.bedrock || this.thePlayer.unusedMiningCooldown >= 100) {
  						this.playerController.clickBlock(var2, var3, var4, this.objectMouseOver.sideHit);
-@@ -657,7 +633,7 @@
+@@ -657,7 +636,7 @@
  				} else {
  					ItemStack var7 = this.thePlayer.inventory.getCurrentItem();
  					int var8 = var7 != null ? var7.stackSize : 0;
@@ -14329,7 +14369,7 @@
  						this.thePlayer.swingItem();
  					}
  
-@@ -673,18 +649,10 @@
+@@ -673,18 +652,10 @@
  				}
  			}
  
@@ -14351,7 +14391,7 @@
  				}
  			}
  
-@@ -740,27 +708,27 @@
+@@ -740,27 +711,27 @@
  			}
  
  			System.out.println("Size: " + this.displayWidth + ", " + this.displayHeight);
@@ -14395,7 +14435,7 @@
  			this.currentScreen.setWorldAndResolution(this, var4, var5);
  		}
  
-@@ -789,9 +757,6 @@
+@@ -789,9 +760,6 @@
  	public void runTick() {
  		this.ingameGUI.updateTick();
  		this.entityRenderer.getMouseOver(1.0F);
@@ -14405,7 +14445,7 @@
  
  		if(!this.isGamePaused && this.theWorld != null) {
  			this.playerController.onUpdate();
-@@ -867,20 +832,36 @@
+@@ -867,20 +835,36 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F5) {
@@ -14445,7 +14485,7 @@
  											}
  
  											for(int var4 = 0; var4 < 9; ++var4) {
-@@ -954,6 +935,9 @@
+@@ -954,6 +938,9 @@
  			}
  
  			if(!this.isGamePaused || this.isMultiplayerWorld()) {
@@ -14455,7 +14495,7 @@
  				this.theWorld.tick();
  			}
  
-@@ -980,82 +964,104 @@
+@@ -980,82 +967,104 @@
  		return this.theWorld != null && this.theWorld.multiplayerWorld;
  	}
  
@@ -14594,7 +14634,7 @@
  			int var6 = this.theWorld.spawnX;
  			int var7 = this.theWorld.spawnZ;
  			if(this.thePlayer != null) {
-@@ -1063,7 +1069,7 @@
+@@ -1063,7 +1072,7 @@
  				var7 = (int)this.thePlayer.posZ;
  			}
  
@@ -14603,7 +14643,7 @@
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
  				this.theWorld.getBlockId(var6 + var5, 64, var7 + var8);
  
-@@ -1077,20 +1083,28 @@
+@@ -1077,20 +1086,28 @@
  		this.theWorld.dropOldChunks();
  	}
  
@@ -14642,7 +14682,7 @@
  		}
  
  	}
-@@ -1099,6 +1113,12 @@
+@@ -1099,6 +1116,12 @@
  		return this.glCapabilities;
  	}
  
@@ -14655,7 +14695,7 @@
  	public String debugInfoRenders() {
  		return this.renderGlobal.getDebugInfoRenders();
  	}
-@@ -1111,6 +1131,33 @@
+@@ -1111,6 +1134,33 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getDebugLoadedEntities();
  	}
  
@@ -14689,7 +14729,7 @@
  	public void respawn() {
  		this.theWorld.setSpawnLocation();
  		if(this.thePlayer != null) {
-@@ -1126,51 +1173,78 @@
+@@ -1126,51 +1176,78 @@
  		this.preloadWorld("Respawning");
  	}
  
@@ -19899,9 +19939,9 @@
 +
 +/* lets chunk writing be multithreaded by not locking the whole file as a
 +   chunk is serializing -- only writes when serialization is over */
-+class ChunkBuffer extends ByteArrayOutputStream {
++public class ChunkBuffer extends ByteArrayOutputStream {
 +	private int x, z;
-+	final RegionFile regionFile;
++	public final RegionFile regionFile;
 +
 +	public ChunkBuffer(RegionFile regionFile, int x, int z) {
 +		super(8096); // initialize to 8KB
@@ -20273,6 +20313,18 @@
 +		return this.upperChest.isNearPlayer(var1) && this.lowerChest.isNearPlayer(var1);
 +	}
  }
+--- net/minecraft/src/NetworkWriterThread.java
++++ net/minecraft/src/NetworkWriterThread.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.src;
+ 
+-class NetworkWriterThread extends Thread {
+-	final NetworkManager netManager;
++public class NetworkWriterThread extends Thread {
++	public final NetworkManager netManager;
+ 
+ 	NetworkWriterThread(NetworkManager var1, String var2) {
+ 		super(var2);
 --- net/minecraft/src/NetServerHandler.java
 +++ net/minecraft/src/NetServerHandler.java
 @@ -1,10 +1,16 @@
