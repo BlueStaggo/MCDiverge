@@ -3690,6 +3690,137 @@
  		this.fogColorBuffer.flip();
  		return this.fogColorBuffer;
  	}
+--- /dev/null
++++ net/minecraft/src/MCHashTableLong.java
+@@ -1,0 +1,128 @@
++package net.minecraft.src;
++
++public class MCHashTableLong {
++	private transient MCHashEntryLong[] slots = new MCHashEntryLong[16];
++	private transient int count;
++	private int threshold = 12;
++	private final float growFactor = 12.0F / 16.0F;
++	private transient volatile int versionStamp;
++
++	private static int computeHash(long var0) {
++		return computeHash((int)(var0 ^ var0 >>> 32));
++	}
++
++	private static int computeHash(int var0) {
++		var0 ^= var0 >>> 20 ^ var0 >>> 12;
++		return var0 ^ var0 >>> 7 ^ var0 >>> 4;
++	}
++
++	private static int getSlotIndex(int var0, int var1) {
++		return var0 & var1 - 1;
++	}
++
++	public Object lookup(long var1) {
++		int var3 = computeHash(var1);
++
++		for(MCHashEntryLong var4 = this.slots[getSlotIndex(var3, this.slots.length)]; var4 != null; var4 = var4.nextEntry) {
++			if(var4.hashEntry == var1) {
++				return var4.valueEntry;
++			}
++		}
++
++		return null;
++	}
++
++	public void addKey(long var1, Object var3) {
++		int var4 = computeHash(var1);
++		int var5 = getSlotIndex(var4, this.slots.length);
++
++		for(MCHashEntryLong var6 = this.slots[var5]; var6 != null; var6 = var6.nextEntry) {
++			if(var6.hashEntry == var1) {
++				var6.valueEntry = var3;
++			}
++		}
++
++		++this.versionStamp;
++		this.insert(var4, var1, var3, var5);
++	}
++
++	private void grow(int var1) {
++		MCHashEntryLong[] var2 = this.slots;
++		int var3 = var2.length;
++		if(var3 == 1073741824) {
++			this.threshold = Integer.MAX_VALUE;
++		} else {
++			MCHashEntryLong[] var4 = new MCHashEntryLong[var1];
++			this.copyTo(var4);
++			this.slots = var4;
++			this.threshold = (int)((float)var1 * this.growFactor);
++		}
++	}
++
++	private void copyTo(MCHashEntryLong[] var1) {
++		MCHashEntryLong[] var2 = this.slots;
++		int var3 = var1.length;
++
++		for(int var4 = 0; var4 < var2.length; ++var4) {
++			MCHashEntryLong var5 = var2[var4];
++			if(var5 != null) {
++				var2[var4] = null;
++
++				MCHashEntryLong var6;
++				do {
++					var6 = var5.nextEntry;
++					int var7 = getSlotIndex(var5.slotHash, var3);
++					var5.nextEntry = var1[var7];
++					var1[var7] = var5;
++					var5 = var6;
++				} while(var6 != null);
++			}
++		}
++
++	}
++
++	public Object removeObject(long var1) {
++		MCHashEntryLong var3 = this.removeEntry(var1);
++		return var3 == null ? null : var3.valueEntry;
++	}
++
++	final MCHashEntryLong removeEntry(long var1) {
++		int var3 = computeHash(var1);
++		int var4 = getSlotIndex(var3, this.slots.length);
++		MCHashEntryLong var5 = this.slots[var4];
++
++		MCHashEntryLong var6;
++		MCHashEntryLong var7;
++		for(var6 = var5; var6 != null; var6 = var7) {
++			var7 = var6.nextEntry;
++			if(var6.hashEntry == var1) {
++				++this.versionStamp;
++				--this.count;
++				if(var5 == var6) {
++					this.slots[var4] = var7;
++				} else {
++					var5.nextEntry = var7;
++				}
++
++				return var6;
++			}
++
++			var5 = var6;
++		}
++
++		return var6;
++	}
++
++	private void insert(int var1, long var2, Object var4, int var5) {
++		MCHashEntryLong var6 = this.slots[var5];
++		this.slots[var5] = new MCHashEntryLong(var1, var2, var4, var6);
++		if(this.count++ >= this.threshold) {
++			this.grow(2 * this.slots.length);
++		}
++
++	}
++
++	static int getHash(long var0) {
++		return computeHash(var0);
++	}
++}
 --- net/minecraft/src/NBTTagList.java
 +++ net/minecraft/src/NBTTagList.java
 @@ -10,7 +10,7 @@
@@ -5993,6 +6124,59 @@
 +								 out };
 +	}
 +}
+--- net/minecraft/src/MCHashEntry2.java
++++ /dev/null
+@@ -1,50 +1,0 @@
+-package net.minecraft.src;
+-
+-class MCHashEntry2 {
+-	final long hashEntry;
+-	Object valueEntry;
+-	MCHashEntry2 nextEntry;
+-	final int slotHash;
+-
+-	MCHashEntry2(int var1, long var2, Object var4, MCHashEntry2 var5) {
+-		this.valueEntry = var4;
+-		this.nextEntry = var5;
+-		this.hashEntry = var2;
+-		this.slotHash = var1;
+-	}
+-
+-	public final long getHash() {
+-		return this.hashEntry;
+-	}
+-
+-	public final Object getValue() {
+-		return this.valueEntry;
+-	}
+-
+-	public final boolean equals(Object var1) {
+-		if(!(var1 instanceof MCHashEntry2)) {
+-			return false;
+-		} else {
+-			MCHashEntry2 var2 = (MCHashEntry2)var1;
+-			Long var3 = Long.valueOf(this.getHash());
+-			Long var4 = Long.valueOf(var2.getHash());
+-			if(var3 == var4 || var3 != null && var3.equals(var4)) {
+-				Object var5 = this.getValue();
+-				Object var6 = var2.getValue();
+-				if(var5 == var6 || var5 != null && var5.equals(var6)) {
+-					return true;
+-				}
+-			}
+-
+-			return false;
+-		}
+-	}
+-
+-	public final int hashCode() {
+-		return MCHashTable2.getHash(this.hashEntry);
+-	}
+-
+-	public final String toString() {
+-		return this.getHash() + "=" + this.getValue();
+-	}
+-}
 --- net/minecraft/src/NBTTagFloat.java
 +++ net/minecraft/src/NBTTagFloat.java
 @@ -14,11 +14,11 @@
@@ -10806,7 +10990,7 @@
  			var1 = new double[var8 * var9 * var10];
 --- net/minecraft/src/PlayerManager.java
 +++ net/minecraft/src/PlayerManager.java
-@@ -3,6 +3,7 @@
+@@ -3,16 +3,17 @@
  import java.io.IOException;
  import java.util.ArrayList;
  import java.util.List;
@@ -10814,7 +10998,9 @@
  import net.minecraft.server.MinecraftServer;
  
  public class PlayerManager {
-@@ -11,8 +12,8 @@
+ 	private List players = new ArrayList();
+-	private MCHashTable2 playerInstances = new MCHashTable2();
++	private MCHashTableLong playerInstances = new MCHashTableLong();
  	private List playerInstancesToUpdate = new ArrayList();
  	private MinecraftServer mcServer;
  
@@ -10841,6 +11027,169 @@
  		int var2 = (int)var1.posX >> 4;
  		int var3 = (int)var1.posZ >> 4;
  
+@@ -134,7 +133,7 @@
+ 		return var0.mcServer;
+ 	}
+ 
+-	static MCHashTable2 getPlayerInstances(PlayerManager var0) {
++	static MCHashTableLong getPlayerInstances(PlayerManager var0) {
+ 		return var0.playerInstances;
+ 	}
+ 
+--- net/minecraft/src/MCHashTable.java
++++ /dev/null
+@@ -1,151 +1,0 @@
+-package net.minecraft.src;
+-
+-public class MCHashTable {
+-	private transient MCHashEntry[] slots = new MCHashEntry[16];
+-	private transient int count;
+-	private int threshold = 12;
+-	private final float growFactor = 12.0F / 16.0F;
+-	private transient volatile int versionStamp;
+-
+-	private static int computeHash(int var0) {
+-		var0 ^= var0 >>> 20 ^ var0 >>> 12;
+-		return var0 ^ var0 >>> 7 ^ var0 >>> 4;
+-	}
+-
+-	private static int getSlotIndex(int var0, int var1) {
+-		return var0 & var1 - 1;
+-	}
+-
+-	public Object lookup(int var1) {
+-		int var2 = computeHash(var1);
+-
+-		for(MCHashEntry var3 = this.slots[getSlotIndex(var2, this.slots.length)]; var3 != null; var3 = var3.nextEntry) {
+-			if(var3.hashEntry == var1) {
+-				return var3.valueEntry;
+-			}
+-		}
+-
+-		return null;
+-	}
+-
+-	public boolean containsItem(int var1) {
+-		return this.lookupEntry(var1) != null;
+-	}
+-
+-	final MCHashEntry lookupEntry(int var1) {
+-		int var2 = computeHash(var1);
+-
+-		for(MCHashEntry var3 = this.slots[getSlotIndex(var2, this.slots.length)]; var3 != null; var3 = var3.nextEntry) {
+-			if(var3.hashEntry == var1) {
+-				return var3;
+-			}
+-		}
+-
+-		return null;
+-	}
+-
+-	public void addKey(int var1, Object var2) {
+-		int var3 = computeHash(var1);
+-		int var4 = getSlotIndex(var3, this.slots.length);
+-
+-		for(MCHashEntry var5 = this.slots[var4]; var5 != null; var5 = var5.nextEntry) {
+-			if(var5.hashEntry == var1) {
+-				var5.valueEntry = var2;
+-			}
+-		}
+-
+-		++this.versionStamp;
+-		this.insert(var3, var1, var2, var4);
+-	}
+-
+-	private void grow(int var1) {
+-		MCHashEntry[] var2 = this.slots;
+-		int var3 = var2.length;
+-		if(var3 == 1073741824) {
+-			this.threshold = Integer.MAX_VALUE;
+-		} else {
+-			MCHashEntry[] var4 = new MCHashEntry[var1];
+-			this.copyTo(var4);
+-			this.slots = var4;
+-			this.threshold = (int)((float)var1 * this.growFactor);
+-		}
+-	}
+-
+-	private void copyTo(MCHashEntry[] var1) {
+-		MCHashEntry[] var2 = this.slots;
+-		int var3 = var1.length;
+-
+-		for(int var4 = 0; var4 < var2.length; ++var4) {
+-			MCHashEntry var5 = var2[var4];
+-			if(var5 != null) {
+-				var2[var4] = null;
+-
+-				MCHashEntry var6;
+-				do {
+-					var6 = var5.nextEntry;
+-					int var7 = getSlotIndex(var5.slotHash, var3);
+-					var5.nextEntry = var1[var7];
+-					var1[var7] = var5;
+-					var5 = var6;
+-				} while(var6 != null);
+-			}
+-		}
+-
+-	}
+-
+-	public Object removeObject(int var1) {
+-		MCHashEntry var2 = this.removeEntry(var1);
+-		return var2 == null ? null : var2.valueEntry;
+-	}
+-
+-	final MCHashEntry removeEntry(int var1) {
+-		int var2 = computeHash(var1);
+-		int var3 = getSlotIndex(var2, this.slots.length);
+-		MCHashEntry var4 = this.slots[var3];
+-
+-		MCHashEntry var5;
+-		MCHashEntry var6;
+-		for(var5 = var4; var5 != null; var5 = var6) {
+-			var6 = var5.nextEntry;
+-			if(var5.hashEntry == var1) {
+-				++this.versionStamp;
+-				--this.count;
+-				if(var4 == var5) {
+-					this.slots[var3] = var6;
+-				} else {
+-					var4.nextEntry = var6;
+-				}
+-
+-				return var5;
+-			}
+-
+-			var4 = var5;
+-		}
+-
+-		return var5;
+-	}
+-
+-	public void clearMap() {
+-		++this.versionStamp;
+-		MCHashEntry[] var1 = this.slots;
+-
+-		for(int var2 = 0; var2 < var1.length; ++var2) {
+-			var1[var2] = null;
+-		}
+-
+-		this.count = 0;
+-	}
+-
+-	private void insert(int var1, int var2, Object var3, int var4) {
+-		MCHashEntry var5 = this.slots[var4];
+-		this.slots[var4] = new MCHashEntry(var1, var2, var3, var5);
+-		if(this.count++ >= this.threshold) {
+-			this.grow(2 * this.slots.length);
+-		}
+-
+-	}
+-
+-	static int getHash(int var0) {
+-		return computeHash(var0);
+-	}
+-}
 --- net/minecraft/src/ChunkCoordIntPair.java
 +++ net/minecraft/src/ChunkCoordIntPair.java
 @@ -9,8 +9,15 @@
@@ -10883,7 +11232,7 @@
 +	private SpawnerAnimals monsterSpawner = new SpawnerServer(this, 200, IMobs.class);
 +	private SpawnerAnimals animalSpawner = new SpawnerAnimals(15, EntityAnimal.class);
 +	private SpawnerAnimals underworldSpawner = new SpawnerUnderworld(200, IMobs.class);
-+	private MCHashTable entityHashTable;
++	private MCHashTableInteger entityHashTable;
 +	private MinecraftServer mcServer;
 +
 +	public WorldServer(MinecraftServer mcServer, File var1, String var2, boolean var3) {
@@ -10893,7 +11242,7 @@
 +	public WorldServer(MinecraftServer mcServer, File var1, String var2, boolean var3, CreateWorldInfo info) {
 +		super(var1, var2, 0, info, null);
  		this.monsters = var3;
-+		this.entityHashTable = new MCHashTable();
++		this.entityHashTable = new MCHashTableInteger();
 +		this.mcServer = mcServer;
 +	}
 +
@@ -11022,7 +11371,7 @@
  }
 --- net/minecraft/src/WorldClient.java
 +++ net/minecraft/src/WorldClient.java
-@@ -1,10 +1,14 @@
+@@ -1,24 +1,29 @@
  package net.minecraft.src;
  
 +import io.github.bluestaggo.mcdiverge.GameAchievements;
@@ -11037,7 +11386,10 @@
  public class WorldClient extends World {
  	private LinkedList blocksToReceive = new LinkedList();
  	private NetClientHandler sendQueue;
-@@ -14,11 +18,12 @@
+ 	private ChunkProviderClient clientChunkProvider;
+ 	private boolean noTileEntityUpdates = false;
+-	private MCHashTable entityHashTable = new MCHashTable();
++	private MCHashTableInteger entityHashTable = new MCHashTableInteger();
  	private Set entityList = new HashSet();
  	private Set entitySpawnQueue = new HashSet();
  
@@ -16733,22 +17085,20 @@
 +}
 --- net/minecraft/src/ChunkProviderClient.java
 +++ net/minecraft/src/ChunkProviderClient.java
-@@ -1,5 +1,8 @@
+@@ -1,52 +1,66 @@
  package net.minecraft.src;
  
-+import java.io.BufferedWriter;
-+import java.io.IOException;
-+import java.io.OutputStreamWriter;
- import java.util.ArrayList;
+-import java.util.ArrayList;
  import java.util.Arrays;
- import java.util.HashMap;
-@@ -8,45 +11,63 @@
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
  
  public class ChunkProviderClient implements IChunkProvider {
  	private Chunk blankChunk;
 -	private Map chunkMapping = new HashMap();
 -	private List chunkListing = new ArrayList();
-+	private MCHashTable2 chunkMapping = new MCHashTable2();
++	private MCHashTableLong chunkMapping = new MCHashTableLong();
  	private World worldObj;
 +	private Chunk lastChunk;
 +	private int lastChunkX;
@@ -16821,7 +17171,7 @@
  		return var4 == null ? this.blankChunk : var4;
  	}
  
-@@ -63,5 +84,11 @@
+@@ -63,5 +77,11 @@
  	}
  
  	public void populate(IChunkProvider var1, int var2, int var3) {
@@ -17207,6 +17557,137 @@
  			}
  		}
  
+--- net/minecraft/src/MCHashTable2.java
++++ /dev/null
+@@ -1,128 +1,0 @@
+-package net.minecraft.src;
+-
+-public class MCHashTable2 {
+-	private transient MCHashEntry2[] slots = new MCHashEntry2[16];
+-	private transient int count;
+-	private int threshold = 12;
+-	private final float growFactor = 12.0F / 16.0F;
+-	private transient volatile int versionStamp;
+-
+-	private static int computeHash(long var0) {
+-		return computeHash((int)(var0 ^ var0 >>> 32));
+-	}
+-
+-	private static int computeHash(int var0) {
+-		var0 ^= var0 >>> 20 ^ var0 >>> 12;
+-		return var0 ^ var0 >>> 7 ^ var0 >>> 4;
+-	}
+-
+-	private static int getSlotIndex(int var0, int var1) {
+-		return var0 & var1 - 1;
+-	}
+-
+-	public Object lookup(long var1) {
+-		int var3 = computeHash(var1);
+-
+-		for(MCHashEntry2 var4 = this.slots[getSlotIndex(var3, this.slots.length)]; var4 != null; var4 = var4.nextEntry) {
+-			if(var4.hashEntry == var1) {
+-				return var4.valueEntry;
+-			}
+-		}
+-
+-		return null;
+-	}
+-
+-	public void addKey(long var1, Object var3) {
+-		int var4 = computeHash(var1);
+-		int var5 = getSlotIndex(var4, this.slots.length);
+-
+-		for(MCHashEntry2 var6 = this.slots[var5]; var6 != null; var6 = var6.nextEntry) {
+-			if(var6.hashEntry == var1) {
+-				var6.valueEntry = var3;
+-			}
+-		}
+-
+-		++this.versionStamp;
+-		this.insert(var4, var1, var3, var5);
+-	}
+-
+-	private void grow(int var1) {
+-		MCHashEntry2[] var2 = this.slots;
+-		int var3 = var2.length;
+-		if(var3 == 1073741824) {
+-			this.threshold = Integer.MAX_VALUE;
+-		} else {
+-			MCHashEntry2[] var4 = new MCHashEntry2[var1];
+-			this.copyTo(var4);
+-			this.slots = var4;
+-			this.threshold = (int)((float)var1 * this.growFactor);
+-		}
+-	}
+-
+-	private void copyTo(MCHashEntry2[] var1) {
+-		MCHashEntry2[] var2 = this.slots;
+-		int var3 = var1.length;
+-
+-		for(int var4 = 0; var4 < var2.length; ++var4) {
+-			MCHashEntry2 var5 = var2[var4];
+-			if(var5 != null) {
+-				var2[var4] = null;
+-
+-				MCHashEntry2 var6;
+-				do {
+-					var6 = var5.nextEntry;
+-					int var7 = getSlotIndex(var5.slotHash, var3);
+-					var5.nextEntry = var1[var7];
+-					var1[var7] = var5;
+-					var5 = var6;
+-				} while(var6 != null);
+-			}
+-		}
+-
+-	}
+-
+-	public Object removeObject(long var1) {
+-		MCHashEntry2 var3 = this.removeEntry(var1);
+-		return var3 == null ? null : var3.valueEntry;
+-	}
+-
+-	final MCHashEntry2 removeEntry(long var1) {
+-		int var3 = computeHash(var1);
+-		int var4 = getSlotIndex(var3, this.slots.length);
+-		MCHashEntry2 var5 = this.slots[var4];
+-
+-		MCHashEntry2 var6;
+-		MCHashEntry2 var7;
+-		for(var6 = var5; var6 != null; var6 = var7) {
+-			var7 = var6.nextEntry;
+-			if(var6.hashEntry == var1) {
+-				++this.versionStamp;
+-				--this.count;
+-				if(var5 == var6) {
+-					this.slots[var4] = var7;
+-				} else {
+-					var5.nextEntry = var7;
+-				}
+-
+-				return var6;
+-			}
+-
+-			var5 = var6;
+-		}
+-
+-		return var6;
+-	}
+-
+-	private void insert(int var1, long var2, Object var4, int var5) {
+-		MCHashEntry2 var6 = this.slots[var5];
+-		this.slots[var5] = new MCHashEntry2(var1, var2, var4, var6);
+-		if(this.count++ >= this.threshold) {
+-			this.grow(2 * this.slots.length);
+-		}
+-
+-	}
+-
+-	static int getHash(long var0) {
+-		return computeHash(var0);
+-	}
+-}
 --- net/minecraft/src/EntitySkeleton.java
 +++ net/minecraft/src/EntitySkeleton.java
 @@ -1,9 +1,10 @@
@@ -18803,6 +19284,59 @@
 +        this.worldClient.addEntityToWorld(var1.entityId, var2);
 +    }
  }
+--- /dev/null
++++ net/minecraft/src/MCHashEntryLong.java
+@@ -1,0 +1,50 @@
++package net.minecraft.src;
++
++public class MCHashEntryLong {
++	public final long hashEntry;
++	public Object valueEntry;
++	public MCHashEntryLong nextEntry;
++	public final int slotHash;
++
++	MCHashEntryLong(int var1, long var2, Object var4, MCHashEntryLong var5) {
++		this.valueEntry = var4;
++		this.nextEntry = var5;
++		this.hashEntry = var2;
++		this.slotHash = var1;
++	}
++
++	public final long getHash() {
++		return this.hashEntry;
++	}
++
++	public final Object getValue() {
++		return this.valueEntry;
++	}
++
++	public final boolean equals(Object var1) {
++		if(!(var1 instanceof MCHashEntryLong)) {
++			return false;
++		} else {
++			MCHashEntryLong var2 = (MCHashEntryLong)var1;
++			Long var3 = Long.valueOf(this.getHash());
++			Long var4 = Long.valueOf(var2.getHash());
++			if(var3 == var4 || var3 != null && var3.equals(var4)) {
++				Object var5 = this.getValue();
++				Object var6 = var2.getValue();
++				if(var5 == var6 || var5 != null && var5.equals(var6)) {
++					return true;
++				}
++			}
++
++			return false;
++		}
++	}
++
++	public final int hashCode() {
++		return MCHashTableLong.getHash(this.hashEntry);
++	}
++
++	public final String toString() {
++		return this.getHash() + "=" + this.getValue();
++	}
++}
 --- net/minecraft/src/SpawnerAnimals.java
 +++ net/minecraft/src/SpawnerAnimals.java
 @@ -1,5 +1,10 @@
@@ -19990,6 +20524,59 @@
  import net.minecraft.src.CanvasIsomPreview;
  
  public class IsomPreviewApplet extends Applet {
+--- net/minecraft/src/MCHashEntry.java
++++ /dev/null
+@@ -1,50 +1,0 @@
+-package net.minecraft.src;
+-
+-class MCHashEntry {
+-	final int hashEntry;
+-	Object valueEntry;
+-	MCHashEntry nextEntry;
+-	final int slotHash;
+-
+-	MCHashEntry(int var1, int var2, Object var3, MCHashEntry var4) {
+-		this.valueEntry = var3;
+-		this.nextEntry = var4;
+-		this.hashEntry = var2;
+-		this.slotHash = var1;
+-	}
+-
+-	public final int getHash() {
+-		return this.hashEntry;
+-	}
+-
+-	public final Object getValue() {
+-		return this.valueEntry;
+-	}
+-
+-	public final boolean equals(Object var1) {
+-		if(!(var1 instanceof MCHashEntry)) {
+-			return false;
+-		} else {
+-			MCHashEntry var2 = (MCHashEntry)var1;
+-			Integer var3 = Integer.valueOf(this.getHash());
+-			Integer var4 = Integer.valueOf(var2.getHash());
+-			if(var3 == var4 || var3 != null && var3.equals(var4)) {
+-				Object var5 = this.getValue();
+-				Object var6 = var2.getValue();
+-				if(var5 == var6 || var5 != null && var5.equals(var6)) {
+-					return true;
+-				}
+-			}
+-
+-			return false;
+-		}
+-	}
+-
+-	public final int hashCode() {
+-		return MCHashTable.getHash(this.hashEntry);
+-	}
+-
+-	public final String toString() {
+-		return this.getHash() + "=" + this.getValue();
+-	}
+-}
 --- /dev/null
 +++ io/github/bluestaggo/mcdiverge/EntityFox.java
 @@ -1,0 +1,79 @@
@@ -21865,7 +22452,7 @@
  			this.moveForward = (float)((double)this.moveForward * 0.3D);
 --- net/minecraft/src/EntityTracker.java
 +++ net/minecraft/src/EntityTracker.java
-@@ -4,6 +4,7 @@
+@@ -4,11 +4,12 @@
  import java.util.HashSet;
  import java.util.Iterator;
  import java.util.Set;
@@ -21873,6 +22460,12 @@
  import net.minecraft.server.MinecraftServer;
  
  public class EntityTracker {
+ 	private Set trackedEntitySet = new HashSet();
+-	private MCHashTable trackedEntityHashTable = new MCHashTable();
++	private MCHashTableInteger trackedEntityHashTable = new MCHashTableInteger();
+ 	private MinecraftServer mcServer;
+ 	private int maxTrackingDistanceThreshold;
+ 
 @@ -19,7 +20,7 @@
  
  	public void trackEntity(Entity var1) {
@@ -27155,6 +27748,17 @@
 -
 -	}
 -}
+--- net/minecraft/src/Pathfinder.java
++++ net/minecraft/src/Pathfinder.java
+@@ -3,7 +3,7 @@
+ public class Pathfinder {
+ 	private IBlockAccess worldMap;
+ 	private Path path = new Path();
+-	private MCHashTable pointMap = new MCHashTable();
++	private MCHashTableInteger pointMap = new MCHashTableInteger();
+ 	private PathPoint[] pathOptions = new PathPoint[32];
+ 
+ 	public Pathfinder(IBlockAccess var1) {
 --- net/minecraft/src/Packet51MapChunk.java
 +++ net/minecraft/src/Packet51MapChunk.java
 @@ -15,12 +15,35 @@
@@ -30088,6 +30692,213 @@
 +		}
  	}
  }
+--- /dev/null
++++ net/minecraft/src/MCHashTableInteger.java
+@@ -1,0 +1,151 @@
++package net.minecraft.src;
++
++public class MCHashTableInteger {
++	private transient MCHashEntryInteger[] slots = new MCHashEntryInteger[16];
++	private transient int count;
++	private int threshold = 12;
++	private final float growFactor = 12.0F / 16.0F;
++	private transient volatile int versionStamp;
++
++	private static int computeHash(int var0) {
++		var0 ^= var0 >>> 20 ^ var0 >>> 12;
++		return var0 ^ var0 >>> 7 ^ var0 >>> 4;
++	}
++
++	private static int getSlotIndex(int var0, int var1) {
++		return var0 & var1 - 1;
++	}
++
++	public Object lookup(int var1) {
++		int var2 = computeHash(var1);
++
++		for(MCHashEntryInteger var3 = this.slots[getSlotIndex(var2, this.slots.length)]; var3 != null; var3 = var3.nextEntry) {
++			if(var3.hashEntry == var1) {
++				return var3.valueEntry;
++			}
++		}
++
++		return null;
++	}
++
++	public boolean containsItem(int var1) {
++		return this.lookupEntry(var1) != null;
++	}
++
++	final MCHashEntryInteger lookupEntry(int var1) {
++		int var2 = computeHash(var1);
++
++		for(MCHashEntryInteger var3 = this.slots[getSlotIndex(var2, this.slots.length)]; var3 != null; var3 = var3.nextEntry) {
++			if(var3.hashEntry == var1) {
++				return var3;
++			}
++		}
++
++		return null;
++	}
++
++	public void addKey(int var1, Object var2) {
++		int var3 = computeHash(var1);
++		int var4 = getSlotIndex(var3, this.slots.length);
++
++		for(MCHashEntryInteger var5 = this.slots[var4]; var5 != null; var5 = var5.nextEntry) {
++			if(var5.hashEntry == var1) {
++				var5.valueEntry = var2;
++			}
++		}
++
++		++this.versionStamp;
++		this.insert(var3, var1, var2, var4);
++	}
++
++	private void grow(int var1) {
++		MCHashEntryInteger[] var2 = this.slots;
++		int var3 = var2.length;
++		if(var3 == 1073741824) {
++			this.threshold = Integer.MAX_VALUE;
++		} else {
++			MCHashEntryInteger[] var4 = new MCHashEntryInteger[var1];
++			this.copyTo(var4);
++			this.slots = var4;
++			this.threshold = (int)((float)var1 * this.growFactor);
++		}
++	}
++
++	private void copyTo(MCHashEntryInteger[] var1) {
++		MCHashEntryInteger[] var2 = this.slots;
++		int var3 = var1.length;
++
++		for(int var4 = 0; var4 < var2.length; ++var4) {
++			MCHashEntryInteger var5 = var2[var4];
++			if(var5 != null) {
++				var2[var4] = null;
++
++				MCHashEntryInteger var6;
++				do {
++					var6 = var5.nextEntry;
++					int var7 = getSlotIndex(var5.slotHash, var3);
++					var5.nextEntry = var1[var7];
++					var1[var7] = var5;
++					var5 = var6;
++				} while(var6 != null);
++			}
++		}
++
++	}
++
++	public Object removeObject(int var1) {
++		MCHashEntryInteger var2 = this.removeEntry(var1);
++		return var2 == null ? null : var2.valueEntry;
++	}
++
++	final MCHashEntryInteger removeEntry(int var1) {
++		int var2 = computeHash(var1);
++		int var3 = getSlotIndex(var2, this.slots.length);
++		MCHashEntryInteger var4 = this.slots[var3];
++
++		MCHashEntryInteger var5;
++		MCHashEntryInteger var6;
++		for(var5 = var4; var5 != null; var5 = var6) {
++			var6 = var5.nextEntry;
++			if(var5.hashEntry == var1) {
++				++this.versionStamp;
++				--this.count;
++				if(var4 == var5) {
++					this.slots[var3] = var6;
++				} else {
++					var4.nextEntry = var6;
++				}
++
++				return var5;
++			}
++
++			var4 = var5;
++		}
++
++		return var5;
++	}
++
++	public void clearMap() {
++		++this.versionStamp;
++		MCHashEntryInteger[] var1 = this.slots;
++
++		for(int var2 = 0; var2 < var1.length; ++var2) {
++			var1[var2] = null;
++		}
++
++		this.count = 0;
++	}
++
++	private void insert(int var1, int var2, Object var3, int var4) {
++		MCHashEntryInteger var5 = this.slots[var4];
++		this.slots[var4] = new MCHashEntryInteger(var1, var2, var3, var5);
++		if(this.count++ >= this.threshold) {
++			this.grow(2 * this.slots.length);
++		}
++
++	}
++
++	static int getHash(int var0) {
++		return computeHash(var0);
++	}
++}
+--- /dev/null
++++ net/minecraft/src/MCHashEntryInteger.java
+@@ -1,0 +1,50 @@
++package net.minecraft.src;
++
++public class MCHashEntryInteger {
++	public final int hashEntry;
++	public Object valueEntry;
++	public MCHashEntryInteger nextEntry;
++	public final int slotHash;
++
++	MCHashEntryInteger(int var1, int var2, Object var3, MCHashEntryInteger var4) {
++		this.valueEntry = var3;
++		this.nextEntry = var4;
++		this.hashEntry = var2;
++		this.slotHash = var1;
++	}
++
++	public final int getHash() {
++		return this.hashEntry;
++	}
++
++	public final Object getValue() {
++		return this.valueEntry;
++	}
++
++	public final boolean equals(Object var1) {
++		if(!(var1 instanceof MCHashEntryInteger)) {
++			return false;
++		} else {
++			MCHashEntryInteger var2 = (MCHashEntryInteger)var1;
++			Integer var3 = Integer.valueOf(this.getHash());
++			Integer var4 = Integer.valueOf(var2.getHash());
++			if(var3 == var4 || var3 != null && var3.equals(var4)) {
++				Object var5 = this.getValue();
++				Object var6 = var2.getValue();
++				if(var5 == var6 || var5 != null && var5.equals(var6)) {
++					return true;
++				}
++			}
++
++			return false;
++		}
++	}
++
++	public final int hashCode() {
++		return MCHashTableInteger.getHash(this.hashEntry);
++	}
++
++	public final String toString() {
++		return this.getHash() + "=" + this.getValue();
++	}
++}
 --- net/minecraft/src/BlockGlass.java
 +++ net/minecraft/src/BlockGlass.java
 @@ -8,6 +8,18 @@
