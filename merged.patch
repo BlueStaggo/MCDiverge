@@ -3962,19 +3962,7 @@
  	public EntityArrow(World var1, EntityLiving var2) {
  		super(var1);
  		this.shootingEntity = var2;
-@@ -144,6 +151,11 @@
- 				this.worldObj.playSoundAtEntity(this, "random.drr", 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
- 				this.inData = true;
- 				this.arrowShake = 7;
-+
-+
-+					EntityChicken chicken = new EntityChicken(this.worldObj);
-+					chicken.setPosition(this.posX, this.posY, this.posZ);
-+					this.worldObj.spawnEntityInWorld(chicken);
- 			}
- 		}
- 
-@@ -207,15 +219,25 @@
+@@ -207,15 +214,25 @@
  	}
  
  	public void onCollideWithPlayer(EntityPlayer var1) {
