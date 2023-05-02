@@ -1478,7 +1478,15 @@
  		var2 += 0.5D;
  		var6 += 0.5D;
  		double var28 = var2 - 0.5D;
-@@ -757,12 +833,12 @@
+@@ -751,22 +827,29 @@
+ 	}
+ 
+ 	public void renderCrossedSquares(Block var1, int var2, double var3, double var5, double var7) {
++		boolean fabulous = Minecraft.getInstance().options.fancyGraphics >= 2;
++
+ 		Tessellator var9 = Tessellator.instance;
+ 		int var10 = var1.getBlockTextureFromSideAndMetadata(0, var2);
+ 		if(this.overrideBlockTexture >= 0) {
  			var10 = this.overrideBlockTexture;
  		}
  
@@ -1488,16 +1496,29 @@
 -		double var15 = (double)(((float)var11 + 15.99F) / 256.0F);
 -		double var17 = (double)((float)var12 / 256.0F);
 -		double var19 = (double)(((float)var12 + 15.99F) / 256.0F);
+-		double var21 = var3 + 0.5D - (double)0.45F;
+-		double var23 = var3 + 0.5D + (double)0.45F;
+-		double var25 = var7 + 0.5D - (double)0.45F;
+-		double var27 = var7 + 0.5D + (double)0.45F;
 +		int var11 = var10 % 32 * 16;
 +		int var12 = var10 / 32 * 16;
 +		double var13 = (double)((float)var11 / 512.0F);
 +		double var15 = (double)(((float)var11 + 15.99F) / 512.0F);
 +		double var17 = (double)((float)var12 / 512.0F);
 +		double var19 = (double)(((float)var12 + 15.99F) / 512.0F);
- 		double var21 = var3 + 0.5D - (double)0.45F;
- 		double var23 = var3 + 0.5D + (double)0.45F;
- 		double var25 = var7 + 0.5D - (double)0.45F;
-@@ -792,12 +868,12 @@
++		double var21 = -0.45D;
++		double var23 = 0.45D;
++		double var25 = -0.45D;
++		double var27 = 0.45D;
++		var21 += var3 + 0.5D;
++		var23 += var3 + 0.5D;
++		var25 += var7 + 0.5D;
++		var27 += var7 + 0.5D;
++
+ 		var9.addVertexWithUV(var21, var5 + 1.0D, var25, var13, var17);
+ 		var9.addVertexWithUV(var21, var5 + 0.0D, var25, var13, var19);
+ 		var9.addVertexWithUV(var23, var5 + 0.0D, var27, var15, var19);
+@@ -792,12 +875,12 @@
  			var10 = this.overrideBlockTexture;
  		}
  
@@ -1516,7 +1537,7 @@
  		double var21 = var3 + 0.5D - 0.25D;
  		double var23 = var3 + 0.5D + 0.25D;
  		double var25 = var7 + 0.5D - 0.5D;
-@@ -874,20 +950,20 @@
+@@ -874,20 +957,20 @@
  					var24 = var1.getBlockTextureFromSideAndMetadata(2, var19);
  				}
  
@@ -1546,7 +1567,7 @@
  				var5.setColorOpaque_F(var11 * var34, var11 * var34, var11 * var34);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var20), (double)(var4 + 0), var28 - (double)var33 - (double)var32, var30 - (double)var33 + (double)var32);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var21), (double)(var4 + 1), var28 - (double)var33 + (double)var32, var30 + (double)var33 + (double)var32);
-@@ -896,7 +972,7 @@
+@@ -896,7 +979,7 @@
  			}
  
  			if(this.renderAllFaces || var7) {
@@ -1555,7 +1576,7 @@
  				var5.setColorOpaque_F(var10 * var48, var10 * var48, var10 * var48);
  				this.renderBottomFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTextureFromSide(0));
  				var9 = true;
-@@ -922,8 +998,8 @@
+@@ -922,8 +1005,8 @@
  				}
  
  				int var50 = var1.getBlockTextureFromSideAndMetadata(var24 + 2, var19);
@@ -1566,7 +1587,7 @@
  				if(this.renderAllFaces || var8[var24]) {
  					float var31;
  					float var35;
-@@ -959,12 +1035,12 @@
+@@ -959,12 +1042,12 @@
  					}
  
  					var9 = true;
@@ -1585,7 +1606,7 @@
  					if(var24 < 2) {
  						var47 *= var12;
  					} else {
-@@ -1017,56 +1093,56 @@
+@@ -1017,56 +1100,56 @@
  		return 1.0F - var6 / (float)var5;
  	}
  
@@ -1676,7 +1697,7 @@
  		var10.draw();
  	}
  
-@@ -1075,7 +1151,442 @@
+@@ -1075,7 +1158,442 @@
  		float var6 = (float)(var5 >> 16 & 255) / 255.0F;
  		float var7 = (float)(var5 >> 8 & 255) / 255.0F;
  		float var8 = (float)(var5 & 255) / 255.0F;
@@ -2120,7 +2141,7 @@
  	}
  
  	public boolean renderStandardBlockWithColorMultiplier(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
-@@ -1097,17 +1608,17 @@
+@@ -1097,17 +1615,17 @@
  		float var23 = var11 * var7;
  		float var24 = var12 * var7;
  		float var25 = var13 * var7;
@@ -2141,7 +2162,7 @@
  			if(var1.maxY != 1.0D && !var1.material.getIsLiquid()) {
  				var27 = var26;
  			}
-@@ -1118,7 +1629,7 @@
+@@ -1118,7 +1636,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2)) {
@@ -2150,7 +2171,7 @@
  			if(var1.minZ > 0.0D) {
  				var27 = var26;
  			}
-@@ -1129,7 +1640,7 @@
+@@ -1129,7 +1647,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3)) {
@@ -2159,7 +2180,7 @@
  			if(var1.maxZ < 1.0D) {
  				var27 = var26;
  			}
-@@ -1140,7 +1651,7 @@
+@@ -1140,7 +1658,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4)) {
@@ -2168,7 +2189,7 @@
  			if(var1.minX > 0.0D) {
  				var27 = var26;
  			}
-@@ -1151,7 +1662,7 @@
+@@ -1151,7 +1669,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)) {
@@ -2177,7 +2198,7 @@
  			if(var1.maxX < 1.0D) {
  				var27 = var26;
  			}
-@@ -1192,17 +1703,17 @@
+@@ -1192,17 +1710,17 @@
  		float var24 = var12 * var7;
  		float var25 = var13 * var7;
  		float var26 = 1.0F / 16.0F;
@@ -2198,7 +2219,7 @@
  			if(var1.maxY != 1.0D && !var1.material.getIsLiquid()) {
  				var28 = var27;
  			}
-@@ -1213,7 +1724,7 @@
+@@ -1213,7 +1731,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2)) {
@@ -2207,7 +2228,7 @@
  			if(var1.minZ > 0.0D) {
  				var28 = var27;
  			}
-@@ -1226,7 +1737,7 @@
+@@ -1226,7 +1744,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3)) {
@@ -2216,7 +2237,7 @@
  			if(var1.maxZ < 1.0D) {
  				var28 = var27;
  			}
-@@ -1239,7 +1750,7 @@
+@@ -1239,7 +1757,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4)) {
@@ -2225,7 +2246,7 @@
  			if(var1.minX > 0.0D) {
  				var28 = var27;
  			}
-@@ -1252,7 +1763,7 @@
+@@ -1252,7 +1770,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)) {
@@ -2234,7 +2255,7 @@
  			if(var1.maxX < 1.0D) {
  				var28 = var27;
  			}
-@@ -1268,6 +1779,8 @@
+@@ -1268,6 +1786,8 @@
  	}
  
  	public boolean renderBlockFence(Block var1, int var2, int var3, int var4) {
@@ -2243,7 +2264,7 @@
  		boolean var5 = false;
  		float var6 = 6.0F / 16.0F;
  		float var7 = 10.0F / 16.0F;
-@@ -1275,18 +1788,18 @@
+@@ -1275,18 +1795,18 @@
  		this.renderStandardBlock(var1, var2, var3, var4);
  		boolean var8 = false;
  		boolean var9 = false;
@@ -2268,7 +2289,7 @@
  		if(!var8 && !var9) {
  			var8 = true;
  		}
-@@ -1326,32 +1839,9 @@
+@@ -1326,32 +1846,9 @@
  	}
  
  	public boolean renderBlockStairs(Block var1, int var2, int var3, int var4) {
@@ -2303,7 +2324,7 @@
  	}
  
  	public boolean renderBlockDoor(Block var1, int var2, int var3, int var4) {
-@@ -1362,8 +1852,8 @@
+@@ -1362,8 +1859,8 @@
  		float var9 = 1.0F;
  		float var10 = 0.8F;
  		float var11 = 0.6F;
@@ -2314,7 +2335,7 @@
  		if(var6.minY > 0.0D) {
  			var13 = var12;
  		}
-@@ -1375,7 +1865,7 @@
+@@ -1375,7 +1872,7 @@
  		var5.setColorOpaque_F(var8 * var13, var8 * var13, var8 * var13);
  		this.renderBottomFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTexture(this.blockAccess, var2, var3, var4, 0));
  		var7 = true;
@@ -2323,7 +2344,7 @@
  		if(var6.maxY < 1.0D) {
  			var13 = var12;
  		}
-@@ -1387,7 +1877,7 @@
+@@ -1387,7 +1884,7 @@
  		var5.setColorOpaque_F(var9 * var13, var9 * var13, var9 * var13);
  		this.renderTopFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTexture(this.blockAccess, var2, var3, var4, 1));
  		var7 = true;
@@ -2332,7 +2353,7 @@
  		if(var6.minZ > 0.0D) {
  			var13 = var12;
  		}
-@@ -1406,7 +1896,7 @@
+@@ -1406,7 +1903,7 @@
  		this.renderEastFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -2341,7 +2362,7 @@
  		if(var6.maxZ < 1.0D) {
  			var13 = var12;
  		}
-@@ -1425,7 +1915,7 @@
+@@ -1425,7 +1922,7 @@
  		this.renderWestFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -2350,7 +2371,7 @@
  		if(var6.minX > 0.0D) {
  			var13 = var12;
  		}
-@@ -1444,7 +1934,7 @@
+@@ -1444,7 +1941,7 @@
  		this.renderNorthFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -2359,7 +2380,7 @@
  		if(var6.maxX < 1.0D) {
  			var13 = var12;
  		}
-@@ -1472,31 +1962,80 @@
+@@ -1472,31 +1969,80 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2461,7 +2482,7 @@
  	}
  
  	public void renderTopFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1505,31 +2044,80 @@
+@@ -1505,31 +2051,80 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2563,7 +2584,7 @@
  	}
  
  	public void renderEastFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1538,12 +2126,12 @@
+@@ -1538,12 +2133,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2582,7 +2603,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1552,24 +2140,73 @@
+@@ -1552,24 +2147,73 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -2671,7 +2692,7 @@
  	}
  
  	public void renderWestFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1578,12 +2215,12 @@
+@@ -1578,12 +2222,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2690,7 +2711,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1592,24 +2229,73 @@
+@@ -1592,24 +2236,73 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -2779,7 +2800,7 @@
  	}
  
  	public void renderNorthFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1618,12 +2304,12 @@
+@@ -1618,12 +2311,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2798,7 +2819,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1632,24 +2318,73 @@
+@@ -1632,24 +2325,73 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -2887,7 +2908,7 @@
  	}
  
  	public void renderSouthFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1658,12 +2393,12 @@
+@@ -1658,12 +2400,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -2906,7 +2927,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1672,27 +2407,76 @@
+@@ -1672,27 +2414,76 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -2999,7 +3020,7 @@
  		int var3 = var1.getRenderType();
  		Tessellator var4 = Tessellator.instance;
  		if(var3 == 0) {
-@@ -1704,51 +2488,51 @@
+@@ -1704,51 +2495,51 @@
  			float var8 = 0.6F;
  			var4.startDrawingQuads();
  			var4.setColorRGBA_F(var6, var6, var6, var2);
@@ -3065,7 +3086,7 @@
  			var3.draw();
  			GL11.glTranslatef(0.5F, 0.5F, 0.5F);
  		} else if(var4 == 1) {
-@@ -1762,34 +2546,34 @@
+@@ -1762,34 +2553,34 @@
  			float var5 = 1.0F / 16.0F;
  			var3.startDrawingQuads();
  			var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -3106,7 +3127,7 @@
  			var3.setTranslationF(var5, 0.0F, 0.0F);
  			var3.draw();
  			GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-@@ -1818,33 +2602,34 @@
+@@ -1818,33 +2609,34 @@
  					GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
  					var3.startDrawingQuads();
  					var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -3148,7 +3169,7 @@
  					if(var7 == 0) {
  						var1.setBlockBounds(0.5F - var6, 0.0F, 0.0F, 0.5F + var6, 1.0F, var6 * 2.0F);
  					}
-@@ -1865,38 +2650,64 @@
+@@ -1865,38 +2657,64 @@
  					GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
  					var3.startDrawingQuads();
  					var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -3195,6 +3216,7 @@
 +	}
 +
 +	public boolean renderBlockGrass(Block var1, int var2, int var3, int var4) {
++		this.renderStandardBlock(var1, var2, var3, var4);
 +		if (Minecraft.getInstance().options.fancyGraphics > 1) {
 +			Block blockAbove = this.blockAccess.getBlock(var2, var3 + 1, var4);
 +
@@ -3203,13 +3225,12 @@
 +				Tessellator var5 = Tessellator.instance;
 +				float var6 = var1.getBlockRenderBrightness(this.blockAccess, var2, var3 + 1, var4);
 +				var5.setColorOpaque_F(var6, var6, var6);
-+				this.renderBlockCropsImpl(var1, -1,
-+						var2 + SimplexNoise.noise2(10000, var2, var4) * 0.2D,
-+						var3 + 0.25D + SimplexNoise.noise2(20000, var2, var4) * 0.5D,
-+						var4 + SimplexNoise.noise2(30000, var4, var2) * 0.2D);
++				this.renderCrossedSquares(var1, -1,
++						var2 + SimplexNoise.noise3_ImproveXZ(10000, var2, var3, var4) * 0.1D,
++						var3 + 0.25D + SimplexNoise.noise3_ImproveXZ(20000, var2, var3, var4) * 0.4D,
++						var4 + SimplexNoise.noise3_ImproveXZ(30000, var2, var3, var4) * 0.1D);
 +			}
 +		}
-+		this.renderStandardBlock(var1, var2, var3, var4);
 +		return true;
  	}
  
@@ -4011,20 +4032,22 @@
  		}
  	}
  
-@@ -1519,6 +1658,12 @@
+@@ -1519,6 +1658,14 @@
  	}
  
  	public void tick() {
 +		if (this.canDoClientAction()) {
-+			if (this.monsterSpawner != null) this.monsterSpawner.performSpawning(this);
++			if (this.difficultySetting > 0) {
++				if (this.monsterSpawner != null) this.monsterSpawner.performSpawning(this);
++				if (this.mantleDisrupted && this.underworldSpawner != null) this.underworldSpawner.performSpawning(this);
++			}
 +			if (this.animalSpawner != null) this.animalSpawner.performSpawning(this);
-+			if (this.mantleDisrupted && this.underworldSpawner != null) this.underworldSpawner.performSpawning(this);
 +		}
 +
  		this.chunkProvider.unload100OldestChunks();
  		int var1 = this.calculateSkylightSubtracted(1.0F);
  		if(var1 != this.skylightSubtracted) {
-@@ -1534,6 +1679,7 @@
+@@ -1534,6 +1681,7 @@
  			this.saveWorld(false, (IProgressUpdate)null);
  		}
  
@@ -4032,7 +4055,7 @@
  		this.tickUpdates(false);
  		this.updateBlocksAndPlayCaveSounds();
  	}
-@@ -1541,34 +1687,49 @@
+@@ -1541,34 +1689,49 @@
  	protected void updateBlocksAndPlayCaveSounds() {
  		this.positionsToUpdate.clear();
  
@@ -4088,7 +4111,7 @@
  			int var8;
  			int var9;
  			int var10;
-@@ -1577,7 +1738,7 @@
+@@ -1577,7 +1740,7 @@
  				var6 = this.updateLCG >> 2;
  				var7 = var6 & 15;
  				var8 = var6 >> 8 & 15;
@@ -4097,7 +4120,7 @@
  				var10 = var14.getBlockID(var7, var9, var8);
  				var7 += var3;
  				var8 += var4;
-@@ -1590,13 +1751,14 @@
+@@ -1590,13 +1753,14 @@
  				}
  			}
  
@@ -4114,7 +4137,7 @@
  					var10 = var14.getBlockID(var7, var9 - 1, var8);
  					if(var14.getBlockID(var7, var9, var8) == 0 && Block.snow.canPlaceBlockAt(this, var7 + var3, var9, var8 + var4)) {
  						this.setBlockWithNotify(var7 + var3, var9, var8 + var4, Block.snow.blockID);
-@@ -1613,8 +1775,8 @@
+@@ -1613,8 +1777,8 @@
  				var7 = this.updateLCG >> 2;
  				var8 = var7 & 15;
  				var9 = var7 >> 8 & 15;
@@ -4125,7 +4148,7 @@
  				if(Block.tickOnLoad[var15]) {
  					Block.blocksList[var15].updateTick(this, var8 + var3, var10, var9 + var4, this.rand);
  				}
-@@ -1837,7 +1999,7 @@
+@@ -1837,7 +2001,7 @@
  	}
  
  	public byte[] getChunkData(int var1, int var2, int var3, int var4, int var5, int var6) {
@@ -4134,7 +4157,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1849,8 +2011,8 @@
+@@ -1849,8 +2013,8 @@
  			var13 = 0;
  		}
  
@@ -4145,7 +4168,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1882,7 +2044,7 @@
+@@ -1882,7 +2046,7 @@
  		return var7;
  	}
  
@@ -4154,7 +4177,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1894,8 +2056,8 @@
+@@ -1894,8 +2058,8 @@
  			var13 = 0;
  		}
  
@@ -4165,7 +4188,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1920,7 +2082,9 @@
+@@ -1920,7 +2084,9 @@
  					var20 = 16;
  				}
  
@@ -4176,7 +4199,7 @@
  				this.markBlocksDirty(var15 * 16 + var16, var13, var18 * 16 + var19, var15 * 16 + var17, var14, var18 * 16 + var20);
  			}
  		}
-@@ -1970,6 +2134,146 @@
+@@ -1970,6 +2136,146 @@
  
  	}
  
@@ -4323,7 +4346,7 @@
  	static {
  		float var0 = 0.05F;
  
-@@ -1978,5 +2282,254 @@
+@@ -1978,5 +2284,254 @@
  			lightBrightnessTable[var1] = (1.0F - var2) / (var2 * 3.0F + 1.0F) * (1.0F - var0) + var0;
  		}
  
@@ -6306,6 +6329,15 @@
  			return 0;
  		} else {
  			int var4 = (var1 >> 4) - this.chunkX;
+@@ -41,7 +43,7 @@
+ 	}
+ 
+ 	public float getBrightness(int var1, int var2, int var3) {
+-		return World.lightBrightnessTable[this.getLightValue(var1, var2, var3)];
++		return World.lightBrightnessTable[this.getSkyBlockTypeBrightness(var1, var2, var3)];
+ 	}
+ 
+ 	public int getLightValue(int var1, int var2, int var3) {
 @@ -54,7 +56,8 @@
  			int var6;
  			if(var4) {
@@ -6325,7 +6357,73 @@
  				var5 = 15 - this.worldObj.skylightSubtracted;
  				if(var5 < 0) {
  					var5 = 0;
-@@ -102,7 +105,7 @@
+@@ -99,10 +102,73 @@
+ 		}
+ 	}
+ 
++	public int getSkyBlockTypeBrightness(int var2, int var3, int var4) {
++		if(var3 < 0) {
++			var3 = 0;
++		}
++
++		if(var3 >= CHUNK_HEIGHT) {
++			var3 = CHUNK_HEIGHT - 1;
++		}
++
++		if(var2 >= -32000000 && var4 >= -32000000 && var2 < 32000000 && var4 <= 32000000) {
++			int var5;
++			int var6;
++			if(Block.canBlockGrass[this.getBlockId(var2, var3, var4)]) {
++				var5 = this.getSpecialBlockBrightness(var2, var3 + 1, var4);
++				var6 = this.getSpecialBlockBrightness(var2 + 1, var3, var4);
++				int var7 = this.getSpecialBlockBrightness(var2 - 1, var3, var4);
++				int var8 = this.getSpecialBlockBrightness(var2, var3, var4 + 1);
++				int var9 = this.getSpecialBlockBrightness(var2, var3, var4 - 1);
++				if(var6 > var5) {
++					var5 = var6;
++				}
++
++				if(var7 > var5) {
++					var5 = var7;
++				}
++
++				if(var8 > var5) {
++					var5 = var8;
++				}
++
++				if(var9 > var5) {
++					var5 = var9;
++				}
++
++				return var5;
++			} else {
++				var5 = (var2 >> 4) - this.chunkX;
++				var6 = (var4 >> 4) - this.chunkZ;
++				return this.chunkArray[var5][var6].getBlockLightValue(var2 & 15, var3, var4 & 15, this.worldObj.skylightSubtracted);
++			}
++		} else {
++			return 15 - this.worldObj.skylightSubtracted;
++		}
++	}
++
++	public int getSpecialBlockBrightness(int var2, int var3, int var4) {
++		if(var3 < 0) {
++			var3 = 0;
++		}
++
++		if(var3 >= CHUNK_HEIGHT) {
++			var3 = CHUNK_HEIGHT - 1;
++		}
++
++		if(var2 >= -32000000 && var4 >= -32000000 && var2 < 32000000 && var4 <= 32000000) {
++			int var5 = (var2 >> 4) - this.chunkX;
++			int var6 = (var4 >> 4) - this.chunkZ;
++			return this.chunkArray[var5][var6].getBlockLightValue(var2 & 15, var3, var4 & 15, this.worldObj.skylightSubtracted);
++		} else {
++			return 15 - this.worldObj.skylightSubtracted;
++		}
++	}
++
  	public int getBlockMetadata(int var1, int var2, int var3) {
  		if(var2 < 0) {
  			return 0;
@@ -11517,11 +11615,11 @@
 +//		this.noise3 = this.noiseGen3.generateNoiseOctaves(this.noise3, (double)var2, (double)var3, (double)var4, var5, var6, var7, var8 / 80.0D, var10 / 240.0D, var8 / 80.0D);
 +//		this.noise1 = this.noiseGen1.generateNoiseOctaves(this.noise1, (double)var2, (double)var3, (double)var4, var5, var6, var7, var8, var10, var8);
 +//		this.noise2 = this.noiseGen2.generateNoiseOctaves(this.noise2, (double)var2, (double)var3, (double)var4, var5, var6, var7, var8, var10, var8);
-+		this.noise6 = SimplexOctaves.noiseArray(this.noise6, this.seed, 10, var2, 10.0D, var4, var5, 1, var7, 1.121D, 1.0D, 1.121D);
-+		this.noise7 = SimplexOctaves.noiseArray(this.noise7, this.seed, 16, var2, 10.0D, var4, var5, 1, var7, 200.0D, 1.0D, 200.0D);
-+		this.noise3 = SimplexOctaves.noiseArray(this.noise3, this.seed, 8, var2, var3, var4, var5, var6, var7, var8 / 80.0D, var10 / 240.0D, var8 / 80.0D);
++		this.noise6 = SimplexOctaves.noiseArray(this.noise6, this.seed, 10, var2, 10.0D, var4, var5, 1, var7, 0.8D, 1.0D, 0.8D);
++		this.noise7 = SimplexOctaves.noiseArray(this.noise7, this.seed, 16, var2, 10.0D, var4, var5, 1, var7, 50.0D, 1.0D, 50.0D);
++		this.noise3 = SimplexOctaves.noiseArray(this.noise3, this.seed, 8, var2, var3, var4, var5, var6, var7, var8 / 160.0D, var10 / 160.0D, var8 / 160.0D);
 +		this.noise1 = SimplexOctaves.noiseArray(this.noise1, this.seed, 16, var2, var3, var4, var5, var6, var7, var8, var10, var8);
-+		this.noise2 = SimplexOctaves.noiseArray(this.noise2, this.seed, 16, var2, var3, var4, var5, var6, var7, var8, var10, var8);
++		this.noise2 = SimplexOctaves.noiseArray(this.noise2, ~this.seed, 16, var2, var3, var4, var5, var6, var7, var8, var10, var8);
  		int var12 = 0;
  		int var13 = 0;
  
@@ -11534,7 +11632,7 @@
  				if(var20 < 0.0D) {
  					var20 /= 2.0D;
  					if(var20 < -1.0D) {
-@@ -232,16 +359,21 @@
+@@ -232,17 +359,25 @@
  						var20 = 1.0D;
  					}
  
@@ -11547,23 +11645,29 @@
  				}
  
  				var16 += 0.5D;
--				var20 = var20 * (double)var6 / 16.0D;
++//				var20 = var20 * (double)var6 / (16.0D + SimplexOctaves.noise2(this.seed, (var2 + var14) / 1000.0D, (var4 + var15) / 1000.0D, 4) * 16.0D);
+ 				var20 = var20 * (double)var6 / 16.0D;
 -				double var22 = (double)var6 / 2.0D + var20 * 4.0D;
-+				var20 = var20 * (double)var6 / (16.0D + SimplexOctaves.noise2(this.seed, (var2 + var14) / 1000.0D, (var4 + var15) / 1000.0D, 4) * 16.0D);
-+//				var20 = var20 * (double)var6 / 16.0D;
 +				double var22 = (double)var6 / 3.0D + var20 * 4.0D;
  				++var13;
  
- 				for(int var24 = 0; var24 < var6; ++var24) {
+-				for(int var24 = 0; var24 < var6; ++var24) {
 -					double var25 = 0.0D;
+-					double var27 = ((double)var24 - var22) * 12.0D / var16;
++				double amplitude = SimplexOctaves.noise2(this.seed, (var2 + var14) / 1000.0D, (var4 + var15) / 1000.0D, 4) * 4.0F;
++				int height = Math.min(var6 - (int)Math.ceil(amplitude), var6);
++				for(int var24 = 0; var24 < height; ++var24) {
++					double var24d = var24 + amplitude;
 +					double var25;
- 					double var27 = ((double)var24 - var22) * 12.0D / var16;
++					double var27 = (var24d - var22) * 12.0D / var16;
  					if(var27 < 0.0D) {
  						var27 *= 4.0D;
-@@ -261,20 +393,7 @@
+ 					}
+@@ -260,27 +395,128 @@
+ 
  					var25 -= var27;
  					double var35;
- 					if(var24 > var6 - 4) {
+-					if(var24 > var6 - 4) {
 -						var35 = (double)((float)(var24 - (var6 - 4)) / 3.0F);
 -						var25 = var25 * (1.0D - var35) + -10.0D * var35;
 -					}
@@ -11578,14 +11682,21 @@
 -							var35 = 1.0D;
 -						}
 -
-+						var35 = ((float)(var24 - (var6 - 4)) / 3.0F);
++					if(var24d > var6 - 4) {
++						var35 = ((float)(var24d - (var6 - 4)) / 3.0F);
  						var25 = var25 * (1.0D - var35) + -10.0D * var35;
  					}
  
-@@ -287,6 +406,119 @@
- 		return var1;
- 	}
- 
+ 					var1[var12] = var25;
+ 					++var12;
+ 				}
++				var12 += var6 - height;
++			}
++		}
++
++		return var1;
++	}
++
 +	private double[] initializeUnderworldNoiseField(double[] var1, int var2, int var3, int var4, int var5, int var6, int var7) {
 +		if(var1 == null) {
 +			var1 = new double[var5 * var6 * var7];
@@ -11693,16 +11804,10 @@
 +					var1[var12] = var24;
 +					++var12;
 +				}
-+			}
-+		}
-+
-+		return var1;
-+	}
-+
- 	public boolean chunkExists(int var1, int var2) {
- 		return true;
- 	}
-@@ -299,165 +531,104 @@
+ 			}
+ 		}
+ 
+@@ -299,165 +535,104 @@
  		long var6 = this.rand.nextLong() / 2L * 2L + 1L;
  		long var8 = this.rand.nextLong() / 2L * 2L + 1L;
  		this.rand.setSeed((long)var2 * var6 + (long)var3 * var8 ^ this.worldObj.randomSeed);
@@ -14213,8 +14318,8 @@
 +	private final int[][] xzDirectionsConst = new int[][]{{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 +
 +	public PlayerManager(MinecraftServer mcServer, int var2) {
-+		if (var2 > 15) throw new IllegalArgumentException("Too big view radius!");
-+		if (var2 < 3) throw new IllegalArgumentException("Too small view radius!");
++		if (var2 > 24) throw new IllegalArgumentException("Too big view radius!");
++		if (var2 < 2) throw new IllegalArgumentException("Too small view radius!");
 +
 +		this.mcServer = mcServer;
 +		this.playerViewRadius = var2;
@@ -17480,7 +17585,12 @@
  				}
 --- net/minecraft/src/ThreadDownloadImage.java
 +++ net/minecraft/src/ThreadDownloadImage.java
-@@ -4,12 +4,12 @@
+@@ -1,15 +1,18 @@
+ package net.minecraft.src;
+ 
+ import java.net.HttpURLConnection;
++import java.net.InetSocketAddress;
++import java.net.Proxy;
  import java.net.URL;
  import javax.imageio.ImageIO;
  
@@ -17488,6 +17598,7 @@
 -	final String location;
 -	final ImageBuffer buffer;
 -	final ThreadDownloadImageData imageData;
++import net.minecraft.client.Minecraft;
 +public class ThreadDownloadImage extends Thread {
 +	public final String location;
 +	public final ImageBuffer buffer;
@@ -17498,9 +17609,31 @@
  		this.imageData = var1;
  		this.location = var2;
  		this.buffer = var3;
+@@ -20,7 +23,7 @@
+ 
+ 		try {
+ 			URL var2 = new URL(this.location);
+-			var1 = (HttpURLConnection)var2.openConnection();
++			var1 = (HttpURLConnection)var2.openConnection(Minecraft.betacraftProxy);
+ 			var1.setDoInput(true);
+ 			var1.setDoOutput(false);
+ 			var1.connect();
+@@ -30,12 +33,9 @@
+ 				} else {
+ 					this.imageData.image = this.buffer.parseUserSkin(ImageIO.read(var1.getInputStream()));
+ 				}
+-
+-				return;
+ 			}
+ 		} catch (Exception var6) {
+ 			var6.printStackTrace();
+-			return;
+ 		} finally {
+ 			var1.disconnect();
+ 		}
 --- net/minecraft/client/Minecraft.java
 +++ net/minecraft/client/Minecraft.java
-@@ -8,61 +8,74 @@
+@@ -8,61 +8,76 @@
  import java.awt.Frame;
  import java.awt.Graphics;
  import java.io.File;
@@ -17509,6 +17642,8 @@
 -import net.minecraft.src.EffectRenderer;
 -import net.minecraft.src.EntityPlayerSP;
 -import net.minecraft.src.EntityRenderer;
++import java.net.InetSocketAddress;
++import java.net.Proxy;
 +import java.util.Random;
 +
  import net.minecraft.src.EnumOS;
@@ -17603,7 +17738,7 @@
  import org.lwjgl.LWJGLException;
  import org.lwjgl.input.Controllers;
  import org.lwjgl.input.Keyboard;
-@@ -70,9 +83,14 @@
+@@ -70,9 +85,15 @@
  import org.lwjgl.opengl.Display;
  import org.lwjgl.opengl.DisplayMode;
  import org.lwjgl.opengl.GL11;
@@ -17611,14 +17746,15 @@
  import org.lwjgl.util.glu.GLU;
  
  public abstract class Minecraft implements Runnable {
-+	public static final String version = "Minecraft Diverge v0.3_a4";
++	public static final String version = "Minecraft Diverge v0.3_a4.1";
 +	public static final boolean developmentVersion = true;
++	public static final Proxy betacraftProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("betacraft.uk", 11705));
 +	private static Minecraft instance;
 +
  	public PlayerController playerController;
  	private boolean fullscreen = false;
  	public int displayWidth;
-@@ -105,6 +123,7 @@
+@@ -105,6 +126,7 @@
  	public ModelBiped playerModelBiped = new ModelBiped(0.0F);
  	public MovingObjectPosition objectMouseOver = null;
  	public GameSettings options;
@@ -17626,7 +17762,7 @@
  	protected MinecraftApplet mcApplet;
  	public SoundManager sndManager = new SoundManager();
  	public MouseHelper mouseHelper;
-@@ -124,20 +143,29 @@
+@@ -124,20 +146,29 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
@@ -17668,7 +17804,7 @@
  
  	public void setServer(String var1, int var2) {
  		this.serverName = var1;
-@@ -145,6 +173,8 @@
+@@ -145,6 +176,8 @@
  	}
  
  	public void startGame() throws LWJGLException {
@@ -17677,7 +17813,7 @@
  		if(this.mcCanvas != null) {
  			Graphics var1 = this.mcCanvas.getGraphics();
  			if(var1 != null) {
-@@ -169,35 +199,39 @@
+@@ -169,35 +202,39 @@
  			Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
  		}
  
@@ -17725,7 +17861,7 @@
  		}
  
  		this.checkGLError("Pre startup");
-@@ -229,7 +263,14 @@
+@@ -229,7 +266,14 @@
  		try {
  			this.downloadResourcesThread = new ThreadDownloadResources(this.mcDataDir, this);
  			this.downloadResourcesThread.start();
@@ -17741,7 +17877,7 @@
  		}
  
  		this.checkGLError("Post startup");
-@@ -237,16 +278,15 @@
+@@ -237,16 +281,15 @@
  		if(this.serverName != null) {
  			this.displayGuiScreen(new GuiConnecting(this, this.serverName, this.serverPort));
  		} else {
@@ -17763,7 +17899,7 @@
  		GL11.glMatrixMode(GL11.GL_PROJECTION);
  		GL11.glLoadIdentity();
  		GL11.glOrtho(0.0D, (double)var2, (double)var3, 0.0D, 1000.0D, 3000.0D);
-@@ -255,23 +295,23 @@
+@@ -255,23 +298,23 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glViewport(0, 0, this.displayWidth, this.displayHeight);
  		GL11.glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
@@ -17800,7 +17936,7 @@
  		GL11.glDisable(GL11.GL_LIGHTING);
  		GL11.glDisable(GL11.GL_FOG);
  		GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -282,13 +322,13 @@
+@@ -282,13 +325,13 @@
  	public void scaledTessellator(int var1, int var2, int var3, int var4, int var5, int var6) {
  		float var7 = 0.00390625F;
  		float var8 = 0.00390625F;
@@ -17821,7 +17957,7 @@
  	}
  
  	public static File getMinecraftDir() {
-@@ -301,31 +341,31 @@
+@@ -301,31 +344,31 @@
  
  	public static File getAppDir(String var0) {
  		String var1 = System.getProperty("user.home", ".");
@@ -17875,7 +18011,7 @@
  		}
  	}
  
-@@ -334,25 +374,25 @@
+@@ -334,25 +377,25 @@
  		return var0.contains("win") ? EnumOS.windows : (var0.contains("mac") ? EnumOS.macos : (var0.contains("solaris") ? EnumOS.solaris : (var0.contains("sunos") ? EnumOS.solaris : (var0.contains("linux") ? EnumOS.linux : (var0.contains("unix") ? EnumOS.linux : EnumOS.unknown)))));
  	}
  
@@ -17912,7 +18048,7 @@
  				this.skipRenderWorld = false;
  			} else {
  				this.setIngameFocus();
-@@ -382,7 +422,7 @@
+@@ -382,7 +425,7 @@
  			if(this.downloadResourcesThread != null) {
  				this.downloadResourcesThread.closeMinecraft();
  			}
@@ -17921,7 +18057,7 @@
  		}
  
  		try {
-@@ -391,7 +431,7 @@
+@@ -391,7 +434,7 @@
  
  			try {
  				GLAllocation.deleteTexturesAndDisplayLists();
@@ -17930,7 +18066,7 @@
  			}
  
  			this.sndManager.closeMinecraft();
-@@ -409,9 +449,17 @@
+@@ -409,9 +452,17 @@
  
  		try {
  			this.startGame();
@@ -17951,7 +18087,7 @@
  			return;
  		}
  
-@@ -440,7 +488,7 @@
+@@ -440,7 +491,7 @@
  
  						try {
  							this.runTick();
@@ -17960,7 +18096,7 @@
  							this.theWorld = null;
  							this.changeWorld1((World)null);
  							this.displayGuiScreen(new GuiConflictWarning());
-@@ -471,7 +519,7 @@
+@@ -471,7 +522,7 @@
  						Thread.sleep(10L);
  					}
  
@@ -17969,7 +18105,7 @@
  						this.displayDebugInfo();
  					} else {
  						this.prevFrameTime = System.nanoTime();
-@@ -493,8 +541,8 @@
+@@ -493,8 +544,8 @@
  						this.resize(this.displayWidth, this.displayHeight);
  					}
  
@@ -17980,7 +18116,7 @@
  					}
  
  					this.checkGLError("Post render");
-@@ -506,7 +554,7 @@
+@@ -506,7 +557,7 @@
  						var1 += 1000L;
  					}
  				}
@@ -17989,7 +18125,7 @@
  			} catch (Throwable var15) {
  				this.theWorld = null;
  				var15.printStackTrace();
-@@ -514,6 +562,7 @@
+@@ -514,6 +565,7 @@
  			}
  
  		} finally {
@@ -17997,7 +18133,7 @@
  		}
  	}
  
-@@ -534,14 +583,14 @@
+@@ -534,14 +586,14 @@
  		GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
  		GL11.glLineWidth(1.0F);
  		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -18020,7 +18156,7 @@
  		long var4 = 0L;
  
  		int var6;
-@@ -550,14 +599,14 @@
+@@ -550,14 +602,14 @@
  		}
  
  		var6 = (int)(var4 / 200000L / (long)frameTimes.length);
@@ -18043,7 +18179,7 @@
  
  		for(int var7 = 0; var7 < frameTimes.length; ++var7) {
  			int var8 = (var7 - numRecordedFrameTimes & frameTimes.length - 1) * 255 / frameTimes.length;
-@@ -565,13 +614,13 @@
+@@ -565,13 +617,13 @@
  			var9 = var9 * var9 / 255;
  			int var10 = var9 * var9 / 255;
  			var10 = var10 * var10 / 255;
@@ -18061,7 +18197,7 @@
  		GL11.glEnable(GL11.GL_TEXTURE_2D);
  	}
  
-@@ -607,10 +656,10 @@
+@@ -607,10 +659,10 @@
  		}
  	}
  
@@ -18075,7 +18211,7 @@
  					int var3 = this.objectMouseOver.blockX;
  					int var4 = this.objectMouseOver.blockY;
  					int var5 = this.objectMouseOver.blockZ;
-@@ -620,28 +669,31 @@
+@@ -620,28 +672,31 @@
  					this.playerController.resetBlockRemoving();
  				}
  
@@ -18116,7 +18252,7 @@
  				}
  			} else if(this.objectMouseOver.typeOfHit == 0) {
  				int var2 = this.objectMouseOver.blockX;
-@@ -649,15 +701,15 @@
+@@ -649,15 +704,15 @@
  				int var4 = this.objectMouseOver.blockZ;
  				int var5 = this.objectMouseOver.sideHit;
  				Block var6 = Block.blocksList[this.theWorld.getBlockId(var2, var3, var4)];
@@ -18135,7 +18271,7 @@
  						this.thePlayer.swingItem();
  					}
  
-@@ -673,18 +725,10 @@
+@@ -673,18 +728,10 @@
  				}
  			}
  
@@ -18157,7 +18293,7 @@
  				}
  			}
  
-@@ -740,27 +784,27 @@
+@@ -740,27 +787,27 @@
  			}
  
  			System.out.println("Size: " + this.displayWidth + ", " + this.displayHeight);
@@ -18201,7 +18337,7 @@
  			this.currentScreen.setWorldAndResolution(this, var4, var5);
  		}
  
-@@ -789,9 +833,6 @@
+@@ -789,9 +836,6 @@
  	public void runTick() {
  		this.ingameGUI.updateTick();
  		this.entityRenderer.getMouseOver(1.0F);
@@ -18211,7 +18347,7 @@
  
  		if(!this.isGamePaused && this.theWorld != null) {
  			this.playerController.onUpdate();
-@@ -822,7 +863,9 @@
+@@ -822,7 +866,9 @@
  			while(true) {
  				while(true) {
  					while(true) {
@@ -18221,7 +18357,7 @@
  						do {
  							if(!Mouse.next()) {
  								if(this.leftClickCounter > 0) {
-@@ -833,6 +876,10 @@
+@@ -833,6 +879,10 @@
  									while(true) {
  										do {
  											if(!Keyboard.next()) {
@@ -18232,7 +18368,7 @@
  												if(this.currentScreen == null) {
  													if(Mouse.isButtonDown(0) && (float)(this.ticksRan - this.mouseTicksRan) >= this.timer.ticksPerSecond / 4.0F && this.inGameHasFocus) {
  														this.clickMouse(0);
-@@ -845,7 +892,7 @@
+@@ -845,7 +895,7 @@
  													}
  												}
  
@@ -18241,7 +18377,7 @@
  												break label234;
  											}
  
-@@ -867,20 +914,40 @@
+@@ -867,20 +917,40 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F5) {
@@ -18285,7 +18421,7 @@
  											}
  
  											for(int var4 = 0; var4 < 9; ++var4) {
-@@ -908,7 +975,9 @@
+@@ -908,7 +978,9 @@
  						if(this.currentScreen == null) {
  							if(!this.inGameHasFocus && Mouse.getEventButtonState()) {
  								this.setIngameFocus();
@@ -18296,7 +18432,7 @@
  								if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState()) {
  									this.clickMouse(0);
  									this.mouseTicksRan = this.ticksRan;
-@@ -924,6 +993,9 @@
+@@ -924,6 +996,9 @@
  								}
  							}
  						} else if(this.currentScreen != null) {
@@ -18306,17 +18442,14 @@
  							this.currentScreen.handleMouseInput();
  						}
  					}
-@@ -954,6 +1026,14 @@
+@@ -954,6 +1029,11 @@
  			}
  
  			if(!this.isGamePaused || this.isMultiplayerWorld()) {
 +				if (!this.options.caveSounds) {
 +					this.theWorld.soundCounter = 0xDEAD;
 +				}
-+				this.theWorld.simulationDistance =
-+						this.options.simulationDistance <= 2
-+						? this.options.renderDistance
-+						: Math.min(this.options.simulationDistance, this.options.renderDistance);
++				this.theWorld.simulationDistance = Math.min(this.options.simulationDistance, this.options.renderDistance);
 +				this.theWorld.legacyLighting = this.options.legacyLighting;
  				this.theWorld.tick();
  			}
@@ -20817,13 +20950,7 @@
  import javax.xml.parsers.DocumentBuilder;
  import javax.xml.parsers.DocumentBuilderFactory;
  import net.minecraft.client.Minecraft;
-@@ -15,15 +16,23 @@
- import org.w3c.dom.NodeList;
- 
- public class ThreadDownloadResources extends Thread {
-+	private final Proxy betacraftProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("betacraft.uk", 11705));
- 	public File resourcesFolder;
- 	private Minecraft mc;
+@@ -20,10 +21,17 @@
  	private boolean closing = false;
  
  	public ThreadDownloadResources(File var1, Minecraft var2) {
@@ -20842,7 +20969,7 @@
  		if(!this.resourcesFolder.exists() && !this.resourcesFolder.mkdirs()) {
  			throw new RuntimeException("The working directory could not be created: " + this.resourcesFolder);
  		}
-@@ -31,33 +40,57 @@
+@@ -31,33 +39,57 @@
  
  	public void run() {
  		try {
@@ -20881,7 +21008,7 @@
 +	private void downloadAllResources(URL var1, boolean useProxy) throws Exception {
 +		URLConnection connection;
 +		if (useProxy) {
-+			connection = var1.openConnection(this.betacraftProxy);
++			connection = var1.openConnection(Minecraft.betacraftProxy);
 +		} else {
 +			connection = var1.openConnection();
 +		}
@@ -20922,7 +21049,7 @@
  	}
  
  	public void reloadResources() {
-@@ -81,7 +114,7 @@
+@@ -81,7 +113,7 @@
  
  	}
  
@@ -20931,7 +21058,7 @@
  		try {
  			int var6 = var2.indexOf("/");
  			String var7 = var2.substring(0, var6);
-@@ -97,7 +130,7 @@
+@@ -97,7 +129,7 @@
  			if(!var8.exists() || var8.length() != var3) {
  				var8.getParentFile().mkdirs();
  				String var9 = var2.replaceAll(" ", "%20");
@@ -20940,7 +21067,7 @@
  				if(this.closing) {
  					return;
  				}
-@@ -110,9 +143,16 @@
+@@ -110,9 +142,16 @@
  
  	}
  
@@ -20948,7 +21075,7 @@
 +	private void downloadResource(URL var1, File var2, long var3, boolean useProxy) throws IOException {
 +		URLConnection connection;
 +		if (useProxy) {
-+			connection = var1.openConnection(this.betacraftProxy);
++			connection = var1.openConnection(Minecraft.betacraftProxy);
 +		} else {
 +			connection = var1.openConnection();
 +		}
@@ -23486,7 +23613,7 @@
  	protected ChunkPosition getRandomSpawningPointInChunk(World var1, int var2, int var3) {
  		int var4 = var2 + var1.rand.nextInt(16);
 -		int var5 = var1.rand.nextInt(128);
-+		int var5 = var1.rand.nextInt(256);
++		int var5 = var1.rand.nextInt(208) + 48;
  		int var6 = var3 + var1.rand.nextInt(16);
  		return new ChunkPosition(var4, var5, var6);
  	}
@@ -23501,11 +23628,11 @@
  			int var6 = MathHelper.floor_double(var5.posX / 16.0D);
  			var7 = MathHelper.floor_double(var5.posZ / 16.0D);
 -			byte var8 = 4;
-+			byte var8 = 8;
++			byte var8 = (byte)var1.simulationDistance;
  
  			for(var9 = -var8; var9 <= var8; ++var9) {
  				for(var10 = -var8; var10 <= var8; ++var10) {
-@@ -53,45 +41,49 @@
+@@ -53,45 +41,47 @@
  			}
  		}
  
@@ -23538,18 +23665,22 @@
  			var9 = var28.x;
  			var10 = var28.y;
  			int var11 = var28.z;
- 			if(var1.isBlockNormalCube(var9, var10, var11)) {
+-			if(var1.isBlockNormalCube(var9, var10, var11)) {
 -				return 0;
-+//				return 0;
-+				continue;
- 			}
- 
- 			if(var1.getBlockMaterial(var9, var10, var11) != Material.air) {
+-			}
+-
+-			if(var1.getBlockMaterial(var9, var10, var11) != Material.air) {
 -				return 0;
-+//				return 0;
-+				continue;
- 			}
- 
+-			}
+-
++//			if(var1.isBlockNormalCube(var9, var10, var11)) {
++//				continue;
++//			}
++//
++//			if(var1.getBlockMaterial(var9, var10, var11) != Material.air) {
++//				continue;
++//			}
++
 +			Class<? extends EntityLiving> entity = this.getEntity(var1, var1.getBiome(var9, var11));
 +
 +			int spawned = 0;
@@ -23572,7 +23703,7 @@
  						float var20 = (float)var15 + 0.5F;
  						if(var1.getClosestPlayer((double)var18, (double)var19, (double)var20, 24.0D) == null) {
  							float var21 = var18 - (float)var1.spawnX;
-@@ -101,7 +93,7 @@
+@@ -101,15 +91,27 @@
  							if(var24 >= 576.0F) {
  								EntityLiving var29;
  								try {
@@ -23581,9 +23712,10 @@
  								} catch (Exception var25) {
  									var25.printStackTrace();
  									return var4;
-@@ -109,7 +101,18 @@
+ 								}
  
  								var29.setLocationAndAngles((double)var18, (double)var19, (double)var20, var1.rand.nextFloat() * 360.0F, 0.0F);
++								EntityPlayer var5 = (EntityPlayer)var1.playerEntities.get(0);
  								if(var29.getCanSpawnHere()) {
 -									++var4;
 +									if(var29 instanceof EntityFox
@@ -23601,7 +23733,7 @@
  									var1.spawnEntityInWorld(var29);
  									if(var29 instanceof EntitySpider && var1.rand.nextInt(100) == 0) {
  										EntitySkeleton var30 = new EntitySkeleton(var1);
-@@ -117,12 +120,22 @@
+@@ -117,12 +119,22 @@
  										var1.spawnEntityInWorld(var30);
  										var30.mountEntity(var29);
  									}
@@ -26353,7 +26485,7 @@
 +
 +	protected ChunkPosition getRandomSpawningPointInChunk(World var1, int var2, int var3) {
 +		int var4 = var2 + var1.rand.nextInt(16);
-+		int var5 = var1.rand.nextInt(64);
++		int var5 = var1.rand.nextInt(var1.rand.nextInt(56) + 8);
 +		int var6 = var3 + var1.rand.nextInt(16);
 +		return new ChunkPosition(var4, var5, var6);
 +	}
@@ -27171,7 +27303,7 @@
  		this.ipBanFile = var1.getFile("banned-ips.txt");
  		this.opFile = var1.getFile("ops.txt");
 -		this.playerManagerObj = new PlayerManager(var1);
-+		this.playerManagerObj = new PlayerManager(var1, var1.propertyManagerObj.getIntProperty("view-distance", 10));
++		this.playerManagerObj = new PlayerManager(var1, var1.propertyManagerObj.getIntProperty("view-distance", 12));
  		this.maxPlayers = var1.propertyManagerObj.getIntProperty("max-players", 20);
  		this.readBannedPlayers();
  		this.loadBannedList();
@@ -28571,7 +28703,7 @@
 +	}
 +
 +	public void drawHeader(String title) {
-+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++		GL11.glColor4f(0.75F, 0.75F, 0.75F, 1.0F);
 +
 +		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
 +		int tex = Block.blocksList[this.mc.options.headerBlockID]
@@ -36460,7 +36592,7 @@
  
 -public class MinecraftServer implements ICommandListener, Runnable {
 +public class MinecraftServer implements IListenToMyCommands, Runnable {
-+	public static final String version = "v0.3_a4";
++	public static final String version = "v0.3_a4.1";
  	public static Logger logger = Logger.getLogger("Minecraft");
  	public static HashMap playerList = new HashMap();
 +	private static MinecraftServer instance;
@@ -36533,7 +36665,7 @@
  		this.configManager = new ServerConfigurationManager(this);
  		this.entityTracker = new EntityTracker(this);
  		String var5 = this.propertyManagerObj.getStringProperty("level-name", "world");
-@@ -103,11 +123,15 @@
+@@ -103,11 +123,16 @@
  		return true;
  	}
  
@@ -36550,10 +36682,11 @@
  		this.worldMngr.addWorldAccess(new WorldManager(this));
 -		this.worldMngr.difficultySetting = 1;
 +		this.worldMngr.difficultySetting = this.propertyManagerObj.getIntProperty("difficulty", 1);
++		this.worldMngr.simulationDistance = this.propertyManagerObj.getIntProperty("simulation-distance", 8);
  		this.configManager.setPlayerManager(this.worldMngr);
  		byte var2 = 10;
  
-@@ -126,10 +150,15 @@
+@@ -126,10 +151,15 @@
  		this.clearCurrentTask();
  	}
  
@@ -36573,7 +36706,7 @@
  	}
  
  	private void clearCurrentTask() {
-@@ -168,7 +197,7 @@
+@@ -168,7 +198,7 @@
  					long var5 = System.currentTimeMillis();
  					long var7 = var5 - var1;
  					if(var7 > 2000L) {
@@ -36582,7 +36715,7 @@
  						var7 = 2000L;
  					}
  
-@@ -193,22 +222,22 @@
+@@ -193,22 +223,22 @@
  
  					try {
  						Thread.sleep(10L);
@@ -36612,7 +36745,7 @@
  				}
  			}
  		} finally {
-@@ -220,22 +249,23 @@
+@@ -220,22 +250,23 @@
  	}
  
  	private void doTick() throws IOException {
@@ -36644,7 +36777,7 @@
  		}
  
  		AxisAlignedBB.clearBoundingBoxPool();
-@@ -247,10 +277,13 @@
+@@ -247,10 +278,13 @@
  
  		this.worldMngr.tick();
  
@@ -36660,7 +36793,7 @@
  		this.networkServer.handleNetworkListenThread();
  		this.configManager.onTick();
  		this.entityTracker.updateTrackedEntities();
-@@ -261,21 +294,20 @@
+@@ -261,21 +295,20 @@
  
  		try {
  			this.commandLineParser();
@@ -36687,7 +36820,7 @@
  			String var4 = var3.getUsername();
  			if(!var2.toLowerCase().startsWith("help") && !var2.toLowerCase().startsWith("?")) {
  				if(var2.toLowerCase().startsWith("list")) {
-@@ -342,7 +374,7 @@
+@@ -342,7 +375,7 @@
  								var12.playerNetServerHandler.kickPlayer("Kicked by admin");
  								this.print(var4, "Kicking " + var12.username);
  							} else {
@@ -36696,7 +36829,7 @@
  							}
  						} else {
  							String[] var5;
-@@ -353,9 +385,9 @@
+@@ -353,9 +386,9 @@
  									var12 = this.configManager.getPlayerEntity(var5[1]);
  									var7 = this.configManager.getPlayerEntity(var5[2]);
  									if(var12 == null) {
@@ -36708,7 +36841,7 @@
  									} else {
  										var12.playerNetServerHandler.teleportTo(var7.posX, var7.posY, var7.posZ, var7.rotationYaw, var7.rotationPitch);
  										this.print(var4, "Teleporting " + var5[1] + " to " + var5[2] + ".");
-@@ -365,7 +397,7 @@
+@@ -365,7 +398,7 @@
  								}
  							} else if(var2.toLowerCase().startsWith("give ")) {
  								var5 = var2.split(" ");
@@ -36717,7 +36850,7 @@
  									return;
  								}
  
-@@ -374,11 +406,12 @@
+@@ -374,11 +407,12 @@
  								if(var7 != null) {
  									try {
  										int var8 = Integer.parseInt(var5[2]);
@@ -36732,7 +36865,7 @@
  											}
  
  											if(var9 < 1) {
-@@ -389,15 +422,15 @@
+@@ -389,15 +423,15 @@
  												var9 = 64;
  											}
  
@@ -36753,7 +36886,7 @@
  								}
  							} else if(var2.toLowerCase().startsWith("say ")) {
  								var2 = var2.substring(var2.indexOf(" ")).trim();
-@@ -426,23 +459,23 @@
+@@ -426,23 +460,23 @@
  				var3.addHelpCommandMessage("To run the server without a gui, start it like this:");
  				var3.addHelpCommandMessage("   java -Xmx1024M -Xms1024M -jar minecraft_server.jar nogui");
  				var3.addHelpCommandMessage("Console commands:");
@@ -36793,7 +36926,7 @@
  			}
  		}
  
-@@ -454,45 +487,48 @@
+@@ -454,45 +488,48 @@
  		logger.info(var3);
  	}
  
@@ -36884,7 +37017,7 @@
 +	public float fovEffects = 1.0F;
  	public boolean invertMouse = false;
 -	public int renderDistance = 0;
-+	public int renderDistance = 12;
++	public int renderDistance = 16;
 +	public int simulationDistance = 8;
  	public boolean viewBobbing = true;
  	public boolean anaglyph = false;
@@ -37187,7 +37320,7 @@
 +			case 19:
 +				return "Smooth Lighting: " + (this.ambientOcclusion ? "ON" : "OFF");
 +			case 20:
-+				return "Simulation Distance: " + (this.simulationDistance <= 2 ? "Auto" : this.simulationDistance);
++				return "Simulation Distance: " + this.simulationDistance;
 +			case 21:
 +				return "Legacy Lighting: " + (this.legacyLighting ? "ON" : "OFF");
 +			default:
@@ -37273,7 +37406,7 @@
 -				for(int var4 = 0; var4 < this.keyBindings.length; ++var4) {
 -					if(var3[0].equals("key_" + this.keyBindings[var4].keyDescription)) {
 +				if (var3[0].equals("fancyGraphics")) {
-+					this.fancyGraphics = var3[1].equals("true") ? 1
++					this.fancyGraphics = var3[1].equals("true") ? 2
 +							: var3[1].equals("false") ? 0
 +							: Integer.parseInt(var3[1]);
 +				}
