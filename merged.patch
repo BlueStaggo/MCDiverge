@@ -4067,7 +4067,7 @@
  	}
  
  	public void tick() {
-+		if (false && this.canDoClientAction()) {
++		if (this.canDoClientAction()) {
 +			if (this.difficultySetting > 0) {
 +				if (this.monsterSpawner != null) this.monsterSpawner.performSpawning(this);
 +				if (this.mantleDisrupted && this.underworldSpawner != null) this.underworldSpawner.performSpawning(this);
