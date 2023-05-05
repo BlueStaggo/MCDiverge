@@ -5977,7 +5977,7 @@
  								ItemStack var18 = this.pickCheckLootItem(var2);
  								if(var18 != null) {
 -									var16.setInventorySlotContents(var2.nextInt(var16.getSizeInventory()), var18);
-+									tileEntityChest16.setInventorySlotItem(var2.nextInt(tileEntityChest16.getSizeInventory()), var18);
++									tileEntityChest16.setInventorySlotItem(var2.nextInt(tileEntityChest16.getInventorySize()), var18);
  								}
  
  								++var17;
@@ -9309,13 +9309,15 @@
 +}
 --- net/minecraft/src/TileEntityFurnace.java
 +++ net/minecraft/src/TileEntityFurnace.java
-@@ -2,9 +2,24 @@
+@@ -2,54 +2,66 @@
  
  public class TileEntityFurnace extends TileEntity implements IInventory {
  	private ItemStack[] furnaceItemStacks = new ItemStack[3];
 -	private int furnaceBurnTime = 0;
 -	private int currentItemBurnTime = 0;
 -	private int furnaceCookTime = 0;
+-
+-	public int getSizeInventory() {
 +	public int furnaceBurnTime = 0;
 +	public int currentItemBurnTime = 0;
 +	public int furnaceCookTime = 0;
@@ -9334,10 +9336,20 @@
 +		this.furnaceMaxTime = speed;
 +		this.furnaceBurnTick = burnTick;
 +	}
- 
- 	public int getSizeInventory() {
++
++	public int getInventorySize() {
  		return this.furnaceItemStacks.length;
-@@ -20,30 +35,27 @@
+ 	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
+ 		return this.furnaceItemStacks[var1];
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		if(this.furnaceItemStacks[var1] != null) {
+ 			ItemStack var3;
  			if(this.furnaceItemStacks[var1].stackSize <= var2) {
  				var3 = this.furnaceItemStacks[var1];
  				this.furnaceItemStacks[var1] = null;
@@ -9361,18 +9373,26 @@
  		this.furnaceItemStacks[var1] = var2;
 -		if(var2 != null && var2.stackSize > this.getInventoryStackLimit()) {
 -			var2.stackSize = this.getInventoryStackLimit();
-+		if(var2 != null && var2.stackSize > this.getItemStackLimit()) {
-+			var2.stackSize = this.getItemStackLimit();
++		if(var2 != null && var2.stackSize > this.getStackLimit()) {
++			var2.stackSize = this.getStackLimit();
  		}
 -
  	}
  
- 	public String getInvName() {
+-	public String getInvName() {
 -		return "Chest";
++	public String getInventoryName() {
 +		return "Furnace";
  	}
  
  	public void readFromNBT(NBTTagCompound var1) {
+ 		super.readFromNBT(var1);
+ 		NBTTagList var2 = var1.getTagList("Items");
+-		this.furnaceItemStacks = new ItemStack[this.getSizeInventory()];
++		this.furnaceItemStacks = new ItemStack[this.getInventorySize()];
+ 
+ 		for(int var3 = 0; var3 < var2.tagCount(); ++var3) {
+ 			NBTTagCompound var4 = (NBTTagCompound)var2.tagAt(var3);
 @@ -60,14 +72,18 @@
  		}
  
@@ -9397,7 +9417,7 @@
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
  	}
  
@@ -9436,7 +9456,7 @@
  					this.furnaceCookTime = 0;
  					this.smeltItem();
  					var2 = true;
-@@ -136,7 +152,7 @@
+@@ -136,12 +152,12 @@
  
  			if(var1 != this.furnaceBurnTime > 0) {
  				var2 = true;
@@ -9445,6 +9465,12 @@
  			}
  		}
  
+ 		if(var2) {
+-			this.onInventoryChanged();
++			this.onInventoryChange();
+ 		}
+ 
+ 	}
 @@ -149,18 +165,25 @@
  	private boolean canSmelt() {
  		if(this.furnaceItemStacks[0] == null) {
@@ -9459,7 +9485,7 @@
 +			   && (outSlot == null
 +				   || (outSlot.itemID == var1.itemID
 +					   && outSlot.itemMetadata == var1.itemMetadata
-+					   && outSlot.stackSize < this.getItemStackLimit()
++					   && outSlot.stackSize < this.getStackLimit()
 +					   && outSlot.stackSize < outSlot.getMaxStackSize()
 +					   && outSlot.stackSize < var1.getMaxStackSize() ) );
  	}
@@ -12347,11 +12373,13 @@
  			var1.readFromNBT(var0);
  		} else {
  			System.out.println("Skipping TileEntity with id " + var0.getString("id"));
-@@ -67,7 +69,9 @@
+@@ -66,8 +68,10 @@
+ 		return this.worldObj.getBlockMetadata(this.xCoord, this.yCoord, this.zCoord);
  	}
  
- 	public void onInventoryChanged() {
+-	public void onInventoryChanged() {
 -		this.worldObj.updateTileEntityChunkAndDoNothing(this.xCoord, this.yCoord, this.zCoord, this);
++	public void onInventoryChange() {
 +		if (this.worldObj != null) {
 +			this.worldObj.updateTileEntityChunkAndDoNothing(this.xCoord, this.yCoord, this.zCoord, this);
 +		}
@@ -13448,11 +13476,11 @@
 +package net.minecraft.src;
 +
 +public class TileEntityCrate extends TileEntityChest {
-+	public int getSizeInventory() {
++	public int getInventorySize() {
 +		return 9;
 +	}
 +
-+	public String getInvName() {
++	public String getInventoryName() {
 +		return "Crate";
 +	}
 +}
@@ -13488,7 +13516,7 @@
  			} else {
  				return this.blockIndexInTexture;
  			}
-@@ -127,7 +127,8 @@
+@@ -127,10 +127,11 @@
  	}
  
  	public void onBlockRemoval(World var1, int var2, int var3, int var4) {
@@ -13496,8 +13524,13 @@
 +		if (!var1.canDoClientAction()) return ;
 +		TileEntityChest var5 = (TileEntityChest) var1.getBlockTileEntity(var2, var3, var4);
  
- 		for(int var6 = 0; var6 < var5.getSizeInventory(); ++var6) {
- 			ItemStack var7 = var5.getStackInSlot(var6);
+-		for(int var6 = 0; var6 < var5.getSizeInventory(); ++var6) {
+-			ItemStack var7 = var5.getStackInSlot(var6);
++		for(int var6 = 0; var6 < var5.getInventorySize(); ++var6) {
++			ItemStack var7 = var5.getStack(var6);
+ 			if(var7 != null) {
+ 				float var8 = this.random.nextFloat() * 0.8F + 0.1F;
+ 				float var9 = this.random.nextFloat() * 0.8F + 0.1F;
 @@ -143,7 +144,7 @@
  					}
  
@@ -15462,11 +15495,11 @@
 +		}
 +	}
 +
-+	public int getSizeInventory() {
++	public int getInventorySize() {
 +		return items.length;
 +	}
 +
-+	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
 +		return var1 < items.length
 +			? items[var1] == null
 +				? null
@@ -15474,7 +15507,7 @@
 +			: null;
 +	}
 +
-+	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
 +		return this.pickable
 +				? new ItemStack(items[var1].itemID,
 +						this.pickOne ? 1 : items[var1].getMaxStackSize(),
@@ -15485,15 +15518,15 @@
 +	public void setInventorySlotItem(int var1, ItemStack var2) {
 +	}
 +
-+	public String getInvName() {
++	public String getInventoryName() {
 +		return "Readonly Inventory";
 +	}
 +
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
 +		return 64;
 +	}
 +
-+	public void onInventoryChanged() {
++	public void onInventoryChange() {
 +	}
 +
 +	public boolean isNearPlayer(EntityPlayer var1) {
@@ -17417,7 +17450,7 @@
 +		for(int var3 = 0; var3 < 3; ++var3) {
 +			for(int var4 = 0; var4 < 3; ++var4) {
 +				int var5 = var3 + var4 * 3;
-+				ItemStack var6 = this.a.getStackInSlot(var5);
++				ItemStack var6 = this.a.getStack(var5);
 +				if(var6 == null) {
 +					var2[var5] = -1;
 +					meta[var5] = 0;
@@ -17436,7 +17469,7 @@
 +
 +		if (var1.worldObj.canDoClientAction()) {
 +			for(int var2 = 0; var2 < 9; ++var2) {
-+				ItemStack var3 = this.a.getStackInSlot(var2);
++				ItemStack var3 = this.a.getStack(var2);
 +				if(var3 != null) {
 +					var1.dropPlayerItem(var3);
 +				}
@@ -17473,10 +17506,10 @@
 +		}
 +
 +		for(var3 = 0; var3 < 4; ++var3) {
-+			this.addSlot(new SlotArmor(this, var1, var1.getSizeInventory() - 5 - var3, 8, 8 + var3 * 18, var3));
-+			this.addSlot(new SlotArmor(this, var1, var1.getSizeInventory() - 1 - var3, 80, 8 + var3 * 18, var3 + 5));
++			this.addSlot(new SlotArmor(this, var1, var1.getInventorySize() - 5 - var3, 8, 8 + var3 * 18, var3));
++			this.addSlot(new SlotArmor(this, var1, var1.getInventorySize() - 1 - var3, 80, 8 + var3 * 18, var3 + 5));
 +		}
-+		this.addSlot(new SlotArmor(this, var1, var1.getSizeInventory() - 9, 152, 62, 4));
++		this.addSlot(new SlotArmor(this, var1, var1.getInventorySize() - 9, 152, 62, 4));
 +
 +		for(var3 = 0; var3 < 3; ++var3) {
 +			for(var4 = 0; var4 < 9; ++var4) {
@@ -17500,7 +17533,7 @@
 +				int var5 = -1;
 +				int var5m = 0;
 +				if(var3 < 2 && var4 < 2) {
-+					ItemStack var6 = this.craftMatrix.getStackInSlot(var3 + var4 * 2);
++					ItemStack var6 = this.craftMatrix.getStack(var3 + var4 * 2);
 +					if(var6 != null) {
 +						var5 = var6.itemID;
 +						var5m = var6.itemMetadata;
@@ -17519,7 +17552,7 @@
 +		super.onCraftGuiClosed(var1);
 +
 +		for(int var2 = 0; var2 < 4; ++var2) {
-+			ItemStack var3 = this.craftMatrix.getStackInSlot(var2);
++			ItemStack var3 = this.craftMatrix.getStack(var2);
 +			if(var3 != null) {
 +				var1.dropPlayerItem(var3);
 +				this.craftMatrix.setInventorySlotItem(var2, (ItemStack)null);
@@ -19120,7 +19153,7 @@
 +				&& this.mainInventory[var2].itemID == var1
 +				&& this.mainInventory[var2].itemMetadata == metadata
 +				&& this.mainInventory[var2].stackSize < this.mainInventory[var2].getMaxStackSize()
-+				&& this.mainInventory[var2].stackSize < this.getItemStackLimit()) {
++				&& this.mainInventory[var2].stackSize < this.getStackLimit()) {
  				return var2;
  			}
  		}
@@ -19150,8 +19183,8 @@
  
 -			if(var4 > this.getInventoryStackLimit() - this.mainInventory[var3].stackSize) {
 -				var4 = this.getInventoryStackLimit() - this.mainInventory[var3].stackSize;
-+			if(var4 > this.getItemStackLimit() - this.mainInventory[var3].stackSize) {
-+				var4 = this.getItemStackLimit() - this.mainInventory[var3].stackSize;
++			if(var4 > this.getStackLimit() - this.mainInventory[var3].stackSize) {
++				var4 = this.getStackLimit() - this.mainInventory[var3].stackSize;
  			}
  
  			if(var4 == 0) {
@@ -19164,6 +19197,15 @@
  			if(var1.stackSize == 0) {
  				return true;
  			}
+@@ -145,7 +148,7 @@
+ 		}
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		ItemStack[] var3 = this.mainInventory;
+ 		if(var1 >= this.mainInventory.length) {
+ 			var3 = this.armorInventory;
 @@ -171,16 +174,11 @@
  		}
  	}
@@ -19190,7 +19232,7 @@
  		return var2;
  	}
  
-@@ -216,43 +213,35 @@
+@@ -216,70 +213,57 @@
  			}
  		}
  
@@ -19242,15 +19284,23 @@
  			}
  		}
 -
- 	}
- 
- 	public int getSizeInventory() {
+-	}
+-
+-	public int getSizeInventory() {
 -		return this.mainInventory.length + 4;
+-	}
+-
+-	public ItemStack getStackInSlot(int var1) {
++	}
++
++	public int getInventorySize() {
 +		return this.mainInventory.length + 9;
- 	}
- 
- 	public ItemStack getStackInSlot(int var1) {
-@@ -262,11 +251,6 @@
++	}
++
++	public ItemStack getStack(int var1) {
+ 		ItemStack[] var2 = this.mainInventory;
+ 		if(var1 >= var2.length) {
+ 			var1 -= var2.length;
  			var2 = this.armorInventory;
  		}
  
@@ -19262,15 +19312,31 @@
  		return var2[var1];
  	}
  
-@@ -274,7 +258,7 @@
+-	public String getInvName() {
++	public String getInventoryName() {
  		return "Inventory";
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
  	}
  
+ 	public int getDamageVsEntity(Entity var1) {
+-		ItemStack var2 = this.getStackInSlot(this.currentItem);
++		ItemStack var2 = this.getStack(this.currentItem);
+ 		return var2 != null ? var2.getDamageVsEntity(var1) : 1;
+ 	}
+ 
+@@ -287,7 +271,7 @@
+ 		if(var1.material != Material.rock && var1.material != Material.iron && var1.material != Material.craftedSnow && var1.material != Material.snow) {
+ 			return true;
+ 		} else {
+-			ItemStack var2 = this.getStackInSlot(this.currentItem);
++			ItemStack var2 = this.getStack(this.currentItem);
+ 			return var2 != null ? var2.canHarvestBlock(var1) : false;
+ 		}
+ 	}
 @@ -298,30 +282,16 @@
  
  	public int getTotalArmorValue() {
@@ -19307,7 +19373,12 @@
  			if(this.armorInventory[var2] != null && this.armorInventory[var2].getItem() instanceof ItemArmor) {
  				this.armorInventory[var2].damageItem(var1);
  				if(this.armorInventory[var2].stackSize == 0) {
-@@ -355,49 +325,76 @@
+@@ -351,53 +321,80 @@
+ 
+ 	}
+ 
+-	public void onInventoryChanged() {
++	public void onInventoryChange() {
  		this.inventoryChanged = true;
  	}
  
@@ -19798,8 +19869,8 @@
 +	}
 +
 +	protected void drawGuiContainerForegroundLayer() {
-+		this.fontRenderer.drawString(this.lowerChestInventory.getInvName(), 8, 6, this.mc.options.getTextColor());
-+		this.fontRenderer.drawString(this.upperChestInventory.getInvName(), 8, 38, this.mc.options.getTextColor());
++		this.fontRenderer.drawString(this.lowerChestInventory.getInventoryName(), 8, 6, this.mc.options.getTextColor());
++		this.fontRenderer.drawString(this.upperChestInventory.getInventoryName(), 8, 38, this.mc.options.getTextColor());
 +	}
 +
 +	protected void drawGuiContainerBackgroundLayer(float var1) {
@@ -20160,7 +20231,7 @@
  	}
  
 +	public void dropOneItem() {
-+		this.dropPlayerItemWithRandomChoice(this.inventory.decrStackSize(this.inventory.currentItem, 1), false);
++		this.dropPlayerItemWithRandomChoice(this.inventory.decrStack(this.inventory.currentItem, 1), false);
 +	}
 +
  	public void dropPlayerItem(ItemStack var1) {
@@ -21895,7 +21966,7 @@
 +}
 --- net/minecraft/src/InventoryCrafting.java
 +++ net/minecraft/src/InventoryCrafting.java
-@@ -3,20 +3,14 @@
+@@ -3,33 +3,27 @@
  public class InventoryCrafting implements IInventory {
  	private ItemStack[] stackList;
  	private int gridSize;
@@ -21915,9 +21986,26 @@
 -		this.craftingInventory = var1;
 -	}
 -
- 	public int getSizeInventory() {
+-	public int getSizeInventory() {
++	public int getInventorySize() {
  		return this.gridSize;
  	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
+ 		return this.stackList[var1];
+ 	}
+ 
+-	public String getInvName() {
++	public String getInventoryName() {
+ 		return "Crafting";
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		if(this.stackList[var1] != null) {
+ 			ItemStack var3;
+ 			if(this.stackList[var1].stackSize <= var2) {
 @@ -51,15 +45,19 @@
  		}
  	}
@@ -21929,11 +22017,12 @@
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
  	}
  
- 	public void onInventoryChanged() {
+-	public void onInventoryChanged() {
++	public void onInventoryChange() {
 +	}
 +
 +	public boolean isNearPlayer(EntityPlayer var1) {
@@ -22168,17 +22257,17 @@
 +		this.field_20074_c = new ItemStack[var2];
 +	}
 +
-+	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
 +		return this.field_20074_c[var1];
 +	}
 +
-+	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
 +		if(this.field_20074_c[var1] != null) {
 +			ItemStack var3;
 +			if(this.field_20074_c[var1].stackSize <= var2) {
 +				var3 = this.field_20074_c[var1];
 +				this.field_20074_c[var1] = null;
-+				this.onInventoryChanged();
++				this.onInventoryChange();
 +				return var3;
 +			} else {
 +				var3 = this.field_20074_c[var1].splitStack(var2);
@@ -22186,7 +22275,7 @@
 +					this.field_20074_c[var1] = null;
 +				}
 +
-+				this.onInventoryChanged();
++				this.onInventoryChange();
 +				return var3;
 +			}
 +		} else {
@@ -22196,25 +22285,25 @@
 +
 +	public void setInventorySlotItem(int var1, ItemStack var2) {
 +		this.field_20074_c[var1] = var2;
-+		if(var2 != null && var2.stackSize > this.getItemStackLimit()) {
-+			var2.stackSize = this.getItemStackLimit();
++		if(var2 != null && var2.stackSize > this.getStackLimit()) {
++			var2.stackSize = this.getStackLimit();
 +		}
 +
-+		this.onInventoryChanged();
++		this.onInventoryChange();
 +	}
 +
-+	public void onInventoryChanged() {
++	public void onInventoryChange() {
 +	}
 +
-+	public int getSizeInventory() {
++	public int getInventorySize() {
 +		return this.field_20071_b;
 +	}
 +
-+	public String getInvName() {
++	public String getInventoryName() {
 +		return this.field_20072_a;
 +	}
 +
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
 +		return 64;
 +	}
 +
@@ -23003,6 +23092,15 @@
  	}
  
  	public void updateScreen() {
+@@ -30,7 +33,7 @@
+ 	protected void actionPerformed(GuiButton var1) {
+ 		if(var1.enabled) {
+ 			if(var1.id == 0) {
+-				this.entitySign.onInventoryChanged();
++				this.entitySign.onInventoryChange();
+ 				this.mc.displayGuiScreen((GuiScreen)null);
+ 			}
+ 
 --- /dev/null
 +++ net/minecraft/src/TileEntityRefabricator.java
 @@ -1,0 +1,136 @@
@@ -23021,15 +23119,15 @@
 +		return this.displayItem;
 +	}
 +
-+	public int getSizeInventory() {
++	public int getInventorySize() {
 +		return this.items.length;
 +	}
 +
-+	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
 +		return this.items[var1];
 +	}
 +
-+	public ItemStack decrStackSize(int slot, int stackSize) {
++	public ItemStack decrStack(int slot, int stackSize) {
 +		if(this.items[slot] != null) {
 +			ItemStack var3;
 +			if(this.items[slot].stackSize <= stackSize) {
@@ -23049,16 +23147,16 @@
 +
 +	public void setInventorySlotItem(int slot, ItemStack itemStack) {
 +		this.items[slot] = itemStack;
-+		if(itemStack != null && itemStack.stackSize > this.getItemStackLimit()) {
-+			itemStack.stackSize = this.getItemStackLimit();
++		if(itemStack != null && itemStack.stackSize > this.getStackLimit()) {
++			itemStack.stackSize = this.getStackLimit();
 +		}
 +	}
 +
-+	public String getInvName() {
++	public String getInventoryName() {
 +		return "Refabricator";
 +	}
 +
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
 +		return 64;
 +	}
 +
@@ -23075,7 +23173,7 @@
 +	public void readFromNBT(NBTTagCompound var1) {
 +		super.readFromNBT(var1);
 +		NBTTagList nBTTagList2 = var1.getTagList("Items");
-+		this.items = new ItemStack[this.getSizeInventory()];
++		this.items = new ItemStack[this.getInventorySize()];
 +
 +		for(int var3 = 0; var3 < nBTTagList2.tagCount(); ++var3) {
 +			NBTTagCompound nBTTagCompound4 = (NBTTagCompound)nBTTagList2.tagAt(var3);
@@ -23132,7 +23230,7 @@
 +			} else if (input.stackSize < input.getMaxStackSize()) {
 +				input.stackSize++;
 +			}
-+			this.decrStackSize(1, 1);
++			this.decrStack(1, 1);
 +			this.refabricationTime = 0;
 +			this.displayItem.item = this.items[0];
 +		}
@@ -23144,25 +23242,42 @@
 +}
 --- net/minecraft/src/IInventory.java
 +++ net/minecraft/src/IInventory.java
-@@ -7,11 +7,22 @@
+@@ -1,17 +1,28 @@
+ package net.minecraft.src;
  
- 	ItemStack decrStackSize(int var1, int var2);
- 
+ public interface IInventory {
+-	int getSizeInventory();
+-
+-	ItemStack getStackInSlot(int var1);
+-
+-	ItemStack decrStackSize(int var1, int var2);
+-
 -	void setInventorySlotContents(int var1, ItemStack var2);
-+	void setInventorySlotItem(int var1, ItemStack var2);
- 
- 	String getInvName();
- 
+-
+-	String getInvName();
+-
 -	int getInventoryStackLimit();
-+	int getItemStackLimit();
- 
- 	void onInventoryChanged();
+-
+-	void onInventoryChanged();
++	int getInventorySize();
++
++	ItemStack getStack(int var1);
++
++	ItemStack decrStack(int var1, int var2);
++
++	void setInventorySlotItem(int var1, ItemStack var2);
++
++	String getInventoryName();
++
++	int getStackLimit();
++
++	void onInventoryChange();
 +
 +	boolean isNearPlayer(EntityPlayer var1);
 +
 +	default void onChunkUpdate(int version) {
-+		for (int i = 0; i < getSizeInventory(); i++) {
-+			ItemStack item = getStackInSlot(i);
++		for (int i = 0; i < getInventorySize(); i++) {
++			ItemStack item = getStack(i);
 +			if (item != null) {
 +				item.onChunkUpdate(version);
 +			}
@@ -23507,7 +23622,7 @@
 +                    var3.signText[var4] = var1.signLines[var4];
 +                }
 +
-+                var3.onInventoryChanged();
++                var3.onInventoryChange();
 +            }
 +        }
 +    }
@@ -25690,15 +25805,43 @@
  		var9.addVertexWithUV((double)(var1 + 0), (double)(var2 + var6), (double)this.zLevel, (double)((float)(var3 + 0) * var7), (double)((float)(var4 + var6) * var8));
 --- net/minecraft/src/InventoryLargeChest.java
 +++ net/minecraft/src/InventoryLargeChest.java
-@@ -27,21 +27,25 @@
- 		return var1 >= this.upperChest.getSizeInventory() ? this.lowerChest.decrStackSize(var1 - this.upperChest.getSizeInventory(), var2) : this.upperChest.decrStackSize(var1, var2);
+@@ -11,37 +11,41 @@
+ 		this.lowerChest = var3;
  	}
  
+-	public int getSizeInventory() {
+-		return this.upperChest.getSizeInventory() + this.lowerChest.getSizeInventory();
++	public int getInventorySize() {
++		return this.upperChest.getInventorySize() + this.lowerChest.getInventorySize();
+ 	}
+ 
+-	public String getInvName() {
++	public String getInventoryName() {
+ 		return this.name;
+ 	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
+-		return var1 >= this.upperChest.getSizeInventory() ? this.lowerChest.getStackInSlot(var1 - this.upperChest.getSizeInventory()) : this.upperChest.getStackInSlot(var1);
+-	}
+-
+-	public ItemStack decrStackSize(int var1, int var2) {
+-		return var1 >= this.upperChest.getSizeInventory() ? this.lowerChest.decrStackSize(var1 - this.upperChest.getSizeInventory(), var2) : this.upperChest.decrStackSize(var1, var2);
+-	}
+-
 -	public void setInventorySlotContents(int var1, ItemStack var2) {
-+	public void setInventorySlotItem(int var1, ItemStack var2) {
- 		if(var1 >= this.upperChest.getSizeInventory()) {
+-		if(var1 >= this.upperChest.getSizeInventory()) {
 -			this.lowerChest.setInventorySlotContents(var1 - this.upperChest.getSizeInventory(), var2);
-+			this.lowerChest.setInventorySlotItem(var1 - this.upperChest.getSizeInventory(), var2);
++	public ItemStack getStack(int var1) {
++		return var1 >= this.upperChest.getInventorySize() ? this.lowerChest.getStack(var1 - this.upperChest.getInventorySize()) : this.upperChest.getStack(var1);
++	}
++
++	public ItemStack decrStack(int var1, int var2) {
++		return var1 >= this.upperChest.getInventorySize() ? this.lowerChest.decrStack(var1 - this.upperChest.getInventorySize(), var2) : this.upperChest.decrStack(var1, var2);
++	}
++
++	public void setInventorySlotItem(int var1, ItemStack var2) {
++		if(var1 >= this.upperChest.getInventorySize()) {
++			this.lowerChest.setInventorySlotItem(var1 - this.upperChest.getInventorySize(), var2);
  		} else {
 -			this.upperChest.setInventorySlotContents(var1, var2);
 +			this.upperChest.setInventorySlotItem(var1, var2);
@@ -25708,13 +25851,18 @@
  
 -	public int getInventoryStackLimit() {
 -		return this.upperChest.getInventoryStackLimit();
-+	public int getItemStackLimit() {
-+		return this.upperChest.getItemStackLimit();
- 	}
- 
- 	public void onInventoryChanged() {
- 		this.upperChest.onInventoryChanged();
- 		this.lowerChest.onInventoryChanged();
+-	}
+-
+-	public void onInventoryChanged() {
+-		this.upperChest.onInventoryChanged();
+-		this.lowerChest.onInventoryChanged();
++	public int getStackLimit() {
++		return this.upperChest.getStackLimit();
++	}
++
++	public void onInventoryChange() {
++		this.upperChest.onInventoryChange();
++		this.lowerChest.onInventoryChange();
 +	}
 +
 +	public boolean isNearPlayer(EntityPlayer var1) {
@@ -26324,7 +26472,7 @@
 +					var6.signText[var7] = var1.signLines[var7];
 +				}
 +
-+				var6.onInventoryChanged();
++				var6.onInventoryChange();
 +				this.mcServer.worldMngr.markBlockNeedsUpdate(var8, var9, var10);
 +			}
 +		}
@@ -26612,7 +26760,7 @@
 +		this.mc = minecraft;
 +
 +		this.inventory = ((ContainerCreative)this.inventorySlots).inventory;
-+		this.maxRow = this.inventory.getSizeInventory() / 8 - 7;
++		this.maxRow = this.inventory.getInventorySize() / 8 - 7;
 +		this.setupItems();
 +	}
 +
@@ -26722,7 +26870,7 @@
 +						this.inventory = this.mc.creativeDebugEnabled
 +								? InventoryReadonly.generateCreativeInventory(true)
 +								: InventoryReadonly.getCreativeInventory();
-+				this.maxRow = this.inventory.getSizeInventory() / 8 - 7;
++				this.maxRow = this.inventory.getInventorySize() / 8 - 7;
 +				this.row = 0;
 +
 +				this.setupItems();
@@ -28177,6 +28325,30 @@
 -}
 --- net/minecraft/src/InventoryCraftResult.java
 +++ net/minecraft/src/InventoryCraftResult.java
+@@ -3,19 +3,19 @@
+ public class InventoryCraftResult implements IInventory {
+ 	private ItemStack[] stackResult = new ItemStack[1];
+ 
+-	public int getSizeInventory() {
++	public int getInventorySize() {
+ 		return 1;
+ 	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
+ 		return this.stackResult[var1];
+ 	}
+ 
+-	public String getInvName() {
++	public String getInventoryName() {
+ 		return "Result";
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		if(this.stackResult[var1] != null) {
+ 			ItemStack var3 = this.stackResult[var1];
+ 			this.stackResult[var1] = null;
 @@ -25,14 +25,18 @@
  		}
  	}
@@ -28187,11 +28359,12 @@
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
  	}
  
- 	public void onInventoryChanged() {
+-	public void onInventoryChanged() {
++	public void onInventoryChange() {
 +	}
 +
 +	public boolean isNearPlayer(EntityPlayer var1) {
@@ -28591,7 +28764,7 @@
 +	public void displayGUIChest(IInventory var1) {
 +		this.resetWindowId();
 +		this.playerNetServerHandler.sendPacket(new Packet100OpenWindow(this.currentWindowId, Packet100OpenWindow.WINDOW_CHEST,
-+				var1.getInvName(), var1.getSizeInventory()));
++				var1.getInventoryName(), var1.getInventorySize()));
 +		this.craftingInventory = new ContainerChest(this.inventory, var1);
 +		this.craftingInventory.windowId = this.currentWindowId;
 +		this.craftingInventory.addCrafter(this);
@@ -28600,7 +28773,7 @@
 +	public void displayGUICrate(IInventory var1) {
 +		this.resetWindowId();
 +		this.playerNetServerHandler.sendPacket(new Packet100OpenWindow(this.currentWindowId, Packet100OpenWindow.WINDOW_CRATE,
-+				var1.getInvName(), var1.getSizeInventory()));
++				var1.getInventoryName(), var1.getInventorySize()));
 +		this.craftingInventory = new ContainerCrate(this.inventory, var1);
 +		this.craftingInventory.windowId = this.currentWindowId;
 +		this.craftingInventory.addCrafter(this);
@@ -28609,7 +28782,7 @@
 +	public void displayGUIFurnace(TileEntityFurnace var1) {
 +		this.resetWindowId();
 +		this.playerNetServerHandler.sendPacket(new Packet100OpenWindow(this.currentWindowId, Packet100OpenWindow.WINDOW_FURNACE,
-+				var1.getInvName(), var1.getSizeInventory()));
++				var1.getInventoryName(), var1.getInventorySize()));
 +		this.craftingInventory = new ContainerFurnace(this.inventory, var1);
 +		this.craftingInventory.windowId = this.currentWindowId;
 +		this.craftingInventory.addCrafter(this);
@@ -28618,7 +28791,7 @@
 +	public void displayGUIRefabricator(TileEntityRefabricator var1) {
 +		this.resetWindowId();
 +		this.playerNetServerHandler.sendPacket(new Packet100OpenWindow(this.currentWindowId, Packet100OpenWindow.WINDOW_REFABRICATOR,
-+				var1.getInvName(), var1.getSizeInventory()));
++				var1.getInventoryName(), var1.getInventorySize()));
 +		this.craftingInventory = new ContainerRefabricator(this.inventory, var1);
 +		this.craftingInventory.windowId = this.currentWindowId;
 +		this.craftingInventory.addCrafter(this);
@@ -28630,7 +28803,7 @@
 +			InventoryReadonly var1 = InventoryReadonly.getCreativeInventory();
 +			var1.pickOne = true;
 +			this.playerNetServerHandler.sendPacket(new Packet100OpenWindow(this.currentWindowId, Packet100OpenWindow.WINDOW_CREATIVE,
-+					var1.getInvName(), var1.getSizeInventory()));
++					var1.getInventoryName(), var1.getInventorySize()));
 +			this.craftingInventory = new ContainerCreative(this.inventory, var1);
 +			((ContainerCreative)this.craftingInventory).setupItems(0);
 +			this.craftingInventory.windowId = this.currentWindowId;
@@ -31111,15 +31284,15 @@
 -			this.inventorySlots.add(new SlotInventory(this, var1, var6, 8 + var6 * 18, 161 + var5));
 -		}
 -
-+		this.field_980_m = var2.getSizeInventory() / 9;
++		this.field_980_m = var2.getInventorySize() / 9;
 +		this.ySize = var4 + this.field_980_m * 18;
  	}
  
  	protected void drawGuiContainerForegroundLayer() {
 -		this.fontRenderer.drawString(this.lowerChestInventory.getInvName(), 8, 6, 4210752);
 -		this.fontRenderer.drawString(this.upperChestInventory.getInvName(), 8, this.ySize - 96 + 2, 4210752);
-+		this.fontRenderer.drawString(this.lowerChestInventory.getInvName(), 8, 6, this.mc.options.getTextColor());
-+		this.fontRenderer.drawString(this.upperChestInventory.getInvName(), 8, this.ySize - 96 + 2, this.mc.options.getTextColor());
++		this.fontRenderer.drawString(this.lowerChestInventory.getInventoryName(), 8, 6, this.mc.options.getTextColor());
++		this.fontRenderer.drawString(this.upperChestInventory.getInventoryName(), 8, this.ySize - 96 + 2, this.mc.options.getTextColor());
  	}
  
  	protected void drawGuiContainerBackgroundLayer(float var1) {
@@ -31895,20 +32068,32 @@
  	public void onCollideWithPlayer(EntityPlayer var1) {
 --- net/minecraft/src/TileEntityChest.java
 +++ net/minecraft/src/TileEntityChest.java
-@@ -1,7 +1,11 @@
+@@ -1,68 +1,76 @@
  package net.minecraft.src;
  
  public class TileEntityChest extends TileEntity implements IInventory {
 -	private ItemStack[] chestContents = new ItemStack[36];
+-
+-	public int getSizeInventory() {
 +	private ItemStack[] chestContents;
 +
 +	public TileEntityChest() {
-+		this.chestContents = new ItemStack[this.getSizeInventory()];
++		this.chestContents = new ItemStack[this.getInventorySize()];
 +	}
- 
- 	public int getSizeInventory() {
++
++	public int getInventorySize() {
  		return 27;
-@@ -17,26 +21,23 @@
+ 	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
+ 		return this.chestContents[var1];
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		if(this.chestContents[var1] != null) {
+ 			ItemStack var3;
  			if(this.chestContents[var1].stackSize <= var2) {
  				var3 = this.chestContents[var1];
  				this.chestContents[var1] = null;
@@ -31923,7 +32108,7 @@
 -				this.onInventoryChanged();
 -				return var3;
  			}
-+			this.onInventoryChanged();
++			this.onInventoryChange();
 +			return var3;
  		} else {
  			return null;
@@ -31935,12 +32120,18 @@
  		this.chestContents[var1] = var2;
 -		if(var2 != null && var2.stackSize > this.getInventoryStackLimit()) {
 -			var2.stackSize = this.getInventoryStackLimit();
-+		if(var2 != null && var2.stackSize > this.getItemStackLimit()) {
-+			var2.stackSize = this.getItemStackLimit();
++		if(var2 != null && var2.stackSize > this.getStackLimit()) {
++			var2.stackSize = this.getStackLimit();
  		}
  
- 		this.onInventoryChanged();
-@@ -48,21 +49,28 @@
+-		this.onInventoryChanged();
++		this.onInventoryChange();
+ 	}
+ 
+-	public String getInvName() {
++	public String getInventoryName() {
+ 		return "Chest";
+ 	}
  
  	public void readFromNBT(NBTTagCompound var1) {
  		super.readFromNBT(var1);
@@ -31954,7 +32145,8 @@
 +
 +	public void readItemsFromNBT(NBTTagCompound var1) {
  		NBTTagList var2 = var1.getTagList("Items");
- 		this.chestContents = new ItemStack[this.getSizeInventory()];
+-		this.chestContents = new ItemStack[this.getSizeInventory()];
++		this.chestContents = new ItemStack[this.getInventorySize()];
  
  		for(int var3 = 0; var3 < var2.tagCount(); ++var3) {
  			NBTTagCompound var4 = (NBTTagCompound)var2.tagAt(var3);
@@ -31978,7 +32170,7 @@
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
 +	}
 +
@@ -32249,8 +32441,8 @@
 +	public ItemStack onItemRightClick(ItemStack var1, World var2, EntityPlayer var3) {
 +		InventoryPlayer inventory = var3.inventory;
 +
-+		for (int i = 0; i < inventory.getSizeInventory(); ++i) {
-+			ItemStack stack = inventory.getStackInSlot(i);
++		for (int i = 0; i < inventory.getInventorySize(); ++i) {
++			ItemStack stack = inventory.getStack(i);
 +			if (stack != null && stack.itemID == Item.arrow.shiftedIndex) {
 +				while (var1.itemDmg > 0 && var3.inventory.consumeInventoryItem(Item.arrow.shiftedIndex)) {
 +					var1.itemDmg--;
@@ -32612,7 +32804,7 @@
 +			boolean invalid = false;
 +
 +			checkBlock: {
-+				ItemStack itemStack = this.inventory.getStackInSlot(i);
++				ItemStack itemStack = this.inventory.getStack(i);
 +				if (itemStack == null
 +						|| itemStack.itemID <= 0
 +						|| itemStack.itemID >= 10000) {
@@ -33249,32 +33441,38 @@
  	}
  
  	public void onPickupFromSlot() {
-@@ -21,8 +26,12 @@
- 		return this.inventory.getStackInSlot(this.slotIndex);
+@@ -18,11 +23,15 @@
  	}
  
-+	public boolean func_20005_c() {
-+		return this.getStack() != null;
+ 	public ItemStack getStack() {
+-		return this.inventory.getStackInSlot(this.slotIndex);
++		return this.inventory.getStack(this.slotIndex);
 +	}
 +
++	public boolean func_20005_c() {
++		return this.getStack() != null;
+ 	}
+ 
  	public void putStack(ItemStack var1) {
 -		this.inventory.setInventorySlotContents(this.slotIndex, var1);
 +		this.inventory.setInventorySlotItem(this.slotIndex, var1);
  		this.onSlotChanged();
  	}
  
-@@ -32,5 +41,37 @@
+@@ -31,6 +40,38 @@
+ 	}
  
  	public void onSlotChanged() {
- 		this.inventory.onInventoryChanged();
+-		this.inventory.onInventoryChanged();
++		this.inventory.onInventoryChange();
 +	}
 +
 +	public int getSlotStackLimit() {
-+		return this.inventory.getItemStackLimit();
++		return this.inventory.getStackLimit();
 +	}
 +
 +	public ItemStack decrStackSize(int var1) {
-+		return this.inventory.decrStackSize(this.slotIndex, var1);
++		return this.inventory.decrStack(this.slotIndex, var1);
 +	}
 +
 +	public boolean matchesSlot(IInventory var1, int var2) {
@@ -34080,6 +34278,19 @@
  	}
  
  	public boolean isItemValid(ItemStack var1) {
+@@ -13,9 +13,9 @@
+ 	}
+ 
+ 	public void onPickupFromSlot() {
+-		for(int var1 = 0; var1 < this.craftMatrix.getSizeInventory(); ++var1) {
+-			if(this.craftMatrix.getStackInSlot(var1) != null) {
+-				this.craftMatrix.decrStackSize(var1, 1);
++		for(int var1 = 0; var1 < this.craftMatrix.getInventorySize(); ++var1) {
++			if(this.craftMatrix.getStack(var1) != null) {
++				this.craftMatrix.decrStack(var1, 1);
+ 			}
+ 		}
+ 
 --- net/minecraft/src/GuiFurnace.java
 +++ net/minecraft/src/GuiFurnace.java
 @@ -6,31 +6,17 @@
@@ -34128,7 +34339,7 @@
 +
 +	public ContainerChest(IInventory var1, IInventory var2) {
 +		this.inventory = var2;
-+		int var3 = var2.getSizeInventory() / 9;
++		int var3 = var2.getInventorySize() / 9;
 +		int var4 = (var3 - 4) * 18;
 +
 +		int var5;
@@ -35836,8 +36047,8 @@
 +				this.entityDropItem(Item.minecartEmpty.shiftedIndex, 1, 0.0F);
 +				if(this.minecartType == 1) {
 +					this.entityDropItem(Block.chest.blockID, 1, 0.0F);
-+					for(int var4 = 0; var4 < this.getSizeInventory(); ++var4) {
-+						ItemStack var5 = this.getStackInSlot(var4);
++					for(int var4 = 0; var4 < this.getInventorySize(); ++var4) {
++						ItemStack var5 = this.getStack(var4);
 +						if(var5 != null) {
 +							float var6 = this.rand.nextFloat() * 0.8F + 0.1F;
 +							float var7 = this.rand.nextFloat() * 0.8F + 0.1F;
@@ -35870,6 +36081,17 @@
  		}
  
  		return true;
+@@ -84,8 +121,8 @@
+ 	}
+ 
+ 	public void setEntityDead() {
+-		for(int var1 = 0; var1 < this.getSizeInventory(); ++var1) {
+-			ItemStack var2 = this.getStackInSlot(var1);
++		for(int var1 = 0; var1 < this.getInventorySize(); ++var1) {
++			ItemStack var2 = this.getStack(var1);
+ 			if(var2 != null) {
+ 				float var3 = this.rand.nextFloat() * 0.8F + 0.1F;
+ 				float var4 = this.rand.nextFloat() * 0.8F + 0.1F;
 @@ -98,7 +135,7 @@
  					}
  
@@ -35984,14 +36206,18 @@
  		} else if(this.minecartType == 1) {
  			NBTTagList var2 = new NBTTagList();
  
-@@ -516,6 +568,7 @@
+@@ -516,9 +568,10 @@
  			this.pushX = var1.getDouble("PushX");
  			this.pushZ = var1.getDouble("PushZ");
  			this.fuel = var1.getShort("Fuel");
 +			this.boost = var1.getDouble("Boost");
  		} else if(this.minecartType == 1) {
  			NBTTagList var2 = var1.getTagList("Items");
- 			this.cargoItems = new ItemStack[this.getSizeInventory()];
+-			this.cargoItems = new ItemStack[this.getSizeInventory()];
++			this.cargoItems = new ItemStack[this.getInventorySize()];
+ 
+ 			for(int var3 = 0; var3 < var2.tagCount(); ++var3) {
+ 				NBTTagCompound var4 = (NBTTagCompound)var2.tagAt(var3);
 @@ -564,13 +617,13 @@
  				if(var1 instanceof EntityMinecart) {
  					double var10 = var1.motionX + this.motionX;
@@ -36008,7 +36234,26 @@
  						var1.motionX *= (double)0.2F;
  						var1.motionZ *= (double)0.2F;
  						var1.addVelocity(this.motionX + var2, 0.0D, this.motionZ + var4);
-@@ -623,10 +676,10 @@
+@@ -595,15 +648,15 @@
+ 		}
+ 	}
+ 
+-	public int getSizeInventory() {
++	public int getInventorySize() {
+ 		return 27;
+ 	}
+ 
+-	public ItemStack getStackInSlot(int var1) {
++	public ItemStack getStack(int var1) {
+ 		return this.cargoItems[var1];
+ 	}
+ 
+-	public ItemStack decrStackSize(int var1, int var2) {
++	public ItemStack decrStack(int var1, int var2) {
+ 		if(this.cargoItems[var1] != null) {
+ 			ItemStack var3;
+ 			if(this.cargoItems[var1].stackSize <= var2) {
+@@ -623,23 +676,23 @@
  		}
  	}
  
@@ -36017,20 +36262,27 @@
  		this.cargoItems[var1] = var2;
 -		if(var2 != null && var2.stackSize > this.getInventoryStackLimit()) {
 -			var2.stackSize = this.getInventoryStackLimit();
-+		if(var2 != null && var2.stackSize > this.getItemStackLimit()) {
-+			var2.stackSize = this.getItemStackLimit();
++		if(var2 != null && var2.stackSize > this.getStackLimit()) {
++			var2.stackSize = this.getStackLimit();
  		}
  
  	}
-@@ -635,7 +688,7 @@
+ 
+-	public String getInvName() {
++	public String getInventoryName() {
  		return "Minecart";
  	}
  
 -	public int getInventoryStackLimit() {
-+	public int getItemStackLimit() {
++	public int getStackLimit() {
  		return 64;
  	}
  
+-	public void onInventoryChanged() {
++	public void onInventoryChange() {
+ 	}
+ 
+ 	public boolean interact(EntityPlayer var1) {
 @@ -651,7 +704,7 @@
  			ItemStack var2 = var1.inventory.getCurrentItem();
  			if(var2 != null && var2.itemID == Item.coal.shiftedIndex) {
