@@ -8,6 +8,8 @@ For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION
 
 This is the Github repository for Minecraft Diverge, where users can submit issues and download new versions. The source code for Minecraft Diverge is partially available in the form of patch files from RetroMCP-Java 1.0.
 
+*Why don't you check out Minecraft Diverge's sister project, [Authentic Adventure](https://github.com/BlueStaggo/AuthenticAdventure)?*
+
 ## Features
 - Stamina based sprinting
 - Extended world height

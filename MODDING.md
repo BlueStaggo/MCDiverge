@@ -1,7 +1,6 @@
 # Modding guide
 This guide provides information on how to create modifications for Minecraft Diverge.
 
-
 ## Prerequisites:
 - JDK 8 (more recent versions do not support modding) (preferrably downloaded from [Adoptium](https://adoptium.net/en-GB/temurin/releases/?version=8), the JDK used to compile Minecraft Diverge)
 - RetroMCP 1.0.1 (https://github.com/MCPHackers/RetroMCP-Java; download 1.0.1 from the "Actions" tab, select the latest workflow, download the build artifacts and use the "GUI" jar if 1.0.1 has not released it)
@@ -24,7 +23,7 @@ This guide provides information on how to create modifications for Minecraft Div
 # Chapter 1: Development environment
 
 ## Setting up RetroMCP
-First, the RetroMCP jar needs to be placed in a new folder. Before decompiling, the `Side` in the `Options` menu needs to be set to `Merged`. Then, go to the "Current version" dropdown and select "Alpha 1.1.2_01". Upon being prompted to run the setup, click yes. RetroMCP will show up a notification when setup is completed, and at that stage RetroMCP should be closed. After this, in the directory RetroMCP is in, two folders called `minecraft` and `minecraft_server` need to be created with each containing a folder called `jars`, since RetroMCP does not create them automatically despite requiring them.
+First, the RetroMCP jar needs to be placed in a new folder. Before decompiling, the `Side` setting in the `Options` menu needs to be set to `Merged` and the source and target Java versions in the `Recompile` section need to be set to 8 with Java Home set to JDK 8. Then, go to the "Current version" dropdown and select "Alpha 1.1.2_01". Upon being prompted to run the setup, click yes. RetroMCP will show up a notification when setup is completed, and at that stage RetroMCP should be closed. After this, in the directory RetroMCP is in, two folders called `minecraft` and `minecraft_server` need to be created with each containing a folder called `jars`, since RetroMCP does not create them automatically despite requiring them.
 
 ## Decompiling Minecraft Diverge (or at least try to)
 In the `jars` folder (not in `minecraft` or `minecraft_server`), there should be a jar file for the client named `minecraft.jar` and a jar file for the server named `minecraft_server.jar`. Each jar needs to be opened in a file archiver and the contents of `mcdiverge.zip` and `mcdiverge_server.zip` need to be copied over to the respective jar. Make sure to delete META-INF in `minecraft.jar`, but not in `minecraft_server.jar`.
@@ -128,6 +127,9 @@ Now when the game is loaded this time, this should appear in the achievements me
 
 ## Publishing the mod
 First, make sure the mod is not loaded from the ModLoader class. Like before, `Recompile`, `Reobfuscate` and `Build` in RetroMCP. In the `build` folder relative to the RetroMCP jar, two files can be found: `minecraft.zip` and `minecraft_server.zip`. Both of these files contain every class you have modified, but if there are any classes in there that you have not modified then make sure to delete them. Finally, the mod can be shared across the web, but one of the best places to share it in is in the Minecraft Diverge [Discord server](https://discord.gg/rzHsJkvpqw).
+
+## Advanced modding
+With the mod class approach, it is impossible to override vanilla Minecraft Diverge classes. Instead, Minecraft Diverge can be modded with the traditional jar mod approach, where any class can be modified. Jar mods are not loaded from the mods folder, but are rather added directly onto the Minecraft Diverge jar.
 
 ## Additional resources
 This guide only shows so much, so looking through the [Example Mod](example_mod/net/minecraft/src/ExampleMod.java) and Minecraft Diverge's source code is recommended.
