@@ -14,7 +14,7 @@ public class ExampleMod extends BaseMod {
 
 	@Override
 	public String getVersion() {
-		return "v0.3_a4";
+		return "1.0";
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class ExampleMod extends BaseMod {
 				"X",
 				'X', cheeseBlock);
 
-		// Item tooltips can be overrided. Here, the Bucket
+		// Item tooltips can be overridden. Here, the Bucket
 		// of Milk becomes the Bucket of Cheese.
 		ItemTooltip.items[Item.bucketMilk.shiftedIndex] = new ItemTooltip("Bucket of Cheese",
 				"What kind of cheese is this?", ItemTooltip.DESCRIPTION_COL);
@@ -77,7 +77,7 @@ public class ExampleMod extends BaseMod {
 	// Using hooks, custom code can be ran
 	// on every tick of the world.
 	@Override
-	public void onWorldMiscUpdates(World world) {
+	public void onWorldTick(World world) {
 		// Drop cheese in singleplayer worlds in 1 in 1000 ticks.
 		int cheeseInterval = 1000;
 		if (ModLoader.isClient() && world.canDoClientAction() && world.rand.nextInt(cheeseInterval) == 0) {
@@ -98,7 +98,7 @@ public class ExampleMod extends BaseMod {
 		inv.addItem(cheeseBlock.blockID, 0);
 	}
 
-	// This is a custom BlockCheese class to get the right shape.
+	// This is a custom BlockCheese class to give the cheese a small shape.
 	// The Block of Cheese is not a full block, so it needs special code.
 	private static class BlockCheese extends Block {
 		public BlockCheese(int var1, int var2, Material var3) {

@@ -13,15 +13,15 @@ This is the Github repository for Minecraft Diverge, where users can submit issu
 ## Features
 - Stamina based sprinting
 - Extended world height
-- Changes the world with six biomes and unique types of wood and stone
+- Six biomes with unique types of wood and stone
 - Rubies and sapphires, gems with magical properties
-- Charms that enhance your ability
+- Charms and trinkets that enhance your abilities
 - Plenty of new blocks to build with
 - New mobs: Foxes (the kind you voted for) and Phantoms (not the kind you voted for)
-- An underworld found deep below
+- A dangerous underworld found deep below with great treasures
 - Creative mode, new world types and custom seeds
 - Server side health, inventories and more
-- Multiple optimisations
+- Plenty of optimisations
 
 ## Trailer (Youtube)
 [![](https://img.youtube.com/vi/iyZVbCfVZU4/0.jpg)](https://youtu.be/iyZVbCfVZU4)
