@@ -1310,7 +1310,7 @@
 +		this.controlList.add(new GuiButton(2, this.width / 2 - 100, this.height / 4 + 84, 200, 20, "Multiplayer"));
 +		this.controlList.add(new GuiButton(0, this.width / 2 - 100, this.height / 4 + 108, 98, 20, "Options"));
 +		this.controlList.add(new GuiButton(3, this.width / 2 + 2, this.height / 4 + 108, 98, 20, "Achievements"));
-+		if (this.mc.options.creativeDebug) {
++		if (this.mc.options.creativeDebug || true) {
 +			this.controlList.add(new GuiButton(-1, 4, this.height - 24, 100, 20, "Biome map"));
 +		}
 +		if (this.mc.session == null) {
@@ -2681,7 +2681,7 @@
 +				this.setCreeperState(1);
 +				++this.timeSinceIgnited;
 +				if(this.timeSinceIgnited >= this.ignitionTime) {
-+					this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 3.0F);
++					this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 3.0F + this.getLevel() * 1.0F);
 +
 +					this.setEntityDead();
 +				}
@@ -2765,17 +2765,6 @@
  	}
  
  	public boolean attackEntityFrom(Entity var1, int var2) {
-@@ -70,7 +70,9 @@
- 		int var1 = MathHelper.floor_double(this.posX);
- 		int var2 = MathHelper.floor_double(this.boundingBox.minY);
- 		int var3 = MathHelper.floor_double(this.posZ);
--		if(this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, var1, var2, var3) > this.rand.nextInt(32)) {
-+		if (var2 < 48) {
-+			return true;
-+		} else if(this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, var1, var2, var3) > this.rand.nextInt(32)) {
- 			return false;
- 		} else {
- 			int var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
 --- net/minecraft/src/BlockFlower.java
 +++ net/minecraft/src/BlockFlower.java
 @@ -3,7 +3,7 @@
@@ -3466,7 +3455,7 @@
  
 --- net/minecraft/src/BlockDirt.java
 +++ net/minecraft/src/BlockDirt.java
-@@ -1,7 +1,21 @@
+@@ -1,7 +1,23 @@
  package net.minecraft.src;
  
 +import net.minecraft.client.Minecraft;
@@ -3484,7 +3473,9 @@
 +	}
 +
 +	public int getBlockTexture(IBlockAccess var1, int var2, int var3, int var4, int var5) {
-+		if (Minecraft.getInstance().options.fancyGraphics < 2 || SimplexNoise.noise3_ImproveXZ(0, var2 * 4.0D, var3 * 4.0D, var4 * 4.0D) < 0.2D)
++		if (Minecraft.getInstance().options.fancyGraphics >= 2 &&
++				SimplexNoise.noise3_ImproveXZ(0, var2 / 32.0D, var3 / 32.0D, var4 / 32.0D)
++						+ SimplexNoise.noise3_ImproveXZ(0, var2, var3, var4) > 0.5D)
 +			return this.getBlockTextureFromSideAndMetadata(var5, var1.getBlockMetadata(var2, var3, var4));
 +		return this.blockIndexInTexture;
  	}
@@ -4743,7 +4734,7 @@
  }
 --- net/minecraft/src/ChunkProviderGenerate.java
 +++ net/minecraft/src/ChunkProviderGenerate.java
-@@ -1,63 +1,95 @@
+@@ -1,63 +1,97 @@
  package net.minecraft.src;
  
 +import static net.minecraft.src.Constants.CHUNK_BIT_OFFSET;
@@ -4766,6 +4757,7 @@
 +	private final long seedMountain;
 +	private final boolean classic;
 +	private final boolean amplified;
++	private final boolean superflat;
  	private NoiseGeneratorOctaves noiseGen1;
  	private NoiseGeneratorOctaves noiseGen2;
  	private NoiseGeneratorOctaves noiseGen3;
@@ -4809,6 +4801,7 @@
 +		this.seedMountain = this.rand.nextLong();
 +		this.classic = this.worldObj.worldType == WorldType.CLASSIC;
 +		this.amplified = this.worldObj.worldType == WorldType.AMPLIFIED;
++		this.superflat = this.worldObj.worldType == WorldType.SUPERFLAT;
  		this.noiseGen1 = new NoiseGeneratorOctaves(this.rand, 16);
  		this.noiseGen2 = new NoiseGeneratorOctaves(this.rand, 16);
  		this.noiseGen3 = new NoiseGeneratorOctaves(this.rand, 8);
@@ -4859,7 +4852,7 @@
  
  					for(int var30 = 0; var30 < 8; ++var30) {
  						double var31 = 0.25D;
-@@ -67,124 +99,238 @@
+@@ -67,124 +101,256 @@
  						double var39 = (var20 - var16) * var31;
  
  						for(int var41 = 0; var41 < 4; ++var41) {
@@ -4932,6 +4925,20 @@
 +						var18 += var26;
 +						var20 += var28;
 +					}
++				}
++			}
++		}
++	}
++
++	public void generateSuperflat(short[] var1) {
++		for (int x = 0; x < 16; x++) {
++			for (int z = 0; z < 16; z++) {
++				for (int y = 0; y < CHUNK_HEIGHT; y++) {
++					int offset = x << CHUNK_BIT_OFFSET + 4 | z << CHUNK_BIT_OFFSET | y;
++					var1[offset] = (short)(y < 92 ? 1
++							: y < 95 ? 3
++							: y == 95 ? 2
++							: 0);
 +				}
 +			}
 +		}
@@ -5046,7 +5053,7 @@
 +						if(var15 <= 88 - this.rand.nextInt(8)) {
 +							metadata[var16] = 2;
 +						} else if(var12 == -1) {
-+							if(var11 <= Math.max((var15 - 140) / 16.0F, 0.0F)) {
++							if(var11 <= Math.max((var15 - 160) / 24.0F, 0.0F)) {
 +								var13 = 0;
 +								var14 = (short)Block.stone.blockID;
 +							} else if(var15 >= var4 - 4 && var15 <= var4 + 1 + this.rand.nextInt(1)) {
@@ -5184,16 +5191,20 @@
 -		this.caveGenerator.generate(this, this.worldObj, var1, var2, var3);
 +		Chunk var4 = new Chunk(this.worldObj, new short[65536], var1, var2);
 +		var4.generateBiomes(this.worldObj);
-+		this.generateTerrain(var1, var2, var4.blocks, var4.biomes);
-+		this.generateUnderworld(var1, var2, var4.blocks);
-+		this.replaceSurfaceBlocks(var1, var2, var4.blocks, var4.data, var4.biomes);
-+		this.replaceUnderworldBlocks(var1, var2, var4.blocks, var4.data);
-+		this.caveGenerator.generate(this, this.worldObj, var1, var2, var4.blocks);
-+		this.underworldCaveGenerator.generate(this, this.worldObj, var1, var2, var4.blocks);
++		if (this.superflat) {
++			this.generateSuperflat(var4.blocks);
++		} else {
++			this.generateTerrain(var1, var2, var4.blocks, var4.biomes);
++			this.generateUnderworld(var1, var2, var4.blocks);
++			this.replaceSurfaceBlocks(var1, var2, var4.blocks, var4.data, var4.biomes);
++			this.replaceUnderworldBlocks(var1, var2, var4.blocks, var4.data);
++			this.caveGenerator.generate(this, this.worldObj, var1, var2, var4.blocks);
++			this.underworldCaveGenerator.generate(this, this.worldObj, var1, var2, var4.blocks);
++		}
  		var4.generateSkylightMap();
  		return var4;
  	}
-@@ -194,13 +340,23 @@
+@@ -194,13 +360,23 @@
  			var1 = new double[var5 * var6 * var7];
  		}
  
@@ -5213,18 +5224,18 @@
 +			this.noise1 = this.noiseGen1.generateNoiseOctaves(this.noise1, (double)var2, (double)var3, (double)var4, var5, var6, var7, var8, var10, var8);
 +			this.noise2 = this.noiseGen2.generateNoiseOctaves(this.noise2, (double)var2, (double)var3, (double)var4, var5, var6, var7, var8, var10, var8);
 +		} else {
-+			double var8 = 684.412D / 1.25D;
++			double var8 = 684.412D;
 +			double var10 = 684.412D;
 +			this.noise6 = SimplexOctaves.noiseArray(this.noise6, this.seed6, 10, var2, 10.0D, var4, var5, 1, var7, 0.8D, 1.0D, 0.8D);
 +			this.noise7 = SimplexOctaves.noiseArray(this.noise7, this.seed7, 16, var2, 10.0D, var4, var5, 1, var7, 100.0D, 1.0D, 100.0D);
-+			this.noise3 = SimplexOctaves.noiseArray(this.noise3, this.seed3, 8, var2, var3, var4, var5, var6, var7, var8 / 80.0D, var10 / 160.0D, var8 / 80.0D);
++			this.noise3 = SimplexOctaves.noiseArray(this.noise3, this.seed3, 8, var2, var3, var4, var5, var6, var7, var8 / 120.0D, var10 / 160.0D, var8 / 120.0D);
 +			this.noise1 = SimplexOctaves.noiseArray(this.noise1, this.seed1, 16, var2, var3, var4, var5, var6, var7, var8, var10, var8);
 +			this.noise2 = SimplexOctaves.noiseArray(this.noise2, this.seed2, 16, var2, var3, var4, var5, var6, var7, var8, var10, var8);
 +		}
  		int var12 = 0;
  		int var13 = 0;
  
-@@ -217,7 +373,7 @@
+@@ -217,7 +393,7 @@
  					var20 = -var20;
  				}
  
@@ -5233,7 +5244,7 @@
  				if(var20 < 0.0D) {
  					var20 /= 2.0D;
  					if(var20 < -1.0D) {
-@@ -232,17 +388,37 @@
+@@ -232,17 +408,37 @@
  						var20 = 1.0D;
  					}
  
@@ -5245,13 +5256,13 @@
 +					var16 = 0.0D;
 +				}
 +
-+				double amplitude = this.classic ? 1.0D : this.amplified ? 0.25F : Math.max(SimplexOctaves.noise2(this.seedAmplitude, (var2 + var14) / 200.0F, (var4 + var15) / 200.0F, 4) + 1.5F, 0.5F);
++				double amplitude = this.classic ? 1.0D : this.amplified ? 0.1D : MathHelper.clamp(SimplexOctaves.noise2(this.seedAmplitude, (var2 + var14) / 150.0D, (var4 + var15) / 150.0D, 1) + 1.5F, 1.0F, 2.0F);
 +				double continentNoise = this.classic || this.amplified || true ? 0.0D : SimplexOctaves.noise2(this.seedContinent, (var2 + var14) / 250.0D, (var4 + var15) / 250.0D, 4);
 +				double continentialness = this.classic || this.amplified || true ? 0.0D : Math.sin(MathHelper.clamp(continentNoise * 2.0D - 1.0D, 0.0D, 1.0D) * Math.PI / 2.0D);
-+				double riverNoise = this.classic ? 0.0D : Math.min(Math.abs(SimplexOctaves.noise2(this.seedRiver, (var2 + var14) / 500.0D, (var4 + var15) / 500.0D, 6))
++				double riverNoise = this.classic ? 0.0D : Math.min(Math.abs(SimplexOctaves.noise2(this.seedRiver, (var2 + var14) / 400.0D, (var4 + var15) / 400.0D, 6))
 +						+ SimplexNoise.noise2(this.seedRiver, (var2 + var14) / 10.0D, (var4 + var15) / 10.0D) * 0.01D, 1.0F);
-+				double river = this.classic ? 0.0D : MathHelper.clamp((Math.cos(Math.min(riverNoise * 50.0D, Math.PI)) + 1.0D) / 2.0D, 0.0D, 1.0D);
-+				double mountainous = this.classic || this.amplified ? 0.0D : SimplexOctaves.noise2(this.seedMountain, (var2 + var14) / 300.0D, (var4  + var15) / 300.0D, 4);
++				double river = this.classic ? 0.0D : MathHelper.clamp((Math.cos(Math.min(riverNoise * 30.0D, Math.PI)) + 1.0D) / 2.0D, 0.0D, 1.0D);
++				double mountainous = this.classic || this.amplified ? 0.0D : SimplexOctaves.noise2(this.seedMountain, (var2 + var14) / 200.0D, (var4  + var15) / 200.0D, 4);
 +				river *= 1.0D - continentialness;
 +				mountainous *= 1.0D - river;
 +
@@ -5276,7 +5287,7 @@
  					if(var27 < 0.0D) {
  						var27 *= 4.0D;
  					}
-@@ -260,21 +436,8 @@
+@@ -260,21 +456,8 @@
  
  					var25 -= var27;
  					double var35;
@@ -5300,7 +5311,7 @@
  						var25 = var25 * (1.0D - var35) + -10.0D * var35;
  					}
  
-@@ -287,177 +450,250 @@
+@@ -287,177 +470,254 @@
  		return var1;
  	}
  
@@ -5583,6 +5594,8 @@
 -		}
 -
 -		BlockSand.fallInstantly = false;
++		if (this.superflat) return;
++
 +		Profiler.startSection("populate");
 +		BlockSand.fallInstantly = true;
 +		int var4 = var2 * 16;
@@ -5674,6 +5687,8 @@
 +	}
 +
 +	public void populateUnderworld(IChunkProvider var1, int var2, int var3) {
++		if (this.superflat) return;
++
 +		Profiler.startSection("populateUnderworld");
 +		BlockSand.fallInstantly = true;
 +		int var4 = var2 * 16;
@@ -10258,27 +10273,18 @@
  	public void onLivingUpdate() {
  		if(this.worldObj.isDaytime()) {
  			float var1 = this.getBrightness(1.0F);
-@@ -30,7 +38,11 @@
+@@ -30,6 +38,10 @@
  	}
  
  	protected void attackEntity(Entity var1, float var2) {
--		if(var2 < 10.0F) {
 +		if (this.getLevel() > 0) {
 +			super.attackEntity(var1, var2);
 +		}
 +
-+		if(var2 < 10.0F + this.getLevel() * 4.0F) {
+ 		if(var2 < 10.0F) {
  			double var3 = var1.posX - this.posX;
  			double var5 = var1.posZ - this.posZ;
- 			if(this.attackTime == 0) {
-@@ -41,13 +53,20 @@
- 				this.worldObj.playSoundAtEntity(this, "random.bow", 1.0F, 1.0F / (this.rand.nextFloat() * 0.4F + 0.8F));
- 				this.worldObj.spawnEntityInWorld(var7);
- 				var7.setArrowHeading(var3, var8 + (double)var10, var5, 0.6F, 12.0F);
--				this.attackTime = 30;
-+				this.attackTime = 30 - this.getLevel() * 10;
- 			}
- 
+@@ -47,7 +59,14 @@
  			this.rotationYaw = (float)(Math.atan2(var5, var3) * 180.0D / (double)((float)Math.PI)) - 90.0F;
  			this.hasAttacked = true;
  		}
@@ -10519,7 +10525,7 @@
 +	private static final TreePopulator trees = new TreePopulator()
 +			.withTree(new WorldGenSpruceTrees())
 +			.withBigTree(new WorldGenSpruceTrees().makeBig().withScale(6, 6, 5), 15, 1)
-+			.withDensity(1.5D, 0.5D, 0.5D);
++			.withDensity(1.0D, 0.5D, 0.3D);
 +
 +	public void populate(PopulatorHost host) {
 +		trees.populate(host);
@@ -10603,7 +10609,7 @@
  	}
  
  	public ItemStack(Item var1, int var2) {
-@@ -27,26 +39,73 @@
+@@ -27,42 +39,100 @@
  	}
  
  	public ItemStack(int var1, int var2) {
@@ -10681,7 +10687,18 @@
  	}
  
  	public Item getItem() {
-@@ -57,12 +116,16 @@
+-		return Item.itemsList[this.itemID];
++		if (this.itemID == 0) return null;
++
++		Item item = Item.itemsList[this.itemID];
++		if (item == null) {
++			this.checkMissing();
++			return Item.missingItem;
++		}
++		return item;
+ 	}
+ 
+ 	public int getIconIndex() {
  		return this.getItem().getIconIndex(this);
  	}
  
@@ -10701,7 +10718,7 @@
  	}
  
  	public ItemStack useItemRightClick(World var1, EntityPlayer var2) {
-@@ -73,13 +136,22 @@
+@@ -73,13 +143,22 @@
  		var1.setShort("id", (short)this.itemID);
  		var1.setByte("Count", (byte)this.stackSize);
  		var1.setShort("Damage", (short)this.itemDmg);
@@ -10725,7 +10742,7 @@
  	}
  
  	public int getMaxStackSize() {
-@@ -92,7 +164,7 @@
+@@ -92,7 +171,7 @@
  
  	public void damageItem(int var1) {
  		this.itemDmg += var1;
@@ -10734,7 +10751,7 @@
  			--this.stackSize;
  			if(this.stackSize < 0) {
  				this.stackSize = 0;
-@@ -112,7 +184,11 @@
+@@ -112,7 +191,11 @@
  	}
  
  	public int getDamageVsEntity(Entity var1) {
@@ -10747,7 +10764,7 @@
  	}
  
  	public boolean canHarvestBlock(Block var1) {
-@@ -127,6 +203,89 @@
+@@ -127,6 +210,89 @@
  	}
  
  	public ItemStack copy() {
@@ -14644,6 +14661,7 @@
 +
 +public class RecipesVanity {
 +	public void addRecipes(CraftingManager craftingManager) {
++		craftingManager.addRecipe(new ItemStack(Item.moustache), " # ", "# #", '#', Item.fur);
 +		craftingManager.addRecipe(new ItemStack(Item.fluffyEars).withMetadata(2), "X X", "#X#", '#', Block.cloth, 'X', Item.fur);
 +		craftingManager.addRecipe(new ItemStack(Item.fluffySnout).withMetadata(0), "XOX", "###", '#', Block.cloth, 'X', Item.fur, 'O', Item.flint);
 +		craftingManager.addRecipe(new ItemStack(Item.fluffyTail).withMetadata(2), "#", "X", "X", '#', Block.cloth, 'X', Item.fur);
@@ -14652,7 +14670,6 @@
 +		createVanityVarying(craftingManager, new ItemStack(Item.topHat), " # ", "###");
 +		craftingManager.addRecipe(new ItemStack(Item.sunglasses), "#-#", '#', Item.shardIce, '-', Item.stick);
 +		craftingManager.addRecipe(new ItemStack(Item.glasses), "#-#", '#', Item.shardGlass, '-', Item.stick);
-+		craftingManager.addRecipe(new ItemStack(Item.moustache), " # ", "# #", '#', Item.fur);
 +	}
 +
 +	public static void createVanityVarying(CraftingManager craftingManager, ItemStack result, Object... params) {
@@ -14745,8 +14762,8 @@
  
 +	public void setLevel(int level) {
 +		super.setLevel(level);
-+		this.moveSpeed = 0.5F + this.getLevel() * 0.5F;
-+		this.attackStrength = 5 + this.getLevel() * 3;
++		this.moveSpeed = 0.5F + this.getLevel() * 0.25F;
++		this.attackStrength = 5 + this.getLevel() * 2;
 +		this.heartsHalvesLife = 20 + level * 5;
 +	}
 +
@@ -15042,7 +15059,7 @@
  	}
  
  	public boolean isOpaqueCube() {
-@@ -108,9 +198,49 @@
+@@ -108,9 +198,45 @@
  	public void setGraphicsLevel(boolean var1) {
  		this.graphicsLevel = var1;
  		this.blockIndexInTexture = this.leafTexIndex + (var1 ? 0 : 1);
@@ -15090,10 +15107,6 @@
 +
 +		this.graphicsLevel = oldGraphicsLevel;
 +		return super.getBlockBrightness(var1, var2, var3, var4) * 0.5F;
-+	}
-+
-+	public float getAOModifier(IBlockAccess var1, int var2, int var3, int var4) {
-+		return var1.isBlockNormalCube(var2, var3, var4) ? 0.0F : 1.0F;
  	}
  }
 --- /dev/null
@@ -16562,7 +16575,7 @@
 +			}
 +			this.mc.sndManager.playRandomCaveMusicIfReady();
 +		} else {
-+			if (iy >= 128 && this.mc.sndManager.getMusicType() != SoundManager.MusicType.NORMAL) {
++			if (iy >= 112 && this.mc.sndManager.getMusicType() != SoundManager.MusicType.NORMAL) {
 +				this.mc.sndManager.fadeOutBackgroundMusic();
 +			}
 +			this.mc.sndManager.playRandomMusicIfReady();
@@ -18350,7 +18363,7 @@
 +	}
 +
 +	protected Entity findPlayerToAttack() {
-+		EntityPlayer var1 = this.worldObj.getClosestPlayerToEntity(this, 16.0D + this.getLevel() * 8.0D);
++		EntityPlayer var1 = this.worldObj.getClosestPlayerToEntity(this, 16.0D);
 +		return var1 != null && this.canEntityBeSeen(var1) && !var1.creative ? var1 : null;
 +	}
 +
@@ -20465,11 +20478,7 @@
  		this.prevPosX = this.posX;
  		this.prevPosY = this.posY;
  		this.prevPosZ = this.posZ;
-@@ -174,17 +180,32 @@
- 		this.age = var1.getShort("Age");
- 		NBTTagCompound var2 = var1.getCompoundTag("Item");
- 		this.item = new ItemStack(var2);
-+		this.item.checkMissing();
+@@ -177,14 +183,28 @@
  	}
  
  	public void onCollideWithPlayer(EntityPlayer var1) {
@@ -21397,15 +21406,7 @@
  		var2 += 0.5D;
  		var6 += 0.5D;
  		double var28 = var2 - 0.5D;
-@@ -751,22 +827,29 @@
- 	}
- 
- 	public void renderCrossedSquares(Block var1, int var2, double var3, double var5, double var7) {
-+		boolean fabulous = Minecraft.getInstance().options.fancyGraphics >= 2;
-+
- 		Tessellator var9 = Tessellator.instance;
- 		int var10 = var1.getBlockTextureFromSideAndMetadata(0, var2);
- 		if(this.overrideBlockTexture >= 0) {
+@@ -757,16 +833,21 @@
  			var10 = this.overrideBlockTexture;
  		}
  
@@ -21437,7 +21438,7 @@
  		var9.addVertexWithUV(var21, var5 + 1.0D, var25, var13, var17);
  		var9.addVertexWithUV(var21, var5 + 0.0D, var25, var13, var19);
  		var9.addVertexWithUV(var23, var5 + 0.0D, var27, var15, var19);
-@@ -792,12 +875,12 @@
+@@ -792,12 +873,12 @@
  			var10 = this.overrideBlockTexture;
  		}
  
@@ -21456,7 +21457,7 @@
  		double var21 = var3 + 0.5D - 0.25D;
  		double var23 = var3 + 0.5D + 0.25D;
  		double var25 = var7 + 0.5D - 0.5D;
-@@ -874,20 +957,20 @@
+@@ -874,20 +955,20 @@
  					var24 = var1.getBlockTextureFromSideAndMetadata(2, var19);
  				}
  
@@ -21486,7 +21487,7 @@
  				var5.setColorOpaque_F(var11 * var34, var11 * var34, var11 * var34);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var20), (double)(var4 + 0), var28 - (double)var33 - (double)var32, var30 - (double)var33 + (double)var32);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var21), (double)(var4 + 1), var28 - (double)var33 + (double)var32, var30 + (double)var33 + (double)var32);
-@@ -896,7 +979,7 @@
+@@ -896,7 +977,7 @@
  			}
  
  			if(this.renderAllFaces || var7) {
@@ -21495,7 +21496,7 @@
  				var5.setColorOpaque_F(var10 * var48, var10 * var48, var10 * var48);
  				this.renderBottomFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTextureFromSide(0));
  				var9 = true;
-@@ -922,8 +1005,8 @@
+@@ -922,8 +1003,8 @@
  				}
  
  				int var50 = var1.getBlockTextureFromSideAndMetadata(var24 + 2, var19);
@@ -21506,7 +21507,7 @@
  				if(this.renderAllFaces || var8[var24]) {
  					float var31;
  					float var35;
-@@ -959,12 +1042,12 @@
+@@ -959,12 +1040,12 @@
  					}
  
  					var9 = true;
@@ -21525,7 +21526,7 @@
  					if(var24 < 2) {
  						var47 *= var12;
  					} else {
-@@ -1017,56 +1100,56 @@
+@@ -1017,56 +1098,56 @@
  		return 1.0F - var6 / (float)var5;
  	}
  
@@ -21616,7 +21617,7 @@
  		var10.draw();
  	}
  
-@@ -1075,7 +1158,442 @@
+@@ -1075,7 +1156,442 @@
  		float var6 = (float)(var5 >> 16 & 255) / 255.0F;
  		float var7 = (float)(var5 >> 8 & 255) / 255.0F;
  		float var8 = (float)(var5 & 255) / 255.0F;
@@ -22060,7 +22061,7 @@
  	}
  
  	public boolean renderStandardBlockWithColorMultiplier(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
-@@ -1097,17 +1615,17 @@
+@@ -1097,17 +1613,17 @@
  		float var23 = var11 * var7;
  		float var24 = var12 * var7;
  		float var25 = var13 * var7;
@@ -22081,7 +22082,7 @@
  			if(var1.maxY != 1.0D && !var1.material.getIsLiquid()) {
  				var27 = var26;
  			}
-@@ -1118,7 +1636,7 @@
+@@ -1118,7 +1634,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2)) {
@@ -22090,7 +22091,7 @@
  			if(var1.minZ > 0.0D) {
  				var27 = var26;
  			}
-@@ -1129,7 +1647,7 @@
+@@ -1129,7 +1645,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3)) {
@@ -22099,7 +22100,7 @@
  			if(var1.maxZ < 1.0D) {
  				var27 = var26;
  			}
-@@ -1140,7 +1658,7 @@
+@@ -1140,7 +1656,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4)) {
@@ -22108,7 +22109,7 @@
  			if(var1.minX > 0.0D) {
  				var27 = var26;
  			}
-@@ -1151,7 +1669,7 @@
+@@ -1151,7 +1667,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)) {
@@ -22117,7 +22118,7 @@
  			if(var1.maxX < 1.0D) {
  				var27 = var26;
  			}
-@@ -1192,17 +1710,17 @@
+@@ -1192,17 +1708,17 @@
  		float var24 = var12 * var7;
  		float var25 = var13 * var7;
  		float var26 = 1.0F / 16.0F;
@@ -22138,7 +22139,7 @@
  			if(var1.maxY != 1.0D && !var1.material.getIsLiquid()) {
  				var28 = var27;
  			}
-@@ -1213,7 +1731,7 @@
+@@ -1213,7 +1729,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2)) {
@@ -22147,7 +22148,7 @@
  			if(var1.minZ > 0.0D) {
  				var28 = var27;
  			}
-@@ -1226,7 +1744,7 @@
+@@ -1226,7 +1742,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3)) {
@@ -22156,7 +22157,7 @@
  			if(var1.maxZ < 1.0D) {
  				var28 = var27;
  			}
-@@ -1239,7 +1757,7 @@
+@@ -1239,7 +1755,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4)) {
@@ -22165,7 +22166,7 @@
  			if(var1.minX > 0.0D) {
  				var28 = var27;
  			}
-@@ -1252,7 +1770,7 @@
+@@ -1252,7 +1768,7 @@
  		}
  
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)) {
@@ -22174,7 +22175,7 @@
  			if(var1.maxX < 1.0D) {
  				var28 = var27;
  			}
-@@ -1268,6 +1786,8 @@
+@@ -1268,6 +1784,8 @@
  	}
  
  	public boolean renderBlockFence(Block var1, int var2, int var3, int var4) {
@@ -22183,7 +22184,7 @@
  		boolean var5 = false;
  		float var6 = 6.0F / 16.0F;
  		float var7 = 10.0F / 16.0F;
-@@ -1275,18 +1795,18 @@
+@@ -1275,18 +1793,18 @@
  		this.renderStandardBlock(var1, var2, var3, var4);
  		boolean var8 = false;
  		boolean var9 = false;
@@ -22208,7 +22209,7 @@
  		if(!var8 && !var9) {
  			var8 = true;
  		}
-@@ -1326,32 +1846,9 @@
+@@ -1326,32 +1844,9 @@
  	}
  
  	public boolean renderBlockStairs(Block var1, int var2, int var3, int var4) {
@@ -22243,7 +22244,7 @@
  	}
  
  	public boolean renderBlockDoor(Block var1, int var2, int var3, int var4) {
-@@ -1362,8 +1859,8 @@
+@@ -1362,8 +1857,8 @@
  		float var9 = 1.0F;
  		float var10 = 0.8F;
  		float var11 = 0.6F;
@@ -22254,7 +22255,7 @@
  		if(var6.minY > 0.0D) {
  			var13 = var12;
  		}
-@@ -1375,7 +1872,7 @@
+@@ -1375,7 +1870,7 @@
  		var5.setColorOpaque_F(var8 * var13, var8 * var13, var8 * var13);
  		this.renderBottomFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTexture(this.blockAccess, var2, var3, var4, 0));
  		var7 = true;
@@ -22263,7 +22264,7 @@
  		if(var6.maxY < 1.0D) {
  			var13 = var12;
  		}
-@@ -1387,7 +1884,7 @@
+@@ -1387,7 +1882,7 @@
  		var5.setColorOpaque_F(var9 * var13, var9 * var13, var9 * var13);
  		this.renderTopFace(var1, (double)var2, (double)var3, (double)var4, var1.getBlockTexture(this.blockAccess, var2, var3, var4, 1));
  		var7 = true;
@@ -22272,7 +22273,7 @@
  		if(var6.minZ > 0.0D) {
  			var13 = var12;
  		}
-@@ -1406,7 +1903,7 @@
+@@ -1406,7 +1901,7 @@
  		this.renderEastFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -22281,7 +22282,7 @@
  		if(var6.maxZ < 1.0D) {
  			var13 = var12;
  		}
-@@ -1425,7 +1922,7 @@
+@@ -1425,7 +1920,7 @@
  		this.renderWestFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -22290,7 +22291,7 @@
  		if(var6.minX > 0.0D) {
  			var13 = var12;
  		}
-@@ -1444,7 +1941,7 @@
+@@ -1444,7 +1939,7 @@
  		this.renderNorthFace(var1, (double)var2, (double)var3, (double)var4, var14);
  		var7 = true;
  		this.flipTexture = false;
@@ -22299,7 +22300,7 @@
  		if(var6.maxX < 1.0D) {
  			var13 = var12;
  		}
-@@ -1472,31 +1969,80 @@
+@@ -1472,31 +1967,80 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22401,7 +22402,7 @@
  	}
  
  	public void renderTopFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1505,31 +2051,80 @@
+@@ -1505,31 +2049,80 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22503,7 +22504,7 @@
  	}
  
  	public void renderEastFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1538,12 +2133,12 @@
+@@ -1538,12 +2131,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22522,7 +22523,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1552,24 +2147,73 @@
+@@ -1552,24 +2145,73 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -22611,7 +22612,7 @@
  	}
  
  	public void renderWestFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1578,12 +2222,12 @@
+@@ -1578,12 +2220,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22630,7 +22631,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1592,24 +2236,73 @@
+@@ -1592,24 +2234,73 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -22719,7 +22720,7 @@
  	}
  
  	public void renderNorthFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1618,12 +2311,12 @@
+@@ -1618,12 +2309,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22738,7 +22739,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1632,24 +2325,73 @@
+@@ -1632,24 +2323,73 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -22827,7 +22828,7 @@
  	}
  
  	public void renderSouthFace(Block var1, double var2, double var4, double var6, int var8) {
-@@ -1658,12 +2400,12 @@
+@@ -1658,12 +2398,12 @@
  			var8 = this.overrideBlockTexture;
  		}
  
@@ -22846,7 +22847,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -1672,27 +2414,76 @@
+@@ -1672,27 +2412,76 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -22939,7 +22940,7 @@
  		int var3 = var1.getRenderType();
  		Tessellator var4 = Tessellator.instance;
  		if(var3 == 0) {
-@@ -1704,51 +2495,51 @@
+@@ -1704,51 +2493,51 @@
  			float var8 = 0.6F;
  			var4.startDrawingQuads();
  			var4.setColorRGBA_F(var6, var6, var6, var2);
@@ -23005,7 +23006,7 @@
  			var3.draw();
  			GL11.glTranslatef(0.5F, 0.5F, 0.5F);
  		} else if(var4 == 1) {
-@@ -1762,34 +2553,34 @@
+@@ -1762,34 +2551,34 @@
  			float var5 = 1.0F / 16.0F;
  			var3.startDrawingQuads();
  			var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -23046,7 +23047,7 @@
  			var3.setTranslationF(var5, 0.0F, 0.0F);
  			var3.draw();
  			GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-@@ -1818,33 +2609,34 @@
+@@ -1818,33 +2607,34 @@
  					GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
  					var3.startDrawingQuads();
  					var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -23088,7 +23089,7 @@
  					if(var7 == 0) {
  						var1.setBlockBounds(0.5F - var6, 0.0F, 0.0F, 0.5F + var6, 1.0F, var6 * 2.0F);
  					}
-@@ -1865,38 +2657,64 @@
+@@ -1865,38 +2655,64 @@
  					GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
  					var3.startDrawingQuads();
  					var3.setNormal(0.0F, -1.0F, 0.0F);
@@ -23252,7 +23253,7 @@
 +}
 --- net/minecraft/src/World.java
 +++ net/minecraft/src/World.java
-@@ -1,20 +1,26 @@
+@@ -1,20 +1,27 @@
  package net.minecraft.src;
  
 +import static net.minecraft.src.Constants.CHUNK_BIT_OFFSET;
@@ -23278,7 +23279,8 @@
 +			"Unknown",
 +			"0.3-a4.2",
 +			"0.3-b1",
-+			"0.3-rc1"
++			"0.3-rc1",
++			"0.3-rc2"
 +	};
 +	public static final int CURRENT_VERSION = VERSION_NAMES.length - 1;
 +
@@ -23286,7 +23288,7 @@
  	private List lightingToUpdate;
  	public List loadedEntityList;
  	private List unloadedEntityList;
-@@ -22,7 +28,7 @@
+@@ -22,7 +29,7 @@
  	private Set scheduledTickSet;
  	public List loadedTileEntityList;
  	public long worldTime;
@@ -23295,7 +23297,7 @@
  	private long skyColor;
  	private long fogColor;
  	private long cloudColor;
-@@ -32,7 +38,7 @@
+@@ -32,7 +39,7 @@
  	public boolean editingBlocks;
  	public static float[] lightBrightnessTable = new float[16];
  	private final long lockTimestamp;
@@ -23304,7 +23306,7 @@
  	public List playerEntities;
  	public int difficultySetting;
  	public Object fontRenderer;
-@@ -42,18 +48,35 @@
+@@ -42,18 +49,35 @@
  	public int spawnZ;
  	public boolean isNewWorld;
  	protected List worldAccesses;
@@ -23342,7 +23344,7 @@
  
  	public static NBTTagCompound getLevelData(File var0, String var1) {
  		File var2 = new File(var0, "saves");
-@@ -97,10 +120,11 @@
+@@ -97,10 +121,11 @@
  	}
  
  	public World(File var1, String var2) {
@@ -23355,7 +23357,7 @@
  		this.lightingToUpdate = new ArrayList();
  		this.loadedEntityList = new ArrayList();
  		this.unloadedEntityList = new ArrayList();
-@@ -108,7 +132,7 @@
+@@ -108,7 +133,7 @@
  		this.scheduledTickSet = new HashSet();
  		this.loadedTileEntityList = new ArrayList();
  		this.worldTime = 0L;
@@ -23364,7 +23366,7 @@
  		this.skyColor = 8961023L;
  		this.fogColor = 12638463L;
  		this.cloudColor = 16777215L;
-@@ -117,24 +141,36 @@
+@@ -117,24 +142,36 @@
  		this.DIST_HASH_MAGIC = 1013904223;
  		this.editingBlocks = false;
  		this.lockTimestamp = System.currentTimeMillis();
@@ -23403,7 +23405,7 @@
  		this.lightingToUpdate = new ArrayList();
  		this.loadedEntityList = new ArrayList();
  		this.unloadedEntityList = new ArrayList();
-@@ -142,7 +178,7 @@
+@@ -142,7 +179,7 @@
  		this.scheduledTickSet = new HashSet();
  		this.loadedTileEntityList = new ArrayList();
  		this.worldTime = 0L;
@@ -23412,7 +23414,7 @@
  		this.skyColor = 8961023L;
  		this.fogColor = 12638463L;
  		this.cloudColor = 16777215L;
-@@ -151,23 +187,34 @@
+@@ -151,23 +188,34 @@
  		this.DIST_HASH_MAGIC = 1013904223;
  		this.editingBlocks = false;
  		this.lockTimestamp = System.currentTimeMillis();
@@ -23448,7 +23450,7 @@
  		File var5;
  		try {
  			var5 = new File(this.saveDirectory, "session.lock");
-@@ -182,6 +229,8 @@
+@@ -182,6 +230,8 @@
  			throw new RuntimeException("Failed to check session lock, aborting");
  		}
  
@@ -23457,7 +23459,7 @@
  		var5 = new File(this.saveDirectory, "level.dat");
  		this.isNewWorld = !var5.exists();
  		if(var5.exists()) {
-@@ -194,7 +243,17 @@
+@@ -194,7 +244,17 @@
  				this.spawnZ = var7.getInteger("SpawnZ");
  				this.worldTime = var7.getLong("Time");
  				this.sizeOnDisk = var7.getLong("SizeOnDisk");
@@ -23476,7 +23478,7 @@
  				if(var7.hasKey("Player")) {
  					this.nbtCompoundPlayer = var7.getCompoundTag("Player");
  				}
-@@ -202,10 +261,16 @@
+@@ -202,10 +262,16 @@
  				var11.printStackTrace();
  			}
  		} else {
@@ -23495,7 +23497,7 @@
  		if(this.randomSeed == 0L) {
  			this.randomSeed = var3;
  			var15 = true;
-@@ -215,10 +280,26 @@
+@@ -215,25 +281,59 @@
  		if(var15) {
  			this.worldChunkLoadOverride = true;
  			this.spawnX = 0;
@@ -23526,7 +23528,10 @@
  			}
  
  			this.worldChunkLoadOverride = false;
-@@ -227,13 +308,29 @@
+ 		}
+ 
++		if (this.worldType == WorldType.SUPERFLAT) this.worldTime = 3000L;
++
  		this.calculateInitialSkylight();
  	}
  
@@ -23559,12 +23564,19 @@
  		}
  
  		while(this.getFirstUncoveredBlock(this.spawnX, this.spawnZ) == 0) {
-@@ -244,13 +341,14 @@
+@@ -244,13 +344,21 @@
  	}
  
  	private boolean findSpawn(int var1, int var2) {
 -		int var3 = this.getFirstUncoveredBlock(var1, var2);
 -		return var3 == Block.sand.blockID;
++		if (this.worldType == WorldType.SUPERFLAT) {
++			this.spawnX = 0;
++			this.spawnY = 96;
++			this.spawnZ = 0;
++			return true;
++		}
++
 +		int var4 = this.spawnY = this.getHeightValue(var1, var2);
 +		Biome var5 = this.getBiome(var1, var2);
 +		return var4 > 128 && var4 < 144 && var5 == Biome.plains;
@@ -23577,7 +23589,7 @@
  		}
  
  		return this.getBlockId(var1, var3, var2);
-@@ -294,8 +392,14 @@
+@@ -294,8 +402,14 @@
  		var1.setInteger("SpawnZ", this.spawnZ);
  		var1.setLong("Time", this.worldTime);
  		var1.setLong("SizeOnDisk", this.sizeOnDisk);
@@ -23593,7 +23605,7 @@
  		EntityPlayer var2 = null;
  		if(this.playerEntities.size() > 0) {
  			var2 = (EntityPlayer)this.playerEntities.get(0);
-@@ -308,6 +412,14 @@
+@@ -308,6 +422,14 @@
  			var1.setCompoundTag("Player", var3);
  		}
  
@@ -23608,7 +23620,7 @@
  		var3 = new NBTTagCompound();
  		var3.setTag("Data", var1);
  
-@@ -348,15 +460,30 @@
+@@ -348,15 +470,30 @@
  	}
  
  	public int getBlockId(int var1, int var2, int var3) {
@@ -23642,7 +23654,7 @@
  			var1 >>= 4;
  			var2 >>= 4;
  			var3 >>= 4;
-@@ -378,7 +505,7 @@
+@@ -378,7 +515,7 @@
  		}
  	}
  
@@ -23651,7 +23663,7 @@
  		return this.chunkProvider.chunkExists(var1, var2);
  	}
  
-@@ -394,11 +521,15 @@
+@@ -394,11 +531,15 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -23669,7 +23681,7 @@
  			}
  		} else {
  			return false;
-@@ -409,11 +540,15 @@
+@@ -409,11 +550,15 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -23687,7 +23699,7 @@
  			}
  		} else {
  			return false;
-@@ -429,7 +564,7 @@
+@@ -429,7 +574,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return 0;
@@ -23696,7 +23708,7 @@
  				return 0;
  			} else {
  				Chunk var4 = this.getChunkFromChunkCoords(var1 >> 4, var3 >> 4);
-@@ -450,7 +585,7 @@
+@@ -450,7 +595,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -23705,7 +23717,7 @@
  				return false;
  			} else {
  				Chunk var5 = this.getChunkFromChunkCoords(var1 >> 4, var3 >> 4);
-@@ -521,7 +656,7 @@
+@@ -521,7 +666,7 @@
  	}
  
  	private void notifyBlockOfNeighborChange(int var1, int var2, int var3, int var4) {
@@ -23714,7 +23726,7 @@
  			Block var5 = Block.blocksList[this.getBlockId(var1, var2, var3)];
  			if(var5 != null) {
  				var5.onNeighborBlockChange(this, var1, var2, var3, var4);
-@@ -543,7 +678,8 @@
+@@ -543,7 +688,8 @@
  			int var5;
  			if(var4) {
  				var5 = this.getBlockId(var1, var2, var3);
@@ -23724,7 +23736,7 @@
  					int var6 = this.getBlockLightValue_do(var1, var2 + 1, var3, false);
  					int var7 = this.getBlockLightValue_do(var1 + 1, var2, var3, false);
  					int var8 = this.getBlockLightValue_do(var1 - 1, var2, var3, false);
-@@ -571,7 +707,7 @@
+@@ -571,7 +717,7 @@
  
  			if(var2 < 0) {
  				return 0;
@@ -23733,7 +23745,7 @@
  				var5 = 15 - this.skylightSubtracted;
  				if(var5 < 0) {
  					var5 = 0;
-@@ -593,7 +729,7 @@
+@@ -593,7 +739,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -23742,7 +23754,7 @@
  				return true;
  			} else if(!this.chunkExists(var1 >> 4, var3 >> 4)) {
  				return false;
-@@ -621,6 +757,19 @@
+@@ -621,6 +767,19 @@
  		}
  	}
  
@@ -23762,7 +23774,7 @@
  	public void neighborLightPropagationChanged(EnumSkyBlock var1, int var2, int var3, int var4, int var5) {
  		if(this.blockExists(var2, var3, var4)) {
  			if(var1 == EnumSkyBlock.Sky) {
-@@ -642,11 +791,14 @@
+@@ -642,11 +801,14 @@
  	}
  
  	public int getSavedLightValue(EnumSkyBlock var1, int var2, int var3, int var4) {
@@ -23779,7 +23791,7 @@
  			} else {
  				Chunk var7 = this.getChunkFromChunkCoords(var5, var6);
  				return var7.getSavedLightValue(var1, var2 & 15, var3, var4 & 15);
-@@ -659,7 +811,7 @@
+@@ -659,7 +821,7 @@
  	public void setLightValue(EnumSkyBlock var1, int var2, int var3, int var4, int var5) {
  		if(var2 >= -32000000 && var4 >= -32000000 && var2 < 32000000 && var4 <= 32000000) {
  			if(var3 >= 0) {
@@ -23788,7 +23800,7 @@
  					if(this.chunkExists(var2 >> 4, var4 >> 4)) {
  						Chunk var6 = this.getChunkFromChunkCoords(var2 >> 4, var4 >> 4);
  						var6.setLightValue(var1, var2 & 15, var3, var4 & 15, var5);
-@@ -674,6 +826,12 @@
+@@ -674,6 +836,12 @@
  		}
  	}
  
@@ -23801,7 +23813,7 @@
  	public float getBrightness(int var1, int var2, int var3) {
  		return lightBrightnessTable[this.getBlockLightValue(var1, var2, var3)];
  	}
-@@ -683,134 +841,151 @@
+@@ -683,134 +851,151 @@
  	}
  
  	public MovingObjectPosition rayTraceBlocks(Vec3D var1, Vec3D var2) {
@@ -24059,7 +24071,7 @@
  						}
  					}
  				}
-@@ -838,9 +1013,9 @@
+@@ -838,9 +1023,9 @@
  
  	}
  
@@ -24071,7 +24083,7 @@
  		}
  
  	}
-@@ -886,7 +1061,6 @@
+@@ -886,7 +1071,6 @@
  		for(int var2 = 0; var2 < this.worldAccesses.size(); ++var2) {
  			((IWorldAccess)this.worldAccesses.get(var2)).releaseEntitySkin(var1);
  		}
@@ -24079,7 +24091,7 @@
  	}
  
  	public void setEntityDead(Entity var1) {
-@@ -1034,12 +1208,13 @@
+@@ -1034,12 +1218,13 @@
  		var4 *= var3 * 0.94F + 0.06F;
  		var5 *= var3 * 0.94F + 0.06F;
  		var6 *= var3 * 0.91F + 0.09F;
@@ -24094,7 +24106,7 @@
  		var1 &= 15;
  
  		for(var2 &= 15; var4 > 0; --var4) {
-@@ -1087,6 +1262,8 @@
+@@ -1087,6 +1272,8 @@
  	}
  
  	public void updateEntities() {
@@ -24103,7 +24115,7 @@
  		this.loadedEntityList.removeAll(this.unloadedEntityList);
  
  		int var1;
-@@ -1107,7 +1284,8 @@
+@@ -1107,7 +1294,8 @@
  		}
  
  		this.unloadedEntityList.clear();
@@ -24113,7 +24125,7 @@
  		for(var1 = 0; var1 < this.loadedEntityList.size(); ++var1) {
  			var2 = (Entity)this.loadedEntityList.get(var1);
  			if(var2.ridingEntity != null) {
-@@ -1124,6 +1302,7 @@
+@@ -1124,6 +1312,7 @@
  			}
  
  			if(var2.isDead) {
@@ -24121,7 +24133,7 @@
  				var3 = var2.chunkCoordX;
  				var4 = var2.chunkCoordZ;
  				if(var2.addedToChunk && this.chunkExists(var3, var4)) {
-@@ -1132,21 +1311,25 @@
+@@ -1132,21 +1321,25 @@
  
  				this.loadedEntityList.remove(var1--);
  				this.releaseEntitySkin(var2);
@@ -24150,7 +24162,7 @@
  			var1.lastTickPosX = var1.posX;
  			var1.lastTickPosY = var1.posY;
  			var1.lastTickPosZ = var1.posZ;
-@@ -1158,6 +1341,27 @@
+@@ -1158,6 +1351,27 @@
  				var1.onUpdate();
  			}
  
@@ -24178,7 +24190,7 @@
  			int var5 = MathHelper.floor_double(var1.posX / 16.0D);
  			int var6 = MathHelper.floor_double(var1.posY / 16.0D);
  			int var7 = MathHelper.floor_double(var1.posZ / 16.0D);
-@@ -1167,14 +1371,15 @@
+@@ -1167,14 +1381,15 @@
  				}
  
  				if(this.chunkExists(var5, var7)) {
@@ -24195,7 +24207,7 @@
  			if(var1.riddenByEntity != null) {
  				if(!var1.riddenByEntity.isDead && var1.riddenByEntity.ridingEntity == var1) {
  					this.updateEntity(var1.riddenByEntity);
-@@ -1184,26 +1389,6 @@
+@@ -1184,26 +1399,6 @@
  				}
  			}
  
@@ -24222,7 +24234,7 @@
  		}
  	}
  
-@@ -1455,7 +1640,7 @@
+@@ -1455,7 +1650,7 @@
  
  	public boolean isBlockNormalCube(int var1, int var2, int var3) {
  		Block var4 = Block.blocksList[this.getBlockId(var1, var2, var3)];
@@ -24231,7 +24243,7 @@
  	}
  
  	public void saveWorldIndirectly(IProgressUpdate var1) {
-@@ -1463,17 +1648,6 @@
+@@ -1463,17 +1658,6 @@
  	}
  
  	public boolean updatingLighting() {
@@ -24249,7 +24261,7 @@
  		return false;
  	}
  
-@@ -1482,31 +1656,37 @@
+@@ -1482,31 +1666,37 @@
  	}
  
  	public void scheduleLightingUpdate_do(EnumSkyBlock var1, int var2, int var3, int var4, int var5, int var6, int var7, boolean var8) {
@@ -24312,7 +24324,7 @@
  		}
  	}
  
-@@ -1519,6 +1699,17 @@
+@@ -1519,6 +1709,17 @@
  	}
  
  	public void tick() {
@@ -24330,9 +24342,12 @@
  		this.chunkProvider.unload100OldestChunks();
  		int var1 = this.calculateSkylightSubtracted(1.0F);
  		if(var1 != this.skylightSubtracted) {
-@@ -1531,29 +1722,51 @@
+@@ -1529,31 +1730,53 @@
+ 			}
+ 		}
  
- 		++this.worldTime;
+-		++this.worldTime;
++		if (this.worldType != WorldType.SUPERFLAT) ++this.worldTime;
  		if(this.worldTime % (long)this.autosavePeriod == 0L) {
 +			Profiler.endStartSection("save");
  			this.saveWorld(false, (IProgressUpdate)null);
@@ -24386,7 +24401,7 @@
  				}
  			}
  		}
-@@ -1562,13 +1775,28 @@
+@@ -1562,13 +1785,28 @@
  			--this.soundCounter;
  		}
  
@@ -24418,7 +24433,7 @@
  			int var8;
  			int var9;
  			int var10;
-@@ -1577,7 +1805,7 @@
+@@ -1577,7 +1815,7 @@
  				var6 = this.updateLCG >> 2;
  				var7 = var6 & 15;
  				var8 = var6 >> 8 & 15;
@@ -24427,7 +24442,7 @@
  				var10 = var14.getBlockID(var7, var9, var8);
  				var7 += var3;
  				var8 += var4;
-@@ -1590,13 +1818,15 @@
+@@ -1590,13 +1828,15 @@
  				}
  			}
  
@@ -24445,7 +24460,7 @@
  					var10 = var14.getBlockID(var7, var9 - 1, var8);
  					if(var14.getBlockID(var7, var9, var8) == 0 && Block.snow.canPlaceBlockAt(this, var7 + var3, var9, var8 + var4)) {
  						this.setBlockWithNotify(var7 + var3, var9, var8 + var4, Block.snow.blockID);
-@@ -1608,19 +1838,21 @@
+@@ -1608,19 +1848,21 @@
  				}
  			}
  
@@ -24470,7 +24485,7 @@
  	}
  
  	public boolean tickUpdates(boolean var1) {
-@@ -1765,6 +1997,7 @@
+@@ -1765,6 +2007,7 @@
  	}
  
  	public PathEntity getPathToEntity(Entity var1, Entity var2, float var3) {
@@ -24478,7 +24493,7 @@
  		int var4 = MathHelper.floor_double(var1.posX);
  		int var5 = MathHelper.floor_double(var1.posY);
  		int var6 = MathHelper.floor_double(var1.posZ);
-@@ -1776,10 +2009,12 @@
+@@ -1776,10 +2019,12 @@
  		int var12 = var5 + var7;
  		int var13 = var6 + var7;
  		ChunkCache var14 = new ChunkCache(this, var8, var9, var10, var11, var12, var13);
@@ -24491,7 +24506,7 @@
  		int var6 = MathHelper.floor_double(var1.posX);
  		int var7 = MathHelper.floor_double(var1.posY);
  		int var8 = MathHelper.floor_double(var1.posZ);
-@@ -1791,7 +2026,9 @@
+@@ -1791,7 +2036,9 @@
  		int var14 = var7 + var9;
  		int var15 = var8 + var9;
  		ChunkCache var16 = new ChunkCache(this, var10, var11, var12, var13, var14, var15);
@@ -24502,7 +24517,7 @@
  	}
  
  	public boolean isBlockProvidingPowerTo(int var1, int var2, int var3, int var4) {
-@@ -1836,8 +2073,24 @@
+@@ -1836,8 +2083,24 @@
  		return var11;
  	}
  
@@ -24528,7 +24543,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1849,8 +2102,8 @@
+@@ -1849,8 +2112,8 @@
  			var13 = 0;
  		}
  
@@ -24539,7 +24554,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1882,7 +2135,7 @@
+@@ -1882,7 +2145,7 @@
  		return var7;
  	}
  
@@ -24548,7 +24563,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1894,8 +2147,8 @@
+@@ -1894,8 +2157,8 @@
  			var13 = 0;
  		}
  
@@ -24559,7 +24574,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1920,7 +2173,9 @@
+@@ -1920,7 +2183,9 @@
  					var20 = 16;
  				}
  
@@ -24570,7 +24585,7 @@
  				this.markBlocksDirty(var15 * 16 + var16, var13, var18 * 16 + var19, var15 * 16 + var17, var14, var18 * 16 + var20);
  			}
  		}
-@@ -1970,6 +2225,148 @@
+@@ -1970,6 +2235,148 @@
  
  	}
  
@@ -24634,7 +24649,7 @@
 +	}
 +
 +	public Biome generateBiome(int x, int z) {
-+		if (this.worldType == WorldType.CLASSIC) {
++		if (this.worldType == WorldType.CLASSIC || this.worldType == WorldType.SUPERFLAT) {
 +			return Biome.plains;
 +		}
 +
@@ -24642,11 +24657,11 @@
 +		float biomeBlend = 0.005F;
 +
 +		float temperature = MathHelper.clamp(SimplexOctaves.noise3_ImproveXY(this.randomSeed,
-+				x * biomeSize, z * biomeSize, 1000, 2) + 0.5F
++				x * biomeSize, z * biomeSize, 1000, 4) + 0.5F
 +				+ (this.rand.nextFloat() * biomeBlend * 2.0F - biomeBlend),
 +				0.0F, 1.0F);
 +		float humidity = MathHelper.clamp(SimplexOctaves.noise3_ImproveXY(this.randomSeed,
-+				x * biomeSize, z * biomeSize, -1000, 2) + 0.5F
++				x * biomeSize, z * biomeSize, -1000, 4) + 0.5F
 +				+ (this.rand.nextFloat() * biomeBlend * 2.0F - biomeBlend),
 +				0.0F, 1.0F);
 +
@@ -24719,7 +24734,7 @@
  	static {
  		float var0 = 0.05F;
  
-@@ -1978,5 +2375,270 @@
+@@ -1978,5 +2385,270 @@
  			lightBrightnessTable[var1] = (1.0F - var2) / (var2 * 3.0F + 1.0F) * (1.0F - var0) + var0;
  		}
  
@@ -25414,7 +25429,7 @@
  				var3.drawBlockBreaking(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
  				var3.drawSelectionBox(var2, this.mc.objectMouseOver, 0, var2.inventory.getCurrentItem(), var1);
  				GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -347,60 +443,81 @@
+@@ -347,60 +443,79 @@
  			GL11.glEnable(GL11.GL_BLEND);
  			GL11.glDisable(GL11.GL_CULL_FACE);
  			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
@@ -25473,13 +25488,14 @@
 +			Profiler.endStartSection("weather");
  			GL11.glDisable(GL11.GL_FOG);
 -			if(this.mc.theWorld.snowCovered) {
-+			if(this.mc.theWorld.worldType == WorldType.WINTER) {
- 				this.renderSnow(var1);
- 			}
- 
+-				this.renderSnow(var1);
+-			}
+-
 -			if(this.pointedEntity != null) {
 -			}
 -
++			this.renderSnow(var1);
++
 +			Profiler.endStartSection("clouds");
  			this.setupFog(0);
  			GL11.glEnable(GL11.GL_FOG);
@@ -25509,7 +25525,7 @@
  			EntityPlayerSP var1 = this.mc.thePlayer;
  			World var2 = this.mc.theWorld;
  			int var3 = MathHelper.floor_double(var1.posX);
-@@ -441,7 +558,7 @@
+@@ -441,12 +556,16 @@
  		double var10 = var2.lastTickPosY + (var2.posY - var2.lastTickPosY) * (double)var1;
  		double var12 = var2.lastTickPosZ + (var2.posZ - var2.lastTickPosZ) * (double)var1;
  		byte var14 = 5;
@@ -25518,16 +25534,27 @@
  			var14 = 10;
  		}
  
-@@ -473,7 +590,7 @@
+ 		for(int var15 = var4 - var14; var15 <= var4 + var14; ++var15) {
+ 			for(int var16 = var6 - var14; var16 <= var6 + var14; ++var16) {
++				if (var3.getBiome(var15, var16) != Biome.tundra) {
++					continue;
++				}
++
+ 				int var17 = var3.getTopSolidOrLiquidBlock(var15, var16);
+ 				if(var17 < 0) {
+ 					var17 = 0;
+@@ -473,8 +592,8 @@
  					double var27 = (double)((float)var16 + 0.5F) - var2.posZ;
  					float var29 = MathHelper.sqrt_double(var25 * var25 + var27 * var27) / (float)var14;
  					var7.startDrawingQuads();
 -					float var30 = var3.getBrightness(var15, 128, var16);
+-					GL11.glColor4f(var30, var30, var30, (1.0F - var29 * var29) * 0.7F);
 +					float var30 = var3.getBrightness(var15, CHUNK_HEIGHT, var16);
- 					GL11.glColor4f(var30, var30, var30, (1.0F - var29 * var29) * 0.7F);
++					GL11.glColor4f(var30, var30, var30, (1.0F - var29 * var29) * (var3.worldType == WorldType.WINTER ? 0.7F : 0.3F));
  					var7.setTranslationD(-var8 * 1.0D, -var10 * 1.0D, -var12 * 1.0D);
  					var7.addVertexWithUV((double)(var15 + 0), (double)var18, (double)(var16 + 0), (double)(0.0F * var20 + var23), (double)((float)var18 * var20 / 8.0F + var22 * var20 + var24));
-@@ -495,7 +612,7 @@
+ 					var7.addVertexWithUV((double)(var15 + 1), (double)var18, (double)(var16 + 1), (double)(1.0F * var20 + var23), (double)((float)var18 * var20 / 8.0F + var22 * var20 + var24));
+@@ -495,7 +614,7 @@
  	}
  
  	public void setupOverlayRendering() {
@@ -25536,7 +25563,7 @@
  		int var2 = var1.getScaledWidth();
  		int var3 = var1.getScaledHeight();
  		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-@@ -510,7 +627,7 @@
+@@ -510,7 +629,7 @@
  	private void updateFogColor(float var1) {
  		World var2 = this.mc.theWorld;
  		EntityPlayerSP var3 = this.mc.thePlayer;
@@ -25545,7 +25572,7 @@
  		var4 = 1.0F - (float)Math.pow((double)var4, 0.25D);
  		Vec3D var5 = var2.getSkyColor(var1);
  		float var6 = (float)var5.xCoord;
-@@ -520,6 +637,19 @@
+@@ -520,6 +639,19 @@
  		this.fogColorRed = (float)var9.xCoord;
  		this.fogColorGreen = (float)var9.yCoord;
  		this.fogColorBlue = (float)var9.zCoord;
@@ -25565,7 +25592,7 @@
  		this.fogColorRed += (var6 - this.fogColorRed) * var4;
  		this.fogColorGreen += (var7 - this.fogColorGreen) * var4;
  		this.fogColorBlue += (var8 - this.fogColorBlue) * var4;
-@@ -583,13 +713,17 @@
+@@ -583,13 +715,17 @@
  				var8 = (var3 * 30.0F + var5 * 70.0F) / 100.0F;
  			}
  		} else {
@@ -25589,7 +25616,7 @@
  
  			if(GLContext.getCapabilities().GL_NV_fog_distance) {
  				GL11.glFogi(NVFogDistance.GL_FOG_DISTANCE_MODE_NV, NVFogDistance.GL_EYE_RADIAL_NV);
-@@ -600,9 +734,9 @@
+@@ -600,9 +736,9 @@
  		GL11.glColorMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT);
  	}
  
@@ -26308,7 +26335,7 @@
  }
 --- /dev/null
 +++ net/minecraft/src/Biome.java
-@@ -1,0 +1,263 @@
+@@ -1,0 +1,268 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -26526,7 +26553,7 @@
 +		int scale = 256;
 +		long seed = System.currentTimeMillis() ^ System.nanoTime();
 +		Random rand = new Random(seed);
-+		BufferedImage img = new BufferedImage(scale * 4, scale * 2, BufferedImage.TYPE_INT_RGB);
++		BufferedImage img = new BufferedImage(scale * 4, scale * 3, BufferedImage.TYPE_INT_RGB);
 +
 +		NoiseGeneratorOctaves noiseGen6 = new NoiseGeneratorOctaves(rand, 4);
 +		NoiseGeneratorOctaves noiseGen7 = new NoiseGeneratorOctaves(rand, 4);
@@ -26555,6 +26582,11 @@
 +				img.setRGB(x + scale, y + scale, grayscaleNoise(noise7s[x + y * scale]));
 +				img.setRGB(x + scale * 2, y + scale, grayscaleNoise(noise3s[x + y * scale]));
 +				img.setRGB(x + scale * 3, y + scale, grayscaleNoise(noise1s[x + y * scale]));
++
++				img.setRGB(x, y + scale * 2, grayscaleNoise(SimplexOctaves.noise2(0, x / 200.0D, y / 200.0D, 1) * 0.5F + 0.5F));
++				img.setRGB(x + scale, y + scale * 2, grayscaleNoise(SimplexOctaves.noise2(0, x / 200.0D, y / 200.0D, 2) * 0.5F + 0.5F));
++				img.setRGB(x + scale * 2, y + scale * 2, grayscaleNoise(SimplexOctaves.noise2(0, x / 200.0D, y / 200.0D, 3) * 0.5F + 0.5F));
++				img.setRGB(x + scale * 3, y + scale * 2, grayscaleNoise(SimplexOctaves.noise2(0, x / 200.0D, y / 200.0D, 4) * 0.5F + 0.5F));
 +			}
 +		}
 +
@@ -32253,12 +32285,12 @@
 +
 +	public String debugInfoWorld() {
 +		return "Type: " + this.theWorld.worldType.getName()
-+				   + ", Biome: " + (this.theWorld.getBiome((int)Math.round(this.thePlayer.posX), (int)Math.round(this.thePlayer.posZ)).name);
++				   + ", Biome: " + (this.theWorld.getBiome(MathHelper.floor_double(this.thePlayer.posX), MathHelper.floor_double(this.thePlayer.posZ)).name);
 +	}
 +
 +	public String debugInfoGeneration() {
-+		int x = (int)this.thePlayer.posX;
-+		int z = (int)this.thePlayer.posZ;
++		int x = MathHelper.floor_double(this.thePlayer.posX);
++		int z = MathHelper.floor_double(this.thePlayer.posZ);
 +
 +		double biomeSize = 0.0005D;
 +
@@ -33403,7 +33435,7 @@
 +	}
 +
 +	public void midairJump() {
-+		this.motionY = this.isSneaking() ? 0.25D : 0.50D;
++		this.motionY = this.isSneaking() ? 0.25D : 0.6D;
 +		this.motionX *= 1.5D;
 +		this.motionZ *= 1.5D;
 +		this.fallDistance = -1.0F;
@@ -36760,7 +36792,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/WorldType.java
-@@ -1,0 +1,63 @@
+@@ -1,0 +1,66 @@
 +package net.minecraft.src;
 +
 +import static net.minecraft.src.ItemTooltip.*;
@@ -36784,7 +36816,10 @@
 +			"seasonal forests and rainforests", DESCRIPTION_COL),
 +			0x80ffdb, 0xc2fff9, 0xffffff),
 +	AMPLIFIED("Amplified", new ItemTooltip(BETA_GRAD, "World Type: Amplified",
-+			"Greatly increased world height", DESCRIPTION_COL));
++			"Greatly increased world height", DESCRIPTION_COL)),
++	SUPERFLAT("Superflat", new ItemTooltip(BETA_GRAD, "World Type: Superflat",
++			"Completely flat terrain", DESCRIPTION_COL,
++			"great for building", DESCRIPTION_COL));
 +
 +	private final String name;
 +	private final ItemTooltip tooltip;
@@ -38242,7 +38277,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/ModLoader.java
-@@ -1,0 +1,183 @@
+@@ -1,0 +1,176 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -38284,8 +38319,6 @@
 +		if (!System.getProperty("java.version").startsWith("1.")) {
 +			return;
 +		}
-+
-+		boolean loadExampleMod = false;
 +
 +		File modDir = new File(mcDir, "/dvmods/");
 +		modDir.mkdirs();
@@ -38341,11 +38374,6 @@
 +        			}
 +				}
 +			}
-+		}
-+
-+		if (loadExampleMod) {
-+			mods.add(new ExampleMod());
-+			modCount++;
 +		}
 +
 +		if (modCount == 0) {
@@ -39725,7 +39753,7 @@
 +
 +public class ItemWings extends ItemCharm {
 +	public ItemWings(int id) {
-+		super(id, 256, "wings");
++		super(id, 384, "wings");
 +	}
 +
 +	public void updateCharm(EntityPlayer player, ItemStack stack) {
@@ -41578,128 +41606,6 @@
 +
 +		int var5 = this.refabricatorInventory.getProgressScaled(48);
 +		this.drawTexturedModalRect(posX + 55, posY + 26 + (48 - var5), 176, 48 - var5, 16, var5);
-+	}
-+}
---- /dev/null
-+++ net/minecraft/src/ExampleMod.java
-@@ -1,0 +1,119 @@
-+package net.minecraft.src;
-+
-+import java.util.List;
-+
-+public class ExampleMod extends BaseMod {
-+	public static Achievement eatTheCheese;
-+	public static Item cheese;
-+	public static Block cheeseBlock;
-+
-+	@Override
-+	public String getName() {
-+		return "Example Mod";
-+	}
-+
-+	@Override
-+	public String getVersion() {
-+		return "1.0";
-+	}
-+
-+	@Override
-+	public String getAuthor() {
-+		return "BlueStaggo";
-+	}
-+
-+	@Override
-+	public String getIcon() {
-+		return "/example_mod/icon.png";
-+	}
-+
-+	@Override
-+	public void load() throws Exception {
-+		// Create an achievement. Textures are stored in /achievements/example/eat_the_cheese.png
-+		// and /achievements/example/eat_the_cheese_locked.png depending on progress.
-+		// Creating the locked achievement image is the same as setting HSL saturation to 0
-+		// and decreasing HSL lightness by 80.
-+		eatTheCheese = new Achievement("example_mod/eat_the_cheese", "EAT THE CHEESE!", "Some random cheese fell on your head. Eat it!")
-+				.setCreativeUnlockable(); // Achievements are not unlockable in creative mode by default.
-+		ModLoader.registry.addAchievement(eatTheCheese); // Register it to the ModLoader so that it loads properly
-+
-+		// Create a new item. New IDs can be automatically used with ModLoader.registry.itemId().
-+		// The "5" in the ItemFood constructor is how much health the food heals.
-+		cheese = new ItemFood(ModLoader.registry.itemId(), 5)
-+				.setIconIndex(ModLoader.registry.addItemTexture("/example_mod/items/cheese.png")); // Load in a custom texture into the item texture atlas
-+		// Add in a tooltip for the inventory
-+		cheese.setTooltip(new ItemTooltip(ItemTooltip.LEGENDARY_GRAD,   // Legendary gradient (magenta)
-+				"Cheese", ItemTooltip.LEGENDARY_COL,                    // Legendary color (magenta)
-+				"Very exquisite cuisine", ItemTooltip.DESCRIPTION_COL,  // Description color (beige)
-+				cheese)); // Pass in item for automatic info generation (how much health the cheese heals)
-+
-+		// Create a new block. This cheese block will inherit the sponge texture,
-+		// but loading custom block textures is done in a very similar fashion
-+		// to loading custom item textures.
-+		cheeseBlock = new BlockCheese(ModLoader.registry.blockId(), Block.sponge.blockIndexInTexture, Material.plants)
-+				.setHardness(1.0F)
-+				.setStepSound(Block.soundClothFootstep);
-+		cheeseBlock.setTooltip(new ItemTooltip(ItemTooltip.LEGENDARY_GRAD,
-+				"Block of Cheese", ItemTooltip.LEGENDARY_COL,
-+				"SO MUCH CHEESE!", ItemTooltip.DESCRIPTION_COL));
-+		ModLoader.registry.registerItemBlock(cheeseBlock); // Make sure to register the block item!
-+
-+		// Create a new recipe. Make a 2x2 square of cheese
-+		// to craft a cheese block.
-+		ModLoader.registry.addRecipe(new ItemStack(cheeseBlock),
-+				"XX",
-+				"XX",
-+				'X', cheese);
-+		ModLoader.registry.addRecipe(new ItemStack(cheese), // Make sure to be able to convert the cheese back!
-+				"X",
-+				'X', cheeseBlock);
-+
-+		// Item tooltips can be overridden. Here, the Bucket
-+		// of Milk becomes the Bucket of Cheese.
-+		ItemTooltip.items[Item.bucketMilk.shiftedIndex] = new ItemTooltip("Bucket of Cheese",
-+				"What kind of cheese is this?", ItemTooltip.DESCRIPTION_COL);
-+	}
-+
-+	// Using hooks, custom code can be ran
-+	// on every tick of the world.
-+	@Override
-+	public void onWorldTick(World world) {
-+		// Drop cheese in singleplayer worlds in 1 in 1000 ticks.
-+		int cheeseInterval = 1000;
-+		if (ModLoader.isClient() && world.canDoClientAction() && world.rand.nextInt(cheeseInterval) == 0) {
-+			for (EntityPlayer player : (List<EntityPlayer>)world.playerEntities) {
-+				EntityItem item = new EntityItem(world, player.posX, player.posY + 10, player.posZ, new ItemStack(cheese));
-+				world.spawnEntityInWorld(item);
-+				world.playSoundAtEntity(item, "random.wand", 1.0F, world.rand.nextFloat() * 0.2F + 0.9F);
-+				world.achievements.updateProgress(eatTheCheese, 1); // Award the "EAT THE CHEESE!" achievement to whoever got the cheese.
-+			}
-+		}
-+	}
-+
-+	// Add mod items to the creative inventory using a hook.
-+	@Override
-+	public void setupCreativeInventory(CreativeInventoryBuilder inv) {
-+		inv.addLabel("Example Mod");
-+		inv.addItem(cheese.shiftedIndex, 0);
-+		inv.addItem(cheeseBlock.blockID, 0);
-+	}
-+
-+	// This is a custom BlockCheese class to give the cheese a small shape.
-+	// The Block of Cheese is not a full block, so it needs special code.
-+	private static class BlockCheese extends Block {
-+		public BlockCheese(int var1, int var2, Material var3) {
-+			super(var1, var2, var3);
-+			this.setBlockBounds(0.25F, 0.0F, 0.25F, 0.75F, 0.5F, 0.75F);
-+		}
-+
-+		@Override
-+		public boolean isOpaqueCube() {
-+			return false;
-+		}
-+
-+		@Override
-+		public boolean shouldSideBeRendered(IBlockAccess var1, int var2, int var3, int var4, int var5) {
-+			return true;
-+		}
 +	}
 +}
 --- /dev/null
