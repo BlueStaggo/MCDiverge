@@ -6,14 +6,14 @@ Minecraft Diverge is a Minecraft Alpha v1.1.2_01 mod that takes the game towards
 
 For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION.md) document. If you want to create mods for Diverge, check out the [MODDING](MODDING.md) guide.
 
-This is the Github repository for Minecraft Diverge, where users can submit issues and download new versions. The source code for Minecraft Diverge is partially available in the form of patch files from RetroMCP-Java 1.0.
+This is the Github repository for Minecraft Diverge, where users can submit issues and download new versions. The source code for Minecraft Diverge is partially available in the form of patch files from RetroMCP-Java.
 
 *Why don't you check out Minecraft Diverge's sister project, [Authentic Adventure](https://github.com/BlueStaggo/AuthenticAdventure)?*
 
 ## Features
 - Stamina based sprinting
 - Extended world height
-- Six biomes with unique types of wood and stone
+- Six biomes with unique wood and stone types
 - Rubies and sapphires, gems with magical properties
 - Charms and trinkets that enhance your abilities
 - Plenty of new blocks to build with
@@ -24,7 +24,7 @@ This is the Github repository for Minecraft Diverge, where users can submit issu
 - Plenty of optimisations
 
 ## Trailer (Youtube)
-[![](https://img.youtube.com/vi/iyZVbCfVZU4/0.jpg)](https://youtu.be/iyZVbCfVZU4)
+[![](https://img.youtube.com/vi/TFNFc11QhAw/0.jpg)](https://youtu.be/TFNFc11QhAw)
 
 ## Screenshots
 ![](img/screenshot0.png)

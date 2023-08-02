@@ -78,8 +78,8 @@ public class ExampleMod extends BaseMod {
 	// on every tick of the world.
 	@Override
 	public void onWorldTick(World world) {
-		// Drop cheese in singleplayer worlds in 1 in 1000 ticks.
-		int cheeseInterval = 1000;
+		// Drop cheese in singleplayer worlds in 1 in 100 ticks.
+		int cheeseInterval = 100;
 		if (ModLoader.isClient() && world.canDoClientAction() && world.rand.nextInt(cheeseInterval) == 0) {
 			for (EntityPlayer player : (List<EntityPlayer>)world.playerEntities) {
 				EntityItem item = new EntityItem(world, player.posX, player.posY + 10, player.posZ, new ItemStack(cheese));
