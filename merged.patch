@@ -11122,7 +11122,7 @@
  	}
  
  	public void moveEntity(double var1, double var3, double var5) {
-+		if (this.worldObj.multiplayerWorld && !this.moveInMultiplayer()) {
++		if (!this.worldObj.canDoClientAction() && !this.moveInMultiplayer()) {
 +			return;
 +		}
 +
