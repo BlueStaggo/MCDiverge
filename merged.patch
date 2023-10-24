@@ -3770,7 +3770,7 @@
  				++this.furnaceItemStacks[2].stackSize;
  			}
  
-@@ -168,20 +198,30 @@
+@@ -168,20 +198,38 @@
  			if(this.furnaceItemStacks[0].stackSize <= 0) {
  				this.furnaceItemStacks[0] = null;
  			}
@@ -3791,6 +3791,7 @@
 +			if (var1.getItem() == null) return 0;
  			int var2 = var1.getItem().shiftedIndex;
 -			return var2 < 256 && Block.blocksList[var2].material == Material.wood ? 300 : (var2 == Item.stick.shiftedIndex ? 100 : (var2 == Item.coal.shiftedIndex ? 1600 : (var2 == Item.bucketLava.shiftedIndex ? 20000 : 0)));
+-		}
 +			return var2 < 256 && Block.blocksList[var2].material == Material.wood ? 300
 +					: var2 == Item.stick.shiftedIndex ? 100
 +					: var2 == Item.coal.shiftedIndex ? 1600
@@ -3798,11 +3799,19 @@
 +					: var2 == Item.starDust.shiftedIndex ? 6400
 +					: var2 == Block.blockCoal.blockID ? 14400
 +					: 0;
- 		}
++		}
 +	}
 +
 +	public boolean isNearPlayer(EntityPlayer var1) {
 +		return this.worldObj.getBlockTileEntity(this.xCoord, this.yCoord, this.zCoord) == this && var1.getDistanceSq((double) this.xCoord + 0.5D, (double) this.yCoord + 0.5D, (double) this.zCoord + 0.5D) <= 64.0D;
++	}
++
++	public Block getBlockType() {
++		Block type = super.getBlockType();
++		if (type == null) {
++			type = Block.stoneOvenIdle;
++		}
++		return type;
  	}
  }
 --- /dev/null
@@ -13635,10 +13644,12 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/GuiHeaderPicker.java
-@@ -1,0 +1,53 @@
+@@ -1,0 +1,61 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
++import org.lwjgl.opengl.GL11;
++
 +public class GuiHeaderPicker extends GuiCreative {
 +	protected GuiScreen parentScreen;
 +
@@ -13687,6 +13698,12 @@
 +	}
 +
 +	public void drawTooltip(ItemTooltip tooltip, int x, int y) {
++	}
++
++	public void drawScreen(int var1, int var2, float var3) {
++		super.drawScreen(var1, var2, var3);
++		GL11.glDisable(GL11.GL_LIGHTING);
++		GL11.glDisable(GL11.GL_DEPTH_TEST);
 +	}
 +}
 --- /dev/null
@@ -17885,7 +17902,7 @@
  }
 --- net/minecraft/src/BlockFurnace.java
 +++ net/minecraft/src/BlockFurnace.java
-@@ -3,12 +3,17 @@
+@@ -3,12 +3,18 @@
  import java.util.Random;
  
  public class BlockFurnace extends BlockContainer {
@@ -17895,6 +17912,7 @@
 -		super(var1, Material.rock);
 +	protected final boolean isActive;
 +	private final Random random = new Random();
++	private static boolean keepFurnaceInventory = false;
 +
 +	public BlockFurnace(int var1, boolean var2) {
 +		this(var1, var2, Material.rock);
@@ -17908,7 +17926,7 @@
  	}
  
  	public int idDropped(int var1, Random var2) {
-@@ -52,7 +57,7 @@
+@@ -52,7 +58,7 @@
  			return Block.stone.blockIndexInTexture;
  		} else {
  			int var6 = var1.getBlockMetadata(var2, var3, var4);
@@ -17917,7 +17935,7 @@
  		}
  	}
  
-@@ -82,16 +87,18 @@
+@@ -82,26 +88,63 @@
  	}
  
  	public int getBlockTextureFromSide(int var1) {
@@ -17939,15 +17957,20 @@
 +	public void updateFurnaceBlockState(boolean var0, World var1, int var2, int var3, int var4) {
  		int var5 = var1.getBlockMetadata(var2, var3, var4);
  		TileEntity var6 = var1.getBlockTileEntity(var2, var3, var4);
++		keepFurnaceInventory = true;
  		if(var0) {
-@@ -102,6 +109,39 @@
+ 			var1.setBlockWithNotify(var2, var3, var4, Block.stoneOvenActive.blockID);
+ 		} else {
+ 			var1.setBlockWithNotify(var2, var3, var4, Block.stoneOvenIdle.blockID);
+ 		}
++		keepFurnaceInventory = false;
  
  		var1.setBlockMetadataWithNotify(var2, var3, var4, var5);
  		var1.setBlockTileEntity(var2, var3, var4, var6);
 +	}
 +
 +	public void onBlockRemoval(World var1, int var2, int var3, int var4) {
-+		if (!var1.canDoClientAction()) return;
++		if (!var1.canDoClientAction() || keepFurnaceInventory) return;
 +		TileEntityFurnace var5 = (TileEntityFurnace)var1.getBlockTileEntity(var2, var3, var4);
 +
 +		for(int var6 = 0; var6 < var5.getInventorySize(); ++var6) {
@@ -23820,7 +23843,7 @@
 +}
 --- net/minecraft/src/World.java
 +++ net/minecraft/src/World.java
-@@ -1,20 +1,31 @@
+@@ -1,20 +1,32 @@
  package net.minecraft.src;
  
 +import static net.minecraft.src.Constants.CHUNK_BIT_OFFSET;
@@ -23850,7 +23873,8 @@
 +			"0.3-rc1",
 +			"0.3-rc2",
 +			"0.3",
-+			"0.3.1"
++			"0.3.1",
++			"0.3.1.1"
 +	};
 +	public static final int CURRENT_VERSION = VERSION_NAMES.length - 1;
 +
@@ -23858,7 +23882,7 @@
  	private List lightingToUpdate;
  	public List loadedEntityList;
  	private List unloadedEntityList;
-@@ -22,7 +33,7 @@
+@@ -22,7 +34,7 @@
  	private Set scheduledTickSet;
  	public List loadedTileEntityList;
  	public long worldTime;
@@ -23867,7 +23891,7 @@
  	private long skyColor;
  	private long fogColor;
  	private long cloudColor;
-@@ -32,7 +43,7 @@
+@@ -32,7 +44,7 @@
  	public boolean editingBlocks;
  	public static float[] lightBrightnessTable = new float[16];
  	private final long lockTimestamp;
@@ -23876,7 +23900,7 @@
  	public List playerEntities;
  	public int difficultySetting;
  	public Object fontRenderer;
-@@ -42,18 +53,35 @@
+@@ -42,18 +54,35 @@
  	public int spawnZ;
  	public boolean isNewWorld;
  	protected List worldAccesses;
@@ -23914,7 +23938,7 @@
  
  	public static NBTTagCompound getLevelData(File var0, String var1) {
  		File var2 = new File(var0, "saves");
-@@ -97,10 +125,11 @@
+@@ -97,10 +126,11 @@
  	}
  
  	public World(File var1, String var2) {
@@ -23927,7 +23951,7 @@
  		this.lightingToUpdate = new ArrayList();
  		this.loadedEntityList = new ArrayList();
  		this.unloadedEntityList = new ArrayList();
-@@ -108,7 +137,7 @@
+@@ -108,7 +138,7 @@
  		this.scheduledTickSet = new HashSet();
  		this.loadedTileEntityList = new ArrayList();
  		this.worldTime = 0L;
@@ -23936,7 +23960,7 @@
  		this.skyColor = 8961023L;
  		this.fogColor = 12638463L;
  		this.cloudColor = 16777215L;
-@@ -117,24 +146,36 @@
+@@ -117,24 +147,36 @@
  		this.DIST_HASH_MAGIC = 1013904223;
  		this.editingBlocks = false;
  		this.lockTimestamp = System.currentTimeMillis();
@@ -23975,7 +23999,7 @@
  		this.lightingToUpdate = new ArrayList();
  		this.loadedEntityList = new ArrayList();
  		this.unloadedEntityList = new ArrayList();
-@@ -142,7 +183,7 @@
+@@ -142,7 +184,7 @@
  		this.scheduledTickSet = new HashSet();
  		this.loadedTileEntityList = new ArrayList();
  		this.worldTime = 0L;
@@ -23984,7 +24008,7 @@
  		this.skyColor = 8961023L;
  		this.fogColor = 12638463L;
  		this.cloudColor = 16777215L;
-@@ -151,23 +192,34 @@
+@@ -151,23 +193,34 @@
  		this.DIST_HASH_MAGIC = 1013904223;
  		this.editingBlocks = false;
  		this.lockTimestamp = System.currentTimeMillis();
@@ -24020,7 +24044,7 @@
  		File var5;
  		try {
  			var5 = new File(this.saveDirectory, "session.lock");
-@@ -182,6 +234,8 @@
+@@ -182,6 +235,8 @@
  			throw new RuntimeException("Failed to check session lock, aborting");
  		}
  
@@ -24029,7 +24053,7 @@
  		var5 = new File(this.saveDirectory, "level.dat");
  		this.isNewWorld = !var5.exists();
  		if(var5.exists()) {
-@@ -194,7 +248,17 @@
+@@ -194,7 +249,17 @@
  				this.spawnZ = var7.getInteger("SpawnZ");
  				this.worldTime = var7.getLong("Time");
  				this.sizeOnDisk = var7.getLong("SizeOnDisk");
@@ -24048,7 +24072,7 @@
  				if(var7.hasKey("Player")) {
  					this.nbtCompoundPlayer = var7.getCompoundTag("Player");
  				}
-@@ -202,10 +266,16 @@
+@@ -202,10 +267,16 @@
  				var11.printStackTrace();
  			}
  		} else {
@@ -24067,7 +24091,7 @@
  		if(this.randomSeed == 0L) {
  			this.randomSeed = var3;
  			var15 = true;
-@@ -215,25 +285,70 @@
+@@ -215,25 +286,70 @@
  		if(var15) {
  			this.worldChunkLoadOverride = true;
  			this.spawnX = 0;
@@ -24145,7 +24169,7 @@
  		}
  
  		while(this.getFirstUncoveredBlock(this.spawnX, this.spawnZ) == 0) {
-@@ -244,13 +359,28 @@
+@@ -244,13 +360,28 @@
  	}
  
  	private boolean findSpawn(int var1, int var2) {
@@ -24177,7 +24201,7 @@
  		}
  
  		return this.getBlockId(var1, var3, var2);
-@@ -294,8 +424,14 @@
+@@ -294,8 +425,14 @@
  		var1.setInteger("SpawnZ", this.spawnZ);
  		var1.setLong("Time", this.worldTime);
  		var1.setLong("SizeOnDisk", this.sizeOnDisk);
@@ -24193,7 +24217,7 @@
  		EntityPlayer var2 = null;
  		if(this.playerEntities.size() > 0) {
  			var2 = (EntityPlayer)this.playerEntities.get(0);
-@@ -308,6 +444,14 @@
+@@ -308,6 +445,14 @@
  			var1.setCompoundTag("Player", var3);
  		}
  
@@ -24208,7 +24232,7 @@
  		var3 = new NBTTagCompound();
  		var3.setTag("Data", var1);
  
-@@ -348,15 +492,30 @@
+@@ -348,15 +493,30 @@
  	}
  
  	public int getBlockId(int var1, int var2, int var3) {
@@ -24242,7 +24266,7 @@
  			var1 >>= 4;
  			var2 >>= 4;
  			var3 >>= 4;
-@@ -378,7 +537,7 @@
+@@ -378,7 +538,7 @@
  		}
  	}
  
@@ -24251,7 +24275,7 @@
  		return this.chunkProvider.chunkExists(var1, var2);
  	}
  
-@@ -394,11 +553,15 @@
+@@ -394,11 +554,15 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -24269,7 +24293,7 @@
  			}
  		} else {
  			return false;
-@@ -409,11 +572,15 @@
+@@ -409,11 +573,15 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -24287,7 +24311,7 @@
  			}
  		} else {
  			return false;
-@@ -429,7 +596,7 @@
+@@ -429,7 +597,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return 0;
@@ -24296,7 +24320,7 @@
  				return 0;
  			} else {
  				Chunk var4 = this.getChunkFromChunkCoords(var1 >> 4, var3 >> 4);
-@@ -450,7 +617,7 @@
+@@ -450,7 +618,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -24305,7 +24329,7 @@
  				return false;
  			} else {
  				Chunk var5 = this.getChunkFromChunkCoords(var1 >> 4, var3 >> 4);
-@@ -521,7 +688,7 @@
+@@ -521,7 +689,7 @@
  	}
  
  	private void notifyBlockOfNeighborChange(int var1, int var2, int var3, int var4) {
@@ -24314,7 +24338,7 @@
  			Block var5 = Block.blocksList[this.getBlockId(var1, var2, var3)];
  			if(var5 != null) {
  				var5.onNeighborBlockChange(this, var1, var2, var3, var4);
-@@ -543,7 +710,8 @@
+@@ -543,7 +711,8 @@
  			int var5;
  			if(var4) {
  				var5 = this.getBlockId(var1, var2, var3);
@@ -24324,7 +24348,7 @@
  					int var6 = this.getBlockLightValue_do(var1, var2 + 1, var3, false);
  					int var7 = this.getBlockLightValue_do(var1 + 1, var2, var3, false);
  					int var8 = this.getBlockLightValue_do(var1 - 1, var2, var3, false);
-@@ -571,7 +739,7 @@
+@@ -571,7 +740,7 @@
  
  			if(var2 < 0) {
  				return 0;
@@ -24333,7 +24357,7 @@
  				var5 = 15 - this.skylightSubtracted;
  				if(var5 < 0) {
  					var5 = 0;
-@@ -593,7 +761,7 @@
+@@ -593,7 +762,7 @@
  		if(var1 >= -32000000 && var3 >= -32000000 && var1 < 32000000 && var3 <= 32000000) {
  			if(var2 < 0) {
  				return false;
@@ -24342,7 +24366,7 @@
  				return true;
  			} else if(!this.chunkExists(var1 >> 4, var3 >> 4)) {
  				return false;
-@@ -621,6 +789,19 @@
+@@ -621,6 +790,19 @@
  		}
  	}
  
@@ -24362,7 +24386,7 @@
  	public void neighborLightPropagationChanged(EnumSkyBlock var1, int var2, int var3, int var4, int var5) {
  		if(this.blockExists(var2, var3, var4)) {
  			if(var1 == EnumSkyBlock.Sky) {
-@@ -642,11 +823,14 @@
+@@ -642,11 +824,14 @@
  	}
  
  	public int getSavedLightValue(EnumSkyBlock var1, int var2, int var3, int var4) {
@@ -24379,7 +24403,7 @@
  			} else {
  				Chunk var7 = this.getChunkFromChunkCoords(var5, var6);
  				return var7.getSavedLightValue(var1, var2 & 15, var3, var4 & 15);
-@@ -659,7 +843,7 @@
+@@ -659,7 +844,7 @@
  	public void setLightValue(EnumSkyBlock var1, int var2, int var3, int var4, int var5) {
  		if(var2 >= -32000000 && var4 >= -32000000 && var2 < 32000000 && var4 <= 32000000) {
  			if(var3 >= 0) {
@@ -24388,7 +24412,7 @@
  					if(this.chunkExists(var2 >> 4, var4 >> 4)) {
  						Chunk var6 = this.getChunkFromChunkCoords(var2 >> 4, var4 >> 4);
  						var6.setLightValue(var1, var2 & 15, var3, var4 & 15, var5);
-@@ -674,6 +858,12 @@
+@@ -674,6 +859,12 @@
  		}
  	}
  
@@ -24401,7 +24425,7 @@
  	public float getBrightness(int var1, int var2, int var3) {
  		return lightBrightnessTable[this.getBlockLightValue(var1, var2, var3)];
  	}
-@@ -683,134 +873,151 @@
+@@ -683,134 +874,151 @@
  	}
  
  	public MovingObjectPosition rayTraceBlocks(Vec3D var1, Vec3D var2) {
@@ -24659,7 +24683,7 @@
  						}
  					}
  				}
-@@ -838,9 +1045,9 @@
+@@ -838,9 +1046,9 @@
  
  	}
  
@@ -24671,7 +24695,7 @@
  		}
  
  	}
-@@ -886,7 +1093,6 @@
+@@ -886,7 +1094,6 @@
  		for(int var2 = 0; var2 < this.worldAccesses.size(); ++var2) {
  			((IWorldAccess)this.worldAccesses.get(var2)).releaseEntitySkin(var1);
  		}
@@ -24679,7 +24703,7 @@
  	}
  
  	public void setEntityDead(Entity var1) {
-@@ -960,7 +1166,7 @@
+@@ -960,7 +1167,7 @@
  		return (int)(var3 * 11.0F);
  	}
  
@@ -24688,7 +24712,7 @@
  		float var2 = this.getCelestialAngle(var1);
  		float var3 = MathHelper.cos(var2 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
  		if(var3 < 0.0F) {
-@@ -971,9 +1177,20 @@
+@@ -971,9 +1178,20 @@
  			var3 = 1.0F;
  		}
  
@@ -24712,7 +24736,7 @@
  		var4 *= var3;
  		var5 *= var3;
  		var6 *= var3;
-@@ -1017,7 +1234,7 @@
+@@ -1017,7 +1235,7 @@
  		return Vec3D.createVector((double)var4, (double)var5, (double)var6);
  	}
  
@@ -24721,7 +24745,7 @@
  		float var2 = this.getCelestialAngle(var1);
  		float var3 = MathHelper.cos(var2 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
  		if(var3 < 0.0F) {
-@@ -1028,18 +1245,29 @@
+@@ -1028,18 +1246,29 @@
  			var3 = 1.0F;
  		}
  
@@ -24755,7 +24779,7 @@
  		var1 &= 15;
  
  		for(var2 &= 15; var4 > 0; --var4) {
-@@ -1087,6 +1315,8 @@
+@@ -1087,6 +1316,8 @@
  	}
  
  	public void updateEntities() {
@@ -24764,7 +24788,7 @@
  		this.loadedEntityList.removeAll(this.unloadedEntityList);
  
  		int var1;
-@@ -1107,7 +1337,8 @@
+@@ -1107,7 +1338,8 @@
  		}
  
  		this.unloadedEntityList.clear();
@@ -24774,7 +24798,7 @@
  		for(var1 = 0; var1 < this.loadedEntityList.size(); ++var1) {
  			var2 = (Entity)this.loadedEntityList.get(var1);
  			if(var2.ridingEntity != null) {
-@@ -1124,6 +1355,7 @@
+@@ -1124,6 +1356,7 @@
  			}
  
  			if(var2.isDead) {
@@ -24782,7 +24806,7 @@
  				var3 = var2.chunkCoordX;
  				var4 = var2.chunkCoordZ;
  				if(var2.addedToChunk && this.chunkExists(var3, var4)) {
-@@ -1132,21 +1364,25 @@
+@@ -1132,21 +1365,25 @@
  
  				this.loadedEntityList.remove(var1--);
  				this.releaseEntitySkin(var2);
@@ -24811,7 +24835,7 @@
  			var1.lastTickPosX = var1.posX;
  			var1.lastTickPosY = var1.posY;
  			var1.lastTickPosZ = var1.posZ;
-@@ -1158,6 +1394,27 @@
+@@ -1158,6 +1395,27 @@
  				var1.onUpdate();
  			}
  
@@ -24839,7 +24863,7 @@
  			int var5 = MathHelper.floor_double(var1.posX / 16.0D);
  			int var6 = MathHelper.floor_double(var1.posY / 16.0D);
  			int var7 = MathHelper.floor_double(var1.posZ / 16.0D);
-@@ -1167,14 +1424,15 @@
+@@ -1167,14 +1425,15 @@
  				}
  
  				if(this.chunkExists(var5, var7)) {
@@ -24856,7 +24880,7 @@
  			if(var1.riddenByEntity != null) {
  				if(!var1.riddenByEntity.isDead && var1.riddenByEntity.ridingEntity == var1) {
  					this.updateEntity(var1.riddenByEntity);
-@@ -1184,26 +1442,6 @@
+@@ -1184,26 +1443,6 @@
  				}
  			}
  
@@ -24883,7 +24907,7 @@
  		}
  	}
  
-@@ -1455,7 +1693,7 @@
+@@ -1455,7 +1694,7 @@
  
  	public boolean isBlockNormalCube(int var1, int var2, int var3) {
  		Block var4 = Block.blocksList[this.getBlockId(var1, var2, var3)];
@@ -24892,7 +24916,7 @@
  	}
  
  	public void saveWorldIndirectly(IProgressUpdate var1) {
-@@ -1463,17 +1701,6 @@
+@@ -1463,17 +1702,6 @@
  	}
  
  	public boolean updatingLighting() {
@@ -24910,7 +24934,7 @@
  		return false;
  	}
  
-@@ -1482,31 +1709,37 @@
+@@ -1482,31 +1710,37 @@
  	}
  
  	public void scheduleLightingUpdate_do(EnumSkyBlock var1, int var2, int var3, int var4, int var5, int var6, int var7, boolean var8) {
@@ -24973,7 +24997,7 @@
  		}
  	}
  
-@@ -1519,6 +1752,17 @@
+@@ -1519,6 +1753,17 @@
  	}
  
  	public void tick() {
@@ -24991,7 +25015,7 @@
  		this.chunkProvider.unload100OldestChunks();
  		int var1 = this.calculateSkylightSubtracted(1.0F);
  		if(var1 != this.skylightSubtracted) {
-@@ -1529,46 +1773,74 @@
+@@ -1529,46 +1774,74 @@
  			}
  		}
  
@@ -25074,7 +25098,7 @@
  			int var8;
  			int var9;
  			int var10;
-@@ -1577,7 +1849,7 @@
+@@ -1577,7 +1850,7 @@
  				var6 = this.updateLCG >> 2;
  				var7 = var6 & 15;
  				var8 = var6 >> 8 & 15;
@@ -25083,7 +25107,7 @@
  				var10 = var14.getBlockID(var7, var9, var8);
  				var7 += var3;
  				var8 += var4;
-@@ -1590,13 +1862,15 @@
+@@ -1590,13 +1863,15 @@
  				}
  			}
  
@@ -25101,7 +25125,7 @@
  					var10 = var14.getBlockID(var7, var9 - 1, var8);
  					if(var14.getBlockID(var7, var9, var8) == 0 && Block.snow.canPlaceBlockAt(this, var7 + var3, var9, var8 + var4)) {
  						this.setBlockWithNotify(var7 + var3, var9, var8 + var4, Block.snow.blockID);
-@@ -1608,19 +1882,21 @@
+@@ -1608,19 +1883,21 @@
  				}
  			}
  
@@ -25127,7 +25151,7 @@
  	}
  
  	public boolean tickUpdates(boolean var1) {
-@@ -1765,6 +2041,7 @@
+@@ -1765,6 +2042,7 @@
  	}
  
  	public PathEntity getPathToEntity(Entity var1, Entity var2, float var3) {
@@ -25135,7 +25159,7 @@
  		int var4 = MathHelper.floor_double(var1.posX);
  		int var5 = MathHelper.floor_double(var1.posY);
  		int var6 = MathHelper.floor_double(var1.posZ);
-@@ -1776,10 +2053,12 @@
+@@ -1776,10 +2054,12 @@
  		int var12 = var5 + var7;
  		int var13 = var6 + var7;
  		ChunkCache var14 = new ChunkCache(this, var8, var9, var10, var11, var12, var13);
@@ -25148,7 +25172,7 @@
  		int var6 = MathHelper.floor_double(var1.posX);
  		int var7 = MathHelper.floor_double(var1.posY);
  		int var8 = MathHelper.floor_double(var1.posZ);
-@@ -1791,7 +2070,9 @@
+@@ -1791,7 +2071,9 @@
  		int var14 = var7 + var9;
  		int var15 = var8 + var9;
  		ChunkCache var16 = new ChunkCache(this, var10, var11, var12, var13, var14, var15);
@@ -25159,7 +25183,7 @@
  	}
  
  	public boolean isBlockProvidingPowerTo(int var1, int var2, int var3, int var4) {
-@@ -1836,8 +2117,24 @@
+@@ -1836,8 +2118,24 @@
  		return var11;
  	}
  
@@ -25185,7 +25209,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1849,8 +2146,8 @@
+@@ -1849,8 +2147,8 @@
  			var13 = 0;
  		}
  
@@ -25196,7 +25220,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1882,7 +2179,7 @@
+@@ -1882,7 +2180,7 @@
  		return var7;
  	}
  
@@ -25205,7 +25229,7 @@
  		int var8 = var1 >> 4;
  		int var9 = var3 >> 4;
  		int var10 = var1 + var4 - 1 >> 4;
-@@ -1894,8 +2191,8 @@
+@@ -1894,8 +2192,8 @@
  			var13 = 0;
  		}
  
@@ -25216,7 +25240,7 @@
  		}
  
  		for(int var15 = var8; var15 <= var10; ++var15) {
-@@ -1920,7 +2217,9 @@
+@@ -1920,7 +2218,9 @@
  					var20 = 16;
  				}
  
@@ -25227,7 +25251,7 @@
  				this.markBlocksDirty(var15 * 16 + var16, var13, var18 * 16 + var19, var15 * 16 + var17, var14, var18 * 16 + var20);
  			}
  		}
-@@ -1970,6 +2269,168 @@
+@@ -1970,6 +2270,168 @@
  
  	}
  
@@ -25396,7 +25420,7 @@
  	static {
  		float var0 = 0.05F;
  
-@@ -1978,5 +2439,274 @@
+@@ -1978,5 +2440,274 @@
  			lightBrightnessTable[var1] = (1.0F - var2) / (var2 * 3.0F + 1.0F) * (1.0F - var0) + var0;
  		}
  
