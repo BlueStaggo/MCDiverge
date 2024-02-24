@@ -2325,14 +2325,14 @@
  		}
 +	}
 +
-+	public void updateCraftingInventory(Container var1, List var2) {
++	public void updateCrafterInventory(Container var1, List var2) {
 +	}
 +
-+	public void updateCraftingInventorySlot(Container var1, int var2, ItemStack var3) {
++	public void updateCrafterInventorySlot(Container var1, int var2, ItemStack var3) {
 +	}
 +
-+	public void updateCraftingInventoryInfo(Container var1, int var2, int var3) {
-+		this.sendQueue.addToSendQueue(new Packet105UpdateProgressbar(var1.windowId, var2, var3));
++	public void updateCrafterInventoryInfo(Container var1, int var2, int var3) {
++		this.sendQueue.addToSendQueue(new Packet105UpdateWindowProgress(var1.windowId, var2, var3));
  	}
  }
 --- net/minecraft/client/render/ItemRenderer.java
@@ -3269,6 +3269,50 @@
  		}
  
  		this.noClip = true;
+--- net/minecraft/network/packet/Packet105UpdateProgressbar.java
++++ /dev/null
+@@ -1,41 +1,0 @@
+-package net.minecraft.network.packet;
+-
+-import java.io.DataInputStream;
+-import java.io.DataOutputStream;
+-import java.io.IOException;
+-import net.minecraft.network.NetHandler;
+-
+-public class Packet105UpdateProgressbar extends Packet {
+-	public int windowId;
+-	public int progressBar;
+-	public int progressBarValue;
+-
+-	public Packet105UpdateProgressbar() {
+-	}
+-
+-	public void processPacket(NetHandler var1) {
+-		var1.handleProgressbarUpdate(this);
+-	}
+-
+-	public void readPacketData(DataInputStream var1) throws IOException {
+-		this.windowId = var1.readByte();
+-		this.progressBar = var1.readShort();
+-		this.progressBarValue = var1.readShort();
+-	}
+-
+-	public void writePacketData(DataOutputStream var1) throws IOException {
+-		var1.writeByte(this.windowId);
+-		var1.writeShort(this.progressBar);
+-		var1.writeShort(this.progressBarValue);
+-	}
+-
+-	public int getPacketSize() {
+-		return 5;
+-	}
+-
+-	public Packet105UpdateProgressbar(int var1, int var2, int var3) {
+-		this.windowId = var1;
+-		this.progressBar = var2;
+-		this.progressBarValue = var3;
+-	}
+-}
 --- net/minecraft/game/entity/EntityRegistry.java
 +++ net/minecraft/game/entity/EntityRegistry.java
 @@ -1,133 +1,122 @@
@@ -4743,6 +4787,24 @@
 +}
 --- net/minecraft/game/item/Container.java
 +++ net/minecraft/game/item/Container.java
+@@ -28,7 +28,7 @@
+ 			throw new IllegalArgumentException("Listener already listening");
+ 		} else {
+ 			this.crafters.add(var1);
+-			var1.updateCraftingInventory(this, this.func_28127_b());
++			var1.updateCrafterInventory(this, this.func_28127_b());
+ 			this.updateCraftingMatrix();
+ 		}
+ 	}
+@@ -52,7 +52,7 @@
+ 				this.inventoryItemStacks.set(var1, var3);
+ 
+ 				for(int var4 = 0; var4 < this.crafters.size(); ++var4) {
+-					((ICrafting)this.crafters.get(var4)).updateCraftingInventorySlot(this, var1, var3);
++					((ICrafting)this.crafters.get(var4)).updateCrafterInventorySlot(this, var1, var3);
+ 				}
+ 			}
+ 		}
 @@ -217,7 +217,7 @@
  	}
  
@@ -14149,7 +14211,7 @@
  		addIdClassMapping(103, true, false, Packet103SetSlot.class);
  		addIdClassMapping(104, true, false, Packet104WindowItems.class);
 -		addIdClassMapping(105, true, false, Packet105UpdateProgressbar.class);
-+		addIdClassMapping(105, true, true, Packet105UpdateProgressbar.class);
++		addIdClassMapping(105, true, true, Packet105UpdateWindowProgress.class);
  		addIdClassMapping(106, true, true, Packet106Transaction.class);
  		addIdClassMapping(130, true, true, Packet130UpdateSign.class);
  		addIdClassMapping(131, true, false, Packet131MapData.class);
@@ -16903,7 +16965,7 @@
  }
 --- net/minecraft/game/item/recipe/CraftingManager.java
 +++ net/minecraft/game/item/recipe/CraftingManager.java
-@@ -1,178 +1,324 @@
+@@ -1,178 +1,325 @@
  package net.minecraft.game.item.recipe;
  
 -import java.util.ArrayList;
@@ -17205,11 +17267,11 @@
 +		r(o(goldShovel), i(goldIngot, 1), i(stick, 2));
 +		r(o(goldHoe), i(goldIngot, 2), i(stick, 2));
 +
-+		r(o(diamondSword), i(goldIngot, 2), i(stick, 1));
-+		r(o(diamondPickaxe), i(goldIngot, 3), i(stick, 2));
-+		r(o(diamondAxe), i(goldIngot, 3), i(stick, 2));
-+		r(o(diamondShovel), i(goldIngot, 1), i(stick, 2));
-+		r(o(diamondHoe), i(goldIngot, 2), i(stick, 2));
++		r(o(diamondSword), i(diamond, 2), i(stick, 1));
++		r(o(diamondPickaxe), i(diamond, 3), i(stick, 2));
++		r(o(diamondAxe), i(diamond, 3), i(stick, 2));
++		r(o(diamondShovel), i(diamond, 1), i(stick, 2));
++		r(o(diamondHoe), i(diamond, 2), i(stick, 2));
 +
 +		r(o(bow), i(stick, 3), i(string, 3));
 +		r(o(arrow), i(feather), i(flint), i(stick));
@@ -17301,6 +17363,7 @@
 +		r(o(stoneSlab, 2, 0), i(stone));
 +		r(o(stoneSlab, 2, 1), i(sandstone));
 +		r(o(stoneSlab, 2, 2), i(cobblestone));
++		r(o(cobblestoneStairs, 4), i(cobblestone, 3));
 +
 +		// COMPACTIONS
 +
@@ -19297,15 +19360,18 @@
 +}
 --- net/minecraft/game/item/BedItem.java
 +++ net/minecraft/game/item/BedItem.java
-@@ -36,7 +36,7 @@
+@@ -36,9 +36,9 @@
  				var10 = 1;
  			}
  
 -			if(var3.isAirBlock(var4, var5, var6) && var3.isAirBlock(var4 + var10, var5, var6 + var11) && var3.isBlockNormalCube(var4, var5 - 1, var6) && var3.isBlockNormalCube(var4 + var10, var5 - 1, var6 + var11)) {
 +			if(var3.isAirBlock(var4, var5, var6) && var3.isAirBlock(var4 + var10, var5, var6 + var11) && var3.isNormalCube(var4, var5 - 1, var6) && var3.isNormalCube(var4 + var10, var5 - 1, var6 + var11)) {
  				var3.setBlockAndMetadataWithNotify(var4, var5, var6, var8.blockID, var9);
- 				var3.setBlockAndMetadataWithNotify(var4 + var10, var5, var6 + var11, var8.blockID, var9 + 8);
+-				var3.setBlockAndMetadataWithNotify(var4 + var10, var5, var6 + var11, var8.blockID, var9 + 8);
++				var3.setBlockAndMetadataWithNotify(var4 + var10, var5, var6 + var11, var8.blockID, Block.bed.properties.set(var9, BedBlock.IS_HEAD, true));
  				--var1.count;
+ 				return true;
+ 			} else {
 --- net/minecraft/game/item/WoolItem.java
 +++ net/minecraft/game/item/WoolItem.java
 @@ -11,7 +11,7 @@
@@ -19556,6 +19622,15 @@
 -}
 --- net/minecraft/network/NetHandler.java
 +++ net/minecraft/network/NetHandler.java
+@@ -6,7 +6,7 @@
+ import net.minecraft.network.packet.Packet102WindowClick;
+ import net.minecraft.network.packet.Packet103SetSlot;
+ import net.minecraft.network.packet.Packet104WindowItems;
+-import net.minecraft.network.packet.Packet105UpdateProgressbar;
++import net.minecraft.network.packet.Packet105UpdateWindowProgress;
+ import net.minecraft.network.packet.Packet106Transaction;
+ import net.minecraft.network.packet.Packet10Flying;
+ import net.minecraft.network.packet.Packet130UpdateSign;
 @@ -53,6 +53,8 @@
  import net.minecraft.network.packet.Packet9Respawn;
  
@@ -19565,6 +19640,15 @@
  	public abstract boolean isServerHandler();
  
  	public void handleMapChunk(Packet51MapChunk var1) {
+@@ -212,7 +214,7 @@
+ 		this.registerPacket(var1);
+ 	}
+ 
+-	public void handleProgressbarUpdate(Packet105UpdateProgressbar var1) {
++	public void handleProgressbarUpdate(Packet105UpdateWindowProgress var1) {
+ 		this.registerPacket(var1);
+ 	}
+ 
 --- net/minecraft/game/entity/vehicle/BoatEntity.java
 +++ net/minecraft/game/entity/vehicle/BoatEntity.java
 @@ -80,15 +80,7 @@
@@ -21349,7 +21433,15 @@
  				this.playerEntity.playerNetServerHandler.sendPacket(new Packet106Transaction(var1.windowId, var1.action, false));
  				this.playerEntity.craftingInventory.setCanCraft(this.playerEntity, false);
  				ArrayList var3 = new ArrayList();
-@@ -554,8 +542,8 @@
+@@ -547,15 +535,15 @@
+ 					var3.add(((Slot)this.playerEntity.craftingInventory.inventorySlots.get(var4)).getStack());
+ 				}
+ 
+-				this.playerEntity.updateCraftingInventory(this.playerEntity.craftingInventory, var3);
++				this.playerEntity.updateCrafterInventory(this.playerEntity.craftingInventory, var3);
+ 			}
+ 		}
+ 
  	}
  
  	public void handleTransaction(Packet106Transaction var1) {
@@ -21377,7 +21469,7 @@
 +
 +	}
 +
-+	public void handleProgressbarUpdate(Packet105UpdateProgressbar var1) {
++	public void handleProgressbarUpdate(Packet105UpdateWindowProgress var1) {
 +		if (var1.progressBar < 100) return;
 +		if(this.playerEntity.craftingInventory != null && this.playerEntity.craftingInventory.windowId == var1.windowId) {
 +			this.playerEntity.craftingInventory.setTime(var1.progressBar, var1.progressBarValue);
@@ -23467,6 +23559,39 @@
 -		return new J_JsonObject(var0);
 -	}
 -}
+--- net/minecraft/game/world/block/tileentity/FurnaceContainer.java
++++ net/minecraft/game/world/block/tileentity/FurnaceContainer.java
+@@ -39,15 +39,15 @@
+ 		for(int var1 = 0; var1 < this.crafters.size(); ++var1) {
+ 			ICrafting var2 = (ICrafting)this.crafters.get(var1);
+ 			if(this.cookTime != this.furnace.furnaceCookTime) {
+-				var2.updateCraftingInventoryInfo(this, 0, this.furnace.furnaceCookTime);
++				var2.updateCrafterInventoryInfo(this, 0, this.furnace.furnaceCookTime);
+ 			}
+ 
+ 			if(this.burnTime != this.furnace.furnaceBurnTime) {
+-				var2.updateCraftingInventoryInfo(this, 1, this.furnace.furnaceBurnTime);
++				var2.updateCrafterInventoryInfo(this, 1, this.furnace.furnaceBurnTime);
+ 			}
+ 
+ 			if(this.itemBurnTime != this.furnace.currentItemBurnTime) {
+-				var2.updateCraftingInventoryInfo(this, 2, this.furnace.currentItemBurnTime);
++				var2.updateCrafterInventoryInfo(this, 2, this.furnace.currentItemBurnTime);
+ 			}
+ 		}
+ 
+@@ -109,8 +109,8 @@
+ 
+ 	public void onCraftGuiOpened(ICrafting var1) {
+ 		super.onCraftGuiOpened(var1);
+-		var1.updateCraftingInventoryInfo(this, 0, this.furnace.furnaceCookTime);
+-		var1.updateCraftingInventoryInfo(this, 1, this.furnace.furnaceBurnTime);
+-		var1.updateCraftingInventoryInfo(this, 2, this.furnace.currentItemBurnTime);
++		var1.updateCrafterInventoryInfo(this, 0, this.furnace.furnaceCookTime);
++		var1.updateCrafterInventoryInfo(this, 1, this.furnace.furnaceBurnTime);
++		var1.updateCrafterInventoryInfo(this, 2, this.furnace.currentItemBurnTime);
+ 	}
+ }
 --- /dev/null
 +++ net/minecraft/game/world/block/TerrainLayout.java
 @@ -1,0 +1,92 @@
@@ -24583,6 +24708,50 @@
 +		return tag.setKey(this.getKey());
  	}
  }
+--- /dev/null
++++ net/minecraft/network/packet/Packet105UpdateWindowProgress.java
+@@ -1,0 +1,41 @@
++package net.minecraft.network.packet;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import net.minecraft.network.NetHandler;
++
++public class Packet105UpdateWindowProgress extends Packet {
++	public int windowId;
++	public int progressBar;
++	public int progressBarValue;
++
++	public Packet105UpdateWindowProgress() {
++	}
++
++	public void processPacket(NetHandler var1) {
++		var1.handleProgressbarUpdate(this);
++	}
++
++	public void readPacketData(DataInputStream var1) throws IOException {
++		this.windowId = var1.readByte();
++		this.progressBar = var1.readShort();
++		this.progressBarValue = var1.readShort();
++	}
++
++	public void writePacketData(DataOutputStream var1) throws IOException {
++		var1.writeByte(this.windowId);
++		var1.writeShort(this.progressBar);
++		var1.writeShort(this.progressBarValue);
++	}
++
++	public int getPacketSize() {
++		return 5;
++	}
++
++	public Packet105UpdateWindowProgress(int var1, int var2, int var3) {
++		this.windowId = var1;
++		this.progressBar = var2;
++		this.progressBarValue = var3;
++	}
++}
 --- /dev/null
 +++ argo/jdom/LeafFunctor.java
 @@ -1,0 +1,13 @@
@@ -28844,10 +29013,11 @@
  	public void flipFace() {
 --- net/minecraft/game/world/block/WorkbenchContainer.java
 +++ net/minecraft/game/world/block/WorkbenchContainer.java
-@@ -8,39 +8,56 @@
+@@ -7,40 +7,56 @@
+ import net.minecraft.game.item.Container;
  import net.minecraft.game.item.Inventory;
  import net.minecraft.game.item.ItemStack;
- import net.minecraft.game.item.recipe.CraftingManager;
+-import net.minecraft.game.item.recipe.CraftingManager;
 +import net.minecraft.game.item.recipe.ICrafting;
  import net.minecraft.game.item.slot.CraftingSlot;
  import net.minecraft.game.item.slot.Slot;
@@ -28911,7 +29081,7 @@
  		for(var6 = 0; var6 < 9; ++var6) {
  			this.addSlot(new Slot(var1, var6, 8 + var6 * 18, 142));
  		}
-@@ -48,8 +65,18 @@
+@@ -48,8 +64,18 @@
  		this.onCraftMatrixChanged(this.craftMatrix);
  	}
  
@@ -28927,11 +29097,11 @@
 +
 +	public void onCraftGuiOpened(ICrafting var1) {
 +		super.onCraftGuiOpened(var1);
-+		var1.updateCraftingInventoryInfo(this, 100, this.craftResult.page);
++		var1.updateCrafterInventoryInfo(this, 100, this.craftResult.page);
  	}
  
  	public void onCraftGuiClosed(PlayerEntity var1) {
-@@ -57,7 +84,7 @@
+@@ -57,7 +83,7 @@
  		if(!this.worldObj.remoteWorld) {
  			for(int var2 = 0; var2 < 9; ++var2) {
  				ItemStack var3 = this.craftMatrix.getStackInSlot(var2);
@@ -28940,7 +29110,7 @@
  					var1.dropPlayerItem(var3);
  				}
  			}
-@@ -66,7 +93,16 @@
+@@ -66,7 +92,16 @@
  	}
  
  	public boolean isUsableByPlayer(PlayerEntity var1) {
@@ -28958,7 +29128,7 @@
  	}
  
  	public ItemStack getStackInSlot(int var1) {
-@@ -75,14 +111,14 @@
+@@ -75,14 +110,14 @@
  		if(var3 != null && var3.hasStack()) {
  			ItemStack var4 = var3.getStack();
  			var2 = var4.copy();
@@ -28980,7 +29150,7 @@
  			}
  
  			if(var4.count == 0) {
-@@ -99,5 +135,50 @@
+@@ -99,5 +134,50 @@
  		}
  
  		return var2;
@@ -29020,7 +29190,7 @@
 +		if (this.craftResult.page != page) {
 +			this.craftResult.page = page;
 +			for (ICrafting crafter : (List<ICrafting>)this.crafters) {
-+				crafter.updateCraftingInventoryInfo(this, 100, this.craftResult.page);
++				crafter.updateCrafterInventoryInfo(this, 100, this.craftResult.page);
 +			}
 +		}
 +	}
@@ -29180,6 +29350,23 @@
 +        }
 +    }
 +}
+--- net/minecraft/game/item/recipe/ICrafting.java
++++ net/minecraft/game/item/recipe/ICrafting.java
+@@ -5,9 +5,9 @@
+ import net.minecraft.game.item.ItemStack;
+ 
+ public interface ICrafting {
+-	void updateCraftingInventorySlot(Container var1, int var2, ItemStack var3);
+-
+-	void updateCraftingInventoryInfo(Container var1, int var2, int var3);
+-
+-	void updateCraftingInventory(Container var1, List var2);
++	void updateCrafterInventorySlot(Container var1, int var2, ItemStack var3);
++
++	void updateCrafterInventoryInfo(Container var1, int var2, int var3);
++
++	void updateCrafterInventory(Container var1, List var2);
+ }
 --- /dev/null
 +++ net/minecraft/client/model/SlimPlayerModel.java
 @@ -1,0 +1,23 @@
@@ -32427,7 +32614,7 @@
  
  	protected int damageDropped(int var1) {
 -		return this.blockID == Block.lapisOre.blockID ? 4 : 0;
-+	return this.blockID == Block.lapisOre.blockID ? 4 : 0;
++	return this.blockID == Block.lapisOre.blockID ? 11 : 0;
  	}
  }
 --- net/minecraft/game/world/block/JukeboxBlock.java
@@ -32544,15 +32731,27 @@
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.misc.ItemEntity;
  import net.minecraft.game.entity.player.PlayerEntity;
-@@ -26,6 +27,7 @@
- import net.minecraft.game.world.block.tileentity.FurnaceContainer;
- import net.minecraft.game.world.block.tileentity.FurnaceTileEntity;
+@@ -23,9 +24,8 @@
+ import net.minecraft.game.world.block.tileentity.ChestContainer;
+ import net.minecraft.game.world.block.tileentity.DispenserContainer;
+ import net.minecraft.game.world.block.tileentity.DispenserTileEntity;
+-import net.minecraft.game.world.block.tileentity.FurnaceContainer;
+-import net.minecraft.game.world.block.tileentity.FurnaceTileEntity;
  import net.minecraft.game.world.block.tileentity.TileEntity;
 +import net.minecraft.game.world.chunk.Chunk;
  import net.minecraft.game.world.chunk.ChunkCoordIntPair;
  import net.minecraft.network.NetServerHandler;
  import net.minecraft.network.packet.Packet;
-@@ -54,8 +56,8 @@
+@@ -33,7 +33,7 @@
+ import net.minecraft.network.packet.Packet101CloseWindow;
+ import net.minecraft.network.packet.Packet103SetSlot;
+ import net.minecraft.network.packet.Packet104WindowItems;
+-import net.minecraft.network.packet.Packet105UpdateProgressbar;
++import net.minecraft.network.packet.Packet105UpdateWindowProgress;
+ import net.minecraft.network.packet.Packet17Sleep;
+ import net.minecraft.network.packet.Packet18Animation;
+ import net.minecraft.network.packet.Packet200Statistic;
+@@ -54,8 +54,8 @@
  	public ItemInWorldManager itemInWorldManager;
  	public double field_9155_d;
  	public double field_9154_e;
@@ -32563,7 +32762,7 @@
  	private int lastHealth = -99999999;
  	private int ticksOfInvuln = 60;
  	private ItemStack[] playerInventory = new ItemStack[]{null, null, null, null, null};
-@@ -171,22 +173,25 @@
+@@ -171,22 +171,25 @@
  		}
  
  		if(var1 && !this.loadedChunks.isEmpty()) {
@@ -32605,7 +32804,7 @@
  				}
  			}
  		}
-@@ -317,10 +322,18 @@
+@@ -317,10 +320,18 @@
  		this.currentWindowId = this.currentWindowId % 100 + 1;
  	}
  
@@ -32625,7 +32824,7 @@
  		this.craftingInventory.windowId = this.currentWindowId;
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
-@@ -333,10 +346,10 @@
+@@ -333,10 +344,10 @@
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
  
@@ -32639,6 +32838,36 @@
  		this.craftingInventory.windowId = this.currentWindowId;
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
+@@ -349,7 +360,7 @@
+ 		this.craftingInventory.onCraftGuiOpened(this);
+ 	}
+ 
+-	public void updateCraftingInventorySlot(Container var1, int var2, ItemStack var3) {
++	public void updateCrafterInventorySlot(Container var1, int var2, ItemStack var3) {
+ 		if(!(var1.getSlot(var2) instanceof CraftingSlot)) {
+ 			if(!this.isChangingQuantityOnly) {
+ 				this.playerNetServerHandler.sendPacket(new Packet103SetSlot(var1.windowId, var2, var3));
+@@ -358,16 +369,16 @@
+ 	}
+ 
+ 	public void func_28017_a(Container var1) {
+-		this.updateCraftingInventory(var1, var1.func_28127_b());
++		this.updateCrafterInventory(var1, var1.func_28127_b());
+ 	}
+ 
+-	public void updateCraftingInventory(Container var1, List var2) {
++	public void updateCrafterInventory(Container var1, List var2) {
+ 		this.playerNetServerHandler.sendPacket(new Packet104WindowItems(var1.windowId, var2));
+ 		this.playerNetServerHandler.sendPacket(new Packet103SetSlot(-1, -1, this.inventory.getItemStack()));
+ 	}
+ 
+-	public void updateCraftingInventoryInfo(Container var1, int var2, int var3) {
+-		this.playerNetServerHandler.sendPacket(new Packet105UpdateProgressbar(var1.windowId, var2, var3));
++	public void updateCrafterInventoryInfo(Container var1, int var2, int var3) {
++		this.playerNetServerHandler.sendPacket(new Packet105UpdateWindowProgress(var1.windowId, var2, var3));
+ 	}
+ 
+ 	public void onItemStackChanged(ItemStack var1) {
 --- /dev/null
 +++ net/minecraft/game/world/biome/RockyValleyBiome.java
 @@ -1,0 +1,70 @@
@@ -34662,6 +34891,15 @@
  import net.minecraft.game.world.map.MapStorage;
  import net.minecraft.game.world.save.SaveHandler;
  import net.minecraft.network.packet.Packet;
+@@ -57,7 +55,7 @@
+ import net.minecraft.network.packet.Packet101CloseWindow;
+ import net.minecraft.network.packet.Packet103SetSlot;
+ import net.minecraft.network.packet.Packet104WindowItems;
+-import net.minecraft.network.packet.Packet105UpdateProgressbar;
++import net.minecraft.network.packet.Packet105UpdateWindowProgress;
+ import net.minecraft.network.packet.Packet106Transaction;
+ import net.minecraft.network.packet.Packet10Flying;
+ import net.minecraft.network.packet.Packet130UpdateSign;
 @@ -125,7 +123,7 @@
  	public void handleLogin(Packet1Login var1) {
  		this.mc.playerController = new ClientPlayerController(this.mc, this);
@@ -34841,6 +35079,15 @@
  
  				var3.onChanged();
  			}
+@@ -651,7 +694,7 @@
+ 
+ 	}
+ 
+-	public void handleProgressbarUpdate(Packet105UpdateProgressbar var1) {
++	public void handleProgressbarUpdate(Packet105UpdateWindowProgress var1) {
+ 		this.registerPacket(var1);
+ 		if(this.mc.thePlayer.craftingInventory != null && this.mc.thePlayer.craftingInventory.windowId == var1.windowId) {
+ 			this.mc.thePlayer.craftingInventory.setTime(var1.progressBar, var1.progressBarValue);
 --- net/minecraft/client/render/RenderList.java
 +++ net/minecraft/client/render/RenderList.java
 @@ -4,15 +4,15 @@
