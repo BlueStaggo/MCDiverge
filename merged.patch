@@ -5532,7 +5532,7 @@
  						var1.count = 0;
 --- net/minecraft/game/world/save/SaveHandlerImpl.java
 +++ net/minecraft/game/world/save/SaveHandlerImpl.java
-@@ -12,11 +12,14 @@
+@@ -12,14 +12,17 @@
  import java.util.logging.Logger;
  import net.minecraft.game.MinecraftException;
  import net.minecraft.game.entity.player.PlayerEntity;
@@ -5543,10 +5543,15 @@
  import net.minecraft.game.world.chunk.loader.ChunkLoaderImpl;
  import net.minecraft.game.world.dimension.Dimension;
  import net.minecraft.game.world.dimension.NetherDimension;
+-import net.minecraft.server.PlayerDataHandler;
 +import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.PlayerDataHandler;
++import net.minecraft.server.MPPlayerDataHandler;
  
- public class SaveHandlerImpl implements SaveHandler, PlayerDataHandler {
+-public class SaveHandlerImpl implements SaveHandler, PlayerDataHandler {
++public class SaveHandlerImpl implements SaveHandler, MPPlayerDataHandler {
+ 	private static final Logger logger = Logger.getLogger("Minecraft");
+ 	private final File worldDir;
+ 	private final File playerDir;
 @@ -196,6 +199,9 @@
  		CompoundTag var2 = this.getPlayerData(var1.username);
  		if(var2 != null) {
@@ -5557,6 +5562,15 @@
  		}
  
  	}
+@@ -213,7 +219,7 @@
+ 		return null;
+ 	}
+ 
+-	public PlayerDataHandler getPlayerFileData() {
++	public MPPlayerDataHandler getPlayerFileData() {
+ 		return this;
+ 	}
+ 
 --- net/minecraft/network/ThreadCloseConnection.java
 +++ net/minecraft/network/ThreadCloseConnection.java
 @@ -12,7 +12,7 @@
@@ -15368,6 +15382,26 @@
 +		return map;
  	}
  }
+--- net/minecraft/game/world/save/SaveHandler.java
++++ net/minecraft/game/world/save/SaveHandler.java
+@@ -5,7 +5,7 @@
+ import net.minecraft.game.world.WorldInfo;
+ import net.minecraft.game.world.chunk.loader.ChunkLoader;
+ import net.minecraft.game.world.dimension.Dimension;
+-import net.minecraft.server.PlayerDataHandler;
++import net.minecraft.server.MPPlayerDataHandler;
+ 
+ public interface SaveHandler {
+ 	WorldInfo loadWorldInfo();
+@@ -18,7 +18,7 @@
+ 
+ 	void saveWorldInfo(WorldInfo var1);
+ 
+-	PlayerDataHandler getPlayerFileData();
++	MPPlayerDataHandler getPlayerFileData();
+ 
+ 	void flushCache();
+ 
 --- /dev/null
 +++ net/minecraft/game/world/chunk/section/NibbleBlockArray.java
 @@ -1,0 +1,46 @@
@@ -29386,6 +29420,26 @@
 +				: var3.useItem(var1, var2, var4, var5, var6, var7, var8, var9, var10);
  	}
  }
+--- net/minecraft/game/world/save/SaveHandlerMP.java
++++ net/minecraft/game/world/save/SaveHandlerMP.java
+@@ -5,7 +5,7 @@
+ import net.minecraft.game.world.WorldInfo;
+ import net.minecraft.game.world.chunk.loader.ChunkLoader;
+ import net.minecraft.game.world.dimension.Dimension;
+-import net.minecraft.server.PlayerDataHandler;
++import net.minecraft.server.MPPlayerDataHandler;
+ 
+ public class SaveHandlerMP implements SaveHandler {
+ 	public WorldInfo loadWorldInfo() {
+@@ -25,7 +25,7 @@
+ 	public void saveWorldInfo(WorldInfo var1) {
+ 	}
+ 
+-	public PlayerDataHandler getPlayerFileData() {
++	public MPPlayerDataHandler getPlayerFileData() {
+ 		return null;
+ 	}
+ 
 --- net/minecraft/game/world/block/SandBlock.java
 +++ net/minecraft/game/world/block/SandBlock.java
 @@ -13,6 +13,10 @@
@@ -41632,6 +41686,18 @@
 +		return (int)(value * RESOLUTION);
 +	}
 +}
+--- net/minecraft/server/PlayerDataHandler.java
++++ /dev/null
+@@ -1,9 +1,0 @@
+-package net.minecraft.server;
+-
+-import net.minecraft.game.entity.player.PlayerEntity;
+-
+-public interface PlayerDataHandler {
+-	void writePlayerData(PlayerEntity var1);
+-
+-	void readPlayerData(PlayerEntity var1);
+-}
 --- net/minecraft/client/gui/container/ContainerScreen.java
 +++ net/minecraft/client/gui/container/ContainerScreen.java
 @@ -7,16 +7,23 @@
@@ -43006,6 +43072,18 @@
  				var15.delayBeforeCanPickup = 10;
  				var1.entityJoinedWorld(var15);
  			}
+--- /dev/null
++++ net/minecraft/server/MPPlayerDataHandler.java
+@@ -1,0 +1,9 @@
++package net.minecraft.server;
++
++import net.minecraft.game.entity.player.PlayerEntity;
++
++public interface MPPlayerDataHandler {
++	void writePlayerData(PlayerEntity var1);
++
++	void readPlayerData(PlayerEntity var1);
++}
 --- net/minecraft/client/controller/SurvivalPlayerController.java
 +++ net/minecraft/client/controller/SurvivalPlayerController.java
 @@ -1,6 +1,7 @@
@@ -47245,9 +47323,12 @@
  import net.minecraft.game.world.BlockPos;
  import net.minecraft.game.world.PortalGenerator;
  import net.minecraft.game.world.block.tileentity.TileEntity;
-@@ -42,6 +44,7 @@
+@@ -40,8 +42,9 @@
+ 	private File ipBanFile;
+ 	private File opFile;
  	private File whitelistPlayersFile;
- 	private PlayerDataHandler playerNBTManagerObj;
+-	private PlayerDataHandler playerNBTManagerObj;
++	private MPPlayerDataHandler playerNBTManagerObj;
  	private boolean whiteListEnforced;
 +	public final int viewDistance;
  
