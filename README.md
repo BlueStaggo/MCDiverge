@@ -10,6 +10,6 @@ For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION
 - Overhauled world generation
 - Infinite world height
 - Creative mode
-- New and reworked mechanics
+- New and reworked mechanics and progression
 - Plenty of building blocks
 - Performance optimizations, predominantly from Smooth Beta and Starlight
