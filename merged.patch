@@ -2824,7 +2824,8 @@
 -		if(var2.id < 256 && RenderBlocks.renderItemIn3d(Block.blocksList[var2.id].getRenderType())) {
 +		if(var2.isBlock && RenderBlocks.renderItemIn3d(Block.blocksList[var2.id].getRenderType())) {
  			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/terrain.png"));
- 			this.renderBlocksInstance.renderBlockOnInventory(Block.blocksList[var2.id], var2.getItemDamage(), var1.getEntityBrightness(1.0F));
+-			this.renderBlocksInstance.renderBlockOnInventory(Block.blocksList[var2.id], var2.getItemDamage(), var1.getEntityBrightness(1.0F));
++			this.renderBlocksInstance.renderBlockOnInventory(Block.blocksList[var2.id], var2.getItemDamage(), var1.getClientEntityBrightness(1.0F));
  		} else {
 -			if(var2.id < 256) {
 +			if(var2.isBlock) {
@@ -2994,6 +2995,15 @@
  						var6 = this.mc.theWorld.getBlockId(var11, var12, var13);
  					}
  				}
+@@ -334,7 +360,7 @@
+ 
+ 	private void renderInsideOfBlock(float var1, int var2) {
+ 		Tessellator var3 = Tessellator.instance;
+-		this.mc.thePlayer.getEntityBrightness(var1);
++		this.mc.thePlayer.getClientEntityBrightness(var1);
+ 		float var4 = 0.1F;
+ 		GL11.glColor4f(var4, var4, var4, 0.5F);
+ 		GL11.glPushMatrix();
 @@ -344,10 +370,10 @@
  		float var8 = 1.0F;
  		float var9 = -0.5F;
@@ -3009,6 +3019,15 @@
  		var3.startDrawingQuads();
  		var3.addVertexWithUV((double)var5, (double)var7, (double)var9, (double)var12, (double)var14);
  		var3.addVertexWithUV((double)var6, (double)var7, (double)var9, (double)var11, (double)var14);
+@@ -360,7 +386,7 @@
+ 
+ 	private void renderWarpedTextureOverlay(float var1) {
+ 		Tessellator var2 = Tessellator.instance;
+-		float var3 = this.mc.thePlayer.getEntityBrightness(var1);
++		float var3 = this.mc.thePlayer.getClientEntityBrightness(var1);
+ 		GL11.glColor4f(var3, var3, var3, 0.5F);
+ 		GL11.glEnable(GL11.GL_BLEND);
+ 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 @@ -393,13 +419,13 @@
  
  		for(int var4 = 0; var4 < 2; ++var4) {
@@ -6905,6 +6924,81 @@
 +		Layer create(long seed, Layer parent);
 +	}
 +}
+--- net/minecraft/client/gui/ChatScreen.java
++++ /dev/null
+@@ -1,72 +1,0 @@
+-package net.minecraft.client.gui;
+-
+-import net.minecraft.util.ChatAllowedCharacters;
+-import org.lwjgl.input.Keyboard;
+-
+-public class ChatScreen extends GuiScreen {
+-	protected String message = "";
+-	private int updateCounter = 0;
+-	private static final String field_20082_i = ChatAllowedCharacters.allowedCharacters;
+-
+-	public void initGui() {
+-		Keyboard.enableRepeatEvents(true);
+-	}
+-
+-	public void onGuiClosed() {
+-		Keyboard.enableRepeatEvents(false);
+-	}
+-
+-	public void updateScreen() {
+-		++this.updateCounter;
+-	}
+-
+-	protected void keyTyped(char var1, int var2) {
+-		if(var2 == 1) {
+-			this.mc.displayGuiScreen((GuiScreen)null);
+-		} else if(var2 == 28) {
+-			String var3 = this.message.trim();
+-			if(var3.length() > 0) {
+-				String var4 = this.message.trim();
+-				if(!this.mc.lineIsCommand(var4)) {
+-					this.mc.thePlayer.sendChatMessage(var4);
+-				}
+-			}
+-
+-			this.mc.displayGuiScreen((GuiScreen)null);
+-		} else {
+-			if(var2 == 14 && this.message.length() > 0) {
+-				this.message = this.message.substring(0, this.message.length() - 1);
+-			}
+-
+-			if(field_20082_i.indexOf(var1) >= 0 && this.message.length() < 100) {
+-				this.message = this.message + var1;
+-			}
+-
+-		}
+-	}
+-
+-	public void drawScreen(int var1, int var2, float var3) {
+-		this.drawRect(2, this.height - 14, this.width - 2, this.height - 2, Integer.MIN_VALUE);
+-		this.drawString(this.fontRenderer, "> " + this.message + (this.updateCounter / 6 % 2 == 0 ? "_" : ""), 4, this.height - 12, 14737632);
+-		super.drawScreen(var1, var2, var3);
+-	}
+-
+-	protected void mouseClicked(int var1, int var2, int var3) {
+-		if(var3 == 0) {
+-			if(this.mc.ingameGUI.field_933_a != null) {
+-				if(this.message.length() > 0 && !this.message.endsWith(" ")) {
+-					this.message = this.message + " ";
+-				}
+-
+-				this.message = this.message + this.mc.ingameGUI.field_933_a;
+-				byte var4 = 100;
+-				if(this.message.length() > var4) {
+-					this.message = this.message.substring(0, var4);
+-				}
+-			} else {
+-				super.mouseClicked(var1, var2, var3);
+-			}
+-		}
+-
+-	}
+-}
 --- net/minecraft/client/gui/AchievementOverlayGui.java
 +++ net/minecraft/client/gui/AchievementOverlayGui.java
 @@ -61,21 +61,6 @@
@@ -18937,6 +19031,20 @@
 +        }
 +    }
  }
+--- net/minecraft/client/render/entity/RenderMinecart.java
++++ net/minecraft/client/render/entity/RenderMinecart.java
+@@ -68,9 +68,9 @@
+ 			GL11.glTranslatef(0.0F, 5.0F / 16.0F, 0.0F);
+ 			GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
+ 			if(var1.minecartType == 1) {
+-				(new RenderBlocks()).renderBlockOnInventory(Block.chest, 0, var1.getEntityBrightness(var9));
++				(new RenderBlocks()).renderBlockOnInventory(Block.chest, 0, var1.getClientEntityBrightness(var9));
+ 			} else if(var1.minecartType == 2) {
+-				(new RenderBlocks()).renderBlockOnInventory(Block.furnace, 0, var1.getEntityBrightness(var9));
++				(new RenderBlocks()).renderBlockOnInventory(Block.furnace, 0, var1.getClientEntityBrightness(var9));
+ 			}
+ 
+ 			GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
 --- net/minecraft/client/ImageBufferDownload.java
 +++ net/minecraft/client/ImageBufferDownload.java
 @@ -11,45 +11,42 @@
@@ -19437,6 +19545,81 @@
 +		return this.floatValue;
  	}
  }
+--- /dev/null
++++ net/minecraft/client/gui/MessagingScreen.java
+@@ -1,0 +1,72 @@
++package net.minecraft.client.gui;
++
++import net.minecraft.util.ChatAllowedCharacters;
++import org.lwjgl.input.Keyboard;
++
++public class MessagingScreen extends GuiScreen {
++	protected String message = "";
++	private int updateCounter = 0;
++	private static final String field_20082_i = ChatAllowedCharacters.allowedCharacters;
++
++	public void initGui() {
++		Keyboard.enableRepeatEvents(true);
++	}
++
++	public void onGuiClosed() {
++		Keyboard.enableRepeatEvents(false);
++	}
++
++	public void updateScreen() {
++		++this.updateCounter;
++	}
++
++	protected void keyTyped(char var1, int var2) {
++		if(var2 == 1) {
++			this.mc.displayGuiScreen((GuiScreen)null);
++		} else if(var2 == 28) {
++			String var3 = this.message.trim();
++			if(var3.length() > 0) {
++				String var4 = this.message.trim();
++				if(!this.mc.lineIsCommand(var4)) {
++					this.mc.thePlayer.sendChatMessage(var4);
++				}
++			}
++
++			this.mc.displayGuiScreen((GuiScreen)null);
++		} else {
++			if(var2 == 14 && this.message.length() > 0) {
++				this.message = this.message.substring(0, this.message.length() - 1);
++			}
++
++			if(field_20082_i.indexOf(var1) >= 0 && this.message.length() < 100) {
++				this.message = this.message + var1;
++			}
++
++		}
++	}
++
++	public void drawScreen(int var1, int var2, float var3) {
++		this.drawRect(2, this.height - 14, this.width - 2, this.height - 2, Integer.MIN_VALUE);
++		this.drawString(this.fontRenderer, "> " + this.message + (this.updateCounter / 6 % 2 == 0 ? "_" : ""), 4, this.height - 12, 14737632);
++		super.drawScreen(var1, var2, var3);
++	}
++
++	protected void mouseClicked(int var1, int var2, int var3) {
++		if(var3 == 0) {
++			if(this.mc.ingameGUI.field_933_a != null) {
++				if(this.message.length() > 0 && !this.message.endsWith(" ")) {
++					this.message = this.message + " ";
++				}
++
++				this.message = this.message + this.mc.ingameGUI.field_933_a;
++				byte var4 = 100;
++				if(this.message.length() > var4) {
++					this.message = this.message.substring(0, var4);
++				}
++			} else {
++				super.mouseClicked(var1, var2, var3);
++			}
++		}
++
++	}
++}
 --- net/minecraft/client/render/tileentity/TileEntityRenderer.java
 +++ net/minecraft/client/render/tileentity/TileEntityRenderer.java
 @@ -1,6 +1,6 @@
@@ -22505,7 +22688,7 @@
  		this.particleGravity = var14.particleGravity;
  		this.particleRed = this.particleGreen = this.particleBlue = 0.6F;
  		this.particleScale /= 2.0F;
-@@ -35,10 +42,10 @@
+@@ -35,15 +42,15 @@
  	}
  
  	public void renderParticle(Tessellator var1, float var2, float var3, float var4, float var5, float var6, float var7) {
@@ -22520,6 +22703,12 @@
  		float var12 = 0.1F * this.particleScale;
  		float var13 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)var2 - interpPosX);
  		float var14 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)var2 - interpPosY);
+ 		float var15 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)var2 - interpPosZ);
+-		float var16 = this.getEntityBrightness(var2);
++		float var16 = this.getClientEntityBrightness(var2);
+ 		var1.setColorOpaque_F(var16 * this.particleRed, var16 * this.particleGreen, var16 * this.particleBlue);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 - var6 * var12), (double)(var14 - var4 * var12), (double)(var15 - var5 * var12 - var7 * var12), (double)var8, (double)var11);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 + var6 * var12), (double)(var14 + var4 * var12), (double)(var15 - var5 * var12 + var7 * var12), (double)var8, (double)var10);
 --- net/minecraft/network/stats/StatFileWriter.java
 +++ net/minecraft/network/stats/StatFileWriter.java
 @@ -1,10 +1,10 @@
@@ -30518,6 +30707,17 @@
 +        }
 +    }
 +}
+--- net/minecraft/client/effect/EntityFX.java
++++ net/minecraft/client/effect/EntityFX.java
+@@ -91,7 +91,7 @@
+ 		float var13 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)var2 - interpPosX);
+ 		float var14 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)var2 - interpPosY);
+ 		float var15 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)var2 - interpPosZ);
+-		float var16 = this.getEntityBrightness(var2);
++		float var16 = this.getClientEntityBrightness(var2);
+ 		var1.setColorOpaque_F(this.particleRed * var16, this.particleGreen * var16, this.particleBlue * var16);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 - var6 * var12), (double)(var14 - var4 * var12), (double)(var15 - var5 * var12 - var7 * var12), (double)var9, (double)var11);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 + var6 * var12), (double)(var14 + var4 * var12), (double)(var15 - var5 * var12 + var7 * var12), (double)var9, (double)var10);
 --- /dev/null
 +++ net/minecraft/game/item/loot/ChanceLoot.java
 @@ -1,0 +1,27 @@
@@ -31788,7 +31988,12 @@
 +}
 --- net/minecraft/client/gui/MultiplayerSleepingScreen.java
 +++ net/minecraft/client/gui/MultiplayerSleepingScreen.java
-@@ -11,7 +11,7 @@
+@@ -7,11 +7,11 @@
+ import net.minecraft.util.StringTranslate;
+ import org.lwjgl.input.Keyboard;
+ 
+-public class MultiplayerSleepingScreen extends ChatScreen {
++public class MultiplayerSleepingScreen extends MessagingScreen {
  	public void initGui() {
  		Keyboard.enableRepeatEvents(true);
  		StringTranslate var1 = StringTranslate.getInstance();
@@ -32163,7 +32368,14 @@
  
  			GL11.glScalef(var28, var28, var28);
  
-@@ -73,17 +71,17 @@
+@@ -67,23 +65,23 @@
+ 					GL11.glTranslatef(var16, var17, var18);
+ 				}
+ 
+-				this.renderBlocks.renderBlockOnInventory(Block.blocksList[var10.id], var10.getItemDamage(), var1.getEntityBrightness(var9));
++				this.renderBlocks.renderBlockOnInventory(Block.blocksList[var10.id], var10.getItemDamage(), var1.getClientEntityBrightness(var9));
+ 				GL11.glPopMatrix();
+ 			}
  		} else {
  			GL11.glScalef(0.5F, 0.5F, 0.5F);
  			int var14 = var10.getIconIndex();
@@ -32186,7 +32398,7 @@
  			float var20 = 1.0F;
  			float var21 = 0.5F;
  			float var22 = 0.25F;
-@@ -92,7 +90,7 @@
+@@ -92,11 +90,11 @@
  			float var25;
  			float var26;
  			if(this.field_27004_a) {
@@ -32195,6 +32407,11 @@
  				var24 = (float)(var23 >> 16 & 255) / 255.0F;
  				var25 = (float)(var23 >> 8 & 255) / 255.0F;
  				var26 = (float)(var23 & 255) / 255.0F;
+-				float var27 = var1.getEntityBrightness(var9);
++				float var27 = var1.getClientEntityBrightness(var9);
+ 				GL11.glColor4f(var24 * var27, var25 * var27, var26 * var27, 1.0F);
+ 			}
+ 
 @@ -110,6 +108,7 @@
  				}
  
@@ -32950,6 +33167,17 @@
 +        chunkOffset.set(0.0F, 0.0F, 0.0F);
 +    }
 +}
+--- net/minecraft/client/render/entity/RenderSheep.java
++++ net/minecraft/client/render/entity/RenderSheep.java
+@@ -14,7 +14,7 @@
+ 	protected boolean setWoolColorAndRender(SheepEntity var1, int var2, float var3) {
+ 		if(var2 == 0 && !var1.getSheared()) {
+ 			this.loadTexture("/mob/sheep_fur.png");
+-			float var4 = var1.getEntityBrightness(var3);
++			float var4 = var1.getClientEntityBrightness(var3);
+ 			int var5 = var1.getFleeceColor();
+ 			GL11.glColor3f(var4 * SheepEntity.fleeceColorTable[var5][0], var4 * SheepEntity.fleeceColorTable[var5][1], var4 * SheepEntity.fleeceColorTable[var5][2]);
+ 			return true;
 --- net/minecraft/game/world/block/tileentity/MobSpawnerTileEntity.java
 +++ net/minecraft/game/world/block/tileentity/MobSpawnerTileEntity.java
 @@ -1,10 +1,13 @@
@@ -35383,6 +35611,15 @@
  		}
  
  		this.playerPosX = var4.lastTickPosX + (var4.posX - var4.lastTickPosX) * (double)var6;
+@@ -176,7 +180,7 @@
+ 		double var5 = var1.lastTickPosY + (var1.posY - var1.lastTickPosY) * (double)var2;
+ 		double var7 = var1.lastTickPosZ + (var1.posZ - var1.lastTickPosZ) * (double)var2;
+ 		float var9 = var1.prevRotationYaw + (var1.rotationYaw - var1.prevRotationYaw) * var2;
+-		float var10 = var1.getEntityBrightness(var2);
++		float var10 = var1.getClientEntityBrightness(var2);
+ 		GL11.glColor3f(var10, var10, var10);
+ 		this.renderEntityWithPosYaw(var1, var3 - renderPosX, var5 - renderPosY, var7 - renderPosZ, var9, var2);
+ 	}
 --- /dev/null
 +++ net/minecraft/client/gui/component/GuiContainer.java
 @@ -1,0 +1,12 @@
@@ -37110,9 +37347,10 @@
  												}
  
 -												if(this.isMultiplayerWorld() && Keyboard.getEventKey() == this.gameSettings.keyBindChat.keyCode) {
+-													this.displayGuiScreen(new ChatScreen());
 +												if(Keyboard.getEventKey() == this.gameSettings.keyBindChat.keyCode) {
- 													this.displayGuiScreen(new ChatScreen());
- 												}
++													this.displayGuiScreen(new MessagingScreen());
++												}
 +
 +												if (SharedConstants.DEBUG_MODE) {
 +													if(Keyboard.getEventKey() == Keyboard.KEY_X && this.playerController instanceof CreativePlayerController) {
@@ -37130,7 +37368,7 @@
 +														time += this.thePlayer.isSneaking() ? -1000L : 1000L;
 +														this.theWorld.setWorldTime(time);
 +													}
-+												}
+ 												}
  											}
  
  											for(int var6 = 0; var6 < 9; ++var6) {
@@ -39787,6 +40025,17 @@
  		}
  	}
  }
+--- net/minecraft/client/render/entity/RenderSpider.java
++++ net/minecraft/client/render/entity/RenderSpider.java
+@@ -22,7 +22,7 @@
+ 			return false;
+ 		} else {
+ 			this.loadTexture("/mob/spider_eyes.png");
+-			float var4 = (1.0F - var1.getEntityBrightness(1.0F)) * 0.5F;
++			float var4 = (1.0F - var1.getClientEntityBrightness(1.0F)) * 0.5F;
+ 			GL11.glEnable(GL11.GL_BLEND);
+ 			GL11.glDisable(GL11.GL_ALPHA_TEST);
+ 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 --- /dev/null
 +++ net/minecraft/game/world/block/properties/Property.java
 @@ -1,0 +1,28 @@
@@ -41194,6 +41443,17 @@
 +		return this.getItem().getUseDuration(this);
  	}
  }
+--- net/minecraft/client/render/entity/RenderPrimedTNT.java
++++ net/minecraft/client/render/entity/RenderPrimedTNT.java
+@@ -35,7 +35,7 @@
+ 
+ 		var10 = (1.0F - ((float)var1.fuse - var9 + 1.0F) / 100.0F) * 0.8F;
+ 		this.loadTexture("/terrain.png");
+-		this.blockRenderer.renderBlockOnInventory(Block.tnt, 0, var1.getEntityBrightness(var9));
++		this.blockRenderer.renderBlockOnInventory(Block.tnt, 0, var1.getClientEntityBrightness(var9));
+ 		if(var1.fuse / 5 % 2 == 0) {
+ 			GL11.glDisable(GL11.GL_TEXTURE_2D);
+ 			GL11.glDisable(GL11.GL_LIGHTING);
 --- net/minecraft/game/stats/StatList.java
 +++ net/minecraft/game/stats/StatList.java
 @@ -9,8 +9,8 @@
@@ -46716,7 +46976,7 @@
  }
 --- net/minecraft/client/effect/EntitySlimeFX.java
 +++ net/minecraft/client/effect/EntitySlimeFX.java
-@@ -19,10 +19,10 @@
+@@ -19,15 +19,15 @@
  	}
  
  	public void renderParticle(Tessellator var1, float var2, float var3, float var4, float var5, float var6, float var7) {
@@ -46731,6 +46991,12 @@
  		float var12 = 0.1F * this.particleScale;
  		float var13 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)var2 - interpPosX);
  		float var14 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)var2 - interpPosY);
+ 		float var15 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)var2 - interpPosZ);
+-		float var16 = this.getEntityBrightness(var2);
++		float var16 = this.getClientEntityBrightness(var2);
+ 		var1.setColorOpaque_F(var16 * this.particleRed, var16 * this.particleGreen, var16 * this.particleBlue);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 - var6 * var12), (double)(var14 - var4 * var12), (double)(var15 - var5 * var12 - var7 * var12), (double)var8, (double)var11);
+ 		var1.addVertexWithUV((double)(var13 - var3 * var12 + var6 * var12), (double)(var14 + var4 * var12), (double)(var15 - var5 * var12 + var7 * var12), (double)var8, (double)var10);
 --- net/minecraft/client/render/RenderList.java
 +++ net/minecraft/client/render/RenderList.java
 @@ -4,15 +4,15 @@
@@ -47877,6 +48143,17 @@
  		this.spawnableMonsterList.clear();
  		this.spawnableCreatureList.clear();
  		this.spawnableWaterCreatureList.clear();
+--- net/minecraft/client/model/WolfModel.java
++++ net/minecraft/client/model/WolfModel.java
+@@ -120,7 +120,7 @@
+ 		this.wolfBody.rotateAngleZ = var5.getShakeAngle(var4, -0.16F);
+ 		this.wolfTail.rotateAngleZ = var5.getShakeAngle(var4, -0.2F);
+ 		if(var5.getWolfShaking()) {
+-			float var7 = var5.getEntityBrightness(var4) * var5.getShadingWhileShaking(var4);
++			float var7 = var5.getClientEntityBrightness(var4) * var5.getShadingWhileShaking(var4);
+ 			GL11.glColor3f(var7, var7, var7);
+ 		}
+ 
 --- net/minecraft/game/world/NextTickListEntry.java
 +++ net/minecraft/game/world/NextTickListEntry.java
 @@ -26,7 +26,7 @@
@@ -49761,7 +50038,7 @@
  }
 --- net/minecraft/client/gui/IngameHud.java
 +++ net/minecraft/client/gui/IngameHud.java
-@@ -4,20 +4,33 @@
+@@ -4,20 +4,32 @@
  import java.util.ArrayList;
  import java.util.List;
  import java.util.Random;
@@ -49781,7 +50058,6 @@
  import net.minecraft.game.world.block.Block;
 +import net.minecraft.game.world.chunk.Chunk;
 +import net.minecraft.game.world.chunk.section.ChunkSection;
-+import net.minecraft.game.world.chunk.section.EmptyBlockArray;
  import net.minecraft.game.world.material.Material;
  import net.minecraft.util.MathHelper;
  import net.minecraft.util.StringTranslate;
@@ -49795,7 +50071,7 @@
  	private static RenderItem itemRenderer = new RenderItem();
  	private List chatMessageList = new ArrayList();
  	private Random rand = new Random();
-@@ -29,24 +42,27 @@
+@@ -29,24 +41,27 @@
  	private boolean field_22065_l = false;
  	public float damageGuiPartialTime;
  	float prevVignetteBrightness = 1.0F;
@@ -49815,8 +50091,9 @@
  		this.mc.entityRenderer.func_905_b();
  		GL11.glEnable(GL11.GL_BLEND);
 -		if(Minecraft.isFancyGraphicsEnabled()) {
+-			this.renderVignette(this.mc.thePlayer.getEntityBrightness(var1), var6, var7);
 +		if(this.mc.gameSettings.vignette) {
- 			this.renderVignette(this.mc.thePlayer.getEntityBrightness(var1), var6, var7);
++			this.renderVignette(this.mc.thePlayer.getClientEntityBrightness(var1), var6, var7);
  		}
  
  		ItemStack var9 = this.mc.thePlayer.inventory.armorItemInSlot(3);
@@ -49825,7 +50102,7 @@
  			this.renderPumpkinBlur(var6, var7);
  		}
  
-@@ -71,75 +87,118 @@
+@@ -71,75 +86,118 @@
  			var12 = false;
  		}
  
@@ -50007,7 +50284,7 @@
  		}
  
  		GL11.glDisable(GL11.GL_BLEND);
-@@ -173,29 +232,94 @@
+@@ -173,29 +231,94 @@
  		}
  
  		String var23;
@@ -50116,7 +50393,16 @@
  			GL11.glPopMatrix();
  		}
  
-@@ -270,6 +394,40 @@
+@@ -224,7 +347,7 @@
+ 
+ 		byte var26 = 10;
+ 		boolean var31 = false;
+-		if(this.mc.currentScreen instanceof ChatScreen) {
++		if(this.mc.currentScreen instanceof MessagingScreen) {
+ 			var26 = 20;
+ 			var31 = true;
+ 		}
+@@ -270,6 +393,40 @@
  		GL11.glDisable(GL11.GL_BLEND);
  	}
  
@@ -50157,7 +50443,7 @@
  	private void renderPumpkinBlur(int var1, int var2) {
  		GL11.glDisable(GL11.GL_DEPTH_TEST);
  		GL11.glDepthMask(false);
-@@ -332,10 +490,10 @@
+@@ -332,10 +489,10 @@
  		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
  		GL11.glColor4f(1.0F, 1.0F, 1.0F, var1);
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/terrain.png"));
@@ -50172,7 +50458,7 @@
  		Tessellator var8 = Tessellator.instance;
  		var8.startDrawingQuads();
  		var8.addVertexWithUV(0.0D, (double)var3, -90.0D, (double)var4, (double)var7);
-@@ -361,12 +519,12 @@
+@@ -361,12 +518,12 @@
  				GL11.glTranslatef((float)(-(var2 + 8)), (float)(-(var3 + 12)), 0.0F);
  			}
  
@@ -51512,19 +51798,18 @@
  	}
  
  	public void moveFlying(float var1, float var2, float var3) {
-@@ -611,9 +631,10 @@
- 				var7 = this.entityBrightness;
- 			}
- 
-+			var7 = MathHelper.lerp(var7, 1.0F, Minecraft.getInstance().gameSettings.brightness);
- 			return var7;
- 		} else {
--			return this.entityBrightness;
-+			return MathHelper.lerp(this.entityBrightness, 1.0F, Minecraft.getInstance().gameSettings.brightness);
+@@ -617,6 +637,10 @@
  		}
  	}
  
-@@ -664,6 +685,12 @@
++	public float getClientEntityBrightness(float var1) {
++		return MathHelper.lerp(this.getEntityBrightness(var1), 1.0F, Minecraft.getInstance().gameSettings.brightness);
++	}
++
+ 	public void setWorld(World var1) {
+ 		this.worldObj = var1;
+ 	}
+@@ -664,6 +688,12 @@
  		return var7 * var7 + var9 * var9 + var11 * var11;
  	}
  
@@ -51537,7 +51822,7 @@
  	public double getDistance(double var1, double var3, double var5) {
  		double var7 = this.posX - var1;
  		double var9 = this.posY - var3;
-@@ -718,7 +745,7 @@
+@@ -718,7 +748,7 @@
  		this.beenAttacked = true;
  	}
  
@@ -51546,7 +51831,7 @@
  		this.setBeenAttacked();
  		return false;
  	}
-@@ -744,7 +771,7 @@
+@@ -744,7 +774,7 @@
  
  	public boolean isInRangeToRenderDist(double var1) {
  		double var3 = this.boundingBox.getAverageEdgeLength();
@@ -51555,7 +51840,7 @@
  		return var1 < var3 * var3;
  	}
  
-@@ -764,9 +791,9 @@
+@@ -764,9 +794,9 @@
  	}
  
  	public void writeToNBT(CompoundTag var1) {
@@ -51568,7 +51853,7 @@
  		var1.setFloat("FallDistance", this.fallDistance);
  		var1.setShort("Fire", (short)this.fire);
  		var1.setShort("Air", (short)this.air);
-@@ -846,11 +873,19 @@
+@@ -846,11 +876,19 @@
  	}
  
  	public ItemEntity dropItem(int var1, int var2) {
@@ -51590,7 +51875,7 @@
  	}
  
  	public ItemEntity entityDropItem(ItemStack var1, float var2) {
-@@ -865,6 +900,8 @@
+@@ -865,6 +903,8 @@
  	}
  
  	public boolean isEntityInsideOpaqueBlock() {
@@ -51599,7 +51884,7 @@
  		for(int var1 = 0; var1 < 8; ++var1) {
  			float var2 = ((float)((var1 >> 0) % 2) - 0.5F) * this.width * 0.9F;
  			float var3 = ((float)((var1 >> 1) % 2) - 0.5F) * 0.1F;
-@@ -872,7 +909,7 @@
+@@ -872,7 +912,7 @@
  			int var5 = MathHelper.floor(this.posX + (double)var2);
  			int var6 = MathHelper.floor(this.posY + (double)this.getEyeHeight() + (double)var3);
  			int var7 = MathHelper.floor(this.posZ + (double)var4);
@@ -51608,7 +51893,7 @@
  				return true;
  			}
  		}
-@@ -1032,7 +1069,7 @@
+@@ -1032,7 +1072,7 @@
  	public void updateCloak() {
  	}
  
@@ -51617,7 +51902,7 @@
  	}
  
  	public boolean isBurning() {
-@@ -1047,10 +1084,22 @@
+@@ -1047,10 +1087,22 @@
  		return this.getEntityFlag(1);
  	}
  
@@ -51640,7 +51925,7 @@
  	protected boolean getEntityFlag(int var1) {
  		return (this.properties.getByte(0) & 1 << var1) != 0;
  	}
-@@ -1058,9 +1107,9 @@
+@@ -1058,9 +1110,9 @@
  	protected void setEntityFlag(int var1, boolean var2) {
  		byte var3 = this.properties.getByte(0);
  		if(var2) {
@@ -51652,7 +51937,7 @@
  		}
  
  	}
-@@ -1084,13 +1133,13 @@
+@@ -1084,13 +1136,13 @@
  		double var10 = var1 - (double)var7;
  		double var12 = var3 - (double)var8;
  		double var14 = var5 - (double)var9;
@@ -51788,6 +52073,15 @@
  import net.minecraft.client.gui.FontRenderer;
  import net.minecraft.client.model.EntityModel;
  import net.minecraft.client.render.Tessellator;
+@@ -68,7 +67,7 @@
+ 			}
+ 
+ 			this.renderEquippedItems(var1, var9);
+-			float var25 = var1.getEntityBrightness(var9);
++			float var25 = var1.getClientEntityBrightness(var9);
+ 			int var18 = this.getColorMultiplier(var1, var25, var9);
+ 			if((var18 >> 24 & 255) > 0 || var1.hurtTime > 0 || var1.deathTime > 0) {
+ 				GL11.glDisable(GL11.GL_TEXTURE_2D);
 @@ -169,10 +168,6 @@
  	}
  
