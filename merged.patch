@@ -211,8 +211,12 @@
  
 --- net/minecraft/game/stats/achievement/AchievementList.java
 +++ net/minecraft/game/stats/achievement/AchievementList.java
-@@ -14,16 +14,16 @@
- 	public static Achievement openInventory = (new Achievement(0, "openInventory", 0, 0, Item.book, (Achievement)null)).func_27089_a().registerAchievement();
+@@ -11,19 +11,19 @@
+ 	public static int maxDisplayColumn;
+ 	public static int maxDisplayRow;
+ 	public static List achievementList = new ArrayList();
+-	public static Achievement openInventory = (new Achievement(0, "openInventory", 0, 0, Item.book, (Achievement)null)).func_27089_a().registerAchievement();
++	public static Achievement openInventory = (new Achievement(0, "openInventory", 0, 0, Item.book, (Achievement)null)).doCrap().registerAchievement();
  	public static Achievement mineWood = (new Achievement(1, "mineWood", 2, 1, Block.log, openInventory)).registerAchievement();
  	public static Achievement buildWorkBench = (new Achievement(2, "buildWorkBench", 4, -1, Block.workbench, mineWood)).registerAchievement();
 -	public static Achievement buildPickaxe = (new Achievement(3, "buildPickaxe", 4, 2, Item.woodPickaxe, buildWorkBench)).registerAchievement();
@@ -14997,8 +15001,8 @@
 +			Entity var4 = (Entity)this.loadedEntityList.get(var3);
 +			if(var1.isAssignableFrom(var4.getClass())) {
 +				for (Entity player : (List<Entity>)this.playerEntities) {
-+					if (Math.min(
-+							Math.min(
++					if (Math.max(
++							Math.max(
 +									Math.abs(var4.posX - player.posX),
 +									Math.abs(var4.posY - player.posY)
 +							), Math.abs(var4.posZ - player.posZ)
@@ -16502,6 +16506,25 @@
  
  	public void updatePlayerMoveState(PlayerEntity var1) {
  	}
+--- net/minecraft/game/stats/achievement/Achievement.java
++++ net/minecraft/game/stats/achievement/Achievement.java
+@@ -54,7 +54,7 @@
+ 		return this;
+ 	}
+ 
+-	public Achievement func_27089_a() {
++	public Achievement doCrap() {
+ 		this.showZero = true;
+ 		return this;
+ 	}
+@@ -98,6 +98,6 @@
+ 	}
+ 
+ 	public StatBase showZero() {
+-		return this.func_27089_a();
++		return this.doCrap();
+ 	}
+ }
 --- net/minecraft/game/item/RedstoneItem.java
 +++ net/minecraft/game/item/RedstoneItem.java
 @@ -9,7 +9,7 @@
