@@ -13,3 +13,6 @@ For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION
 - New and reworked mechanics and progression
 - Plenty of building blocks
 - Performance optimizations, predominantly from Smooth Beta and Starlight
+
+## Trailer (Youtube)
+[![](https://img.youtube.com/vi/15yW-975SvE/0.jpg)](https://youtu.be/15yW-975SvE)

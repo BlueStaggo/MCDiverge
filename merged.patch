@@ -1931,7 +1931,15 @@
 +}
 --- net/minecraft/game/world/block/TrapDoorBlock.java
 +++ net/minecraft/game/world/block/TrapDoorBlock.java
-@@ -9,13 +9,8 @@
+@@ -2,20 +2,15 @@
+ 
+ import net.minecraft.game.entity.player.PlayerEntity;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.BlockAccess;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
  import net.minecraft.game.world.material.Material;
  
  public class TrapDoorBlock extends Block {
@@ -1956,7 +1964,13 @@
  				var1.setBlockWithNotify(var2, var3, var4, 0);
  				this.dropBlockAsItem(var1, var2, var3, var4, var6);
  			}
-@@ -138,7 +133,7 @@
+@@ -133,12 +128,12 @@
+ 		}
+ 	}
+ 
+-	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
++	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vector3D var5, Vector3D var6) {
+ 		this.setBlockBoundsBasedOnState(var1, var2, var3, var4);
  		return super.collisionRayTrace(var1, var2, var3, var4, var5, var6);
  	}
  
@@ -3505,7 +3519,7 @@
  
 --- net/minecraft/client/GameSettings.java
 +++ net/minecraft/client/GameSettings.java
-@@ -5,26 +5,56 @@
+@@ -5,26 +5,57 @@
  import java.io.FileReader;
  import java.io.FileWriter;
  import java.io.PrintWriter;
@@ -3519,7 +3533,7 @@
 +import static net.minecraft.util.StringTranslate.i18n;
  
  public class GameSettings {
-+	private static final float brightnessMod = 0.15F;
++	private static final float brightnessMod = 0.1F;
  	private static final String[] RENDER_DISTANCES = new String[]{"options.renderDistance.far", "options.renderDistance.normal", "options.renderDistance.short", "options.renderDistance.tiny"};
  	private static final String[] DIFFICULTIES = new String[]{"options.difficulty.peaceful", "options.difficulty.easy", "options.difficulty.normal", "options.difficulty.hard"};
  	private static final String[] GUISCALES = new String[]{"options.guiScale.auto", "options.guiScale.small", "options.guiScale.normal", "options.guiScale.large"};
@@ -3531,6 +3545,7 @@
 +	public float musicVolume = 0.5F;
  	public float soundVolume = 1.0F;
 +	public float ambienceVolume = 1.0F;
++	public boolean creativeMusic = true;
  	public float mouseSensitivity = 0.5F;
  	public boolean invertMouse = false;
 -	public int renderDistance = 0;
@@ -3568,7 +3583,7 @@
  	public String skin = "Default";
  	public KeyBinding keyBindForward = new KeyBinding("key.forward", 17);
  	public KeyBinding keyBindLeft = new KeyBinding("key.left", 30);
-@@ -32,16 +62,18 @@
+@@ -32,16 +63,18 @@
  	public KeyBinding keyBindRight = new KeyBinding("key.right", 32);
  	public KeyBinding keyBindJump = new KeyBinding("key.jump", 57);
  	public KeyBinding keyBindInventory = new KeyBinding("key.inventory", 18);
@@ -3589,7 +3604,7 @@
  	public boolean showDebugInfo = false;
  	public String lastServer = "";
  	public boolean field_22275_C = false;
-@@ -51,10 +83,12 @@
+@@ -51,10 +84,12 @@
  	public float field_22271_G = 1.0F;
  	public int guiScale = 0;
  
@@ -3605,7 +3620,7 @@
  	}
  
  	public GameSettings() {
-@@ -85,10 +119,48 @@
+@@ -85,10 +120,48 @@
  			this.mc.sndManager.onSoundOptionsChanged();
  		}
  
@@ -3654,7 +3669,7 @@
  	}
  
  	public void setOptionValue(Option var1, int var2) {
-@@ -97,11 +169,15 @@
+@@ -97,11 +170,15 @@
  		}
  
  		if(var1 == Option.RENDER_DISTANCE) {
@@ -3671,7 +3686,7 @@
  		}
  
  		if(var1 == Option.VIEW_BOBBING) {
-@@ -119,44 +195,123 @@
+@@ -119,44 +196,128 @@
  		}
  
  		if(var1 == Option.FRAMERATE_LIMIT) {
@@ -3760,6 +3775,10 @@
 +
 +		if(var1 == Option.DROP_SHADOWS) {
 +			this.dropShadows = !this.dropShadows;
++		}
++
++		if(var1 == Option.CREATIVE_MUSIC) {
++			this.creativeMusic = !this.creativeMusic;
  		}
  
  		this.saveOptions();
@@ -3813,11 +3832,12 @@
 +			case TEXTURE_ROTATION: return this.textureRotation;
 +			case WEATHER: return this.fancyWeather;
 +			case DROP_SHADOWS: return this.dropShadows;
++			case CREATIVE_MUSIC: return this.creativeMusic;
 +			default: return false;
  		}
  	}
  
-@@ -165,12 +320,42 @@
+@@ -165,12 +326,42 @@
  		String var3 = var2.translateKey(var1.getName()) + ": ";
  		if(var1.isSlider()) {
  			float var5 = this.getOptionFloatValue(var1);
@@ -3862,7 +3882,7 @@
  		}
  	}
  
-@@ -200,6 +385,10 @@
+@@ -200,6 +391,10 @@
  						this.soundVolume = this.parseFloat(var3[1]);
  					}
  
@@ -3873,7 +3893,7 @@
  					if(var3[0].equals("mouseSensitivity")) {
  						this.mouseSensitivity = this.parseFloat(var3[1]);
  					}
-@@ -208,10 +397,26 @@
+@@ -208,10 +403,26 @@
  						this.invertMouse = var3[1].equals("true");
  					}
  
@@ -3901,7 +3921,7 @@
  					if(var3[0].equals("guiScale")) {
  						this.guiScale = Integer.parseInt(var3[1]);
  					}
-@@ -220,6 +425,10 @@
+@@ -220,6 +431,10 @@
  						this.viewBobbing = var3[1].equals("true");
  					}
  
@@ -3912,7 +3932,7 @@
  					if(var3[0].equals("anaglyph3d")) {
  						this.anaglyph = var3[1].equals("true");
  					}
-@@ -232,16 +441,78 @@
+@@ -232,16 +447,82 @@
  						this.limitFramerate = Integer.parseInt(var3[1]);
  					}
  
@@ -3993,10 +4013,14 @@
 +
 +					if(var3[0].equals("brightness")) {
 +						this.brightness = this.parseFloat(var3[1]);
++					}
++
++					if(var3[0].equals("creativeMusic")) {
++						this.creativeMusic = var3[1].equals("true");
  					}
  
  					if(var3[0].equals("skin")) {
-@@ -265,7 +536,6 @@
+@@ -265,7 +546,6 @@
  			System.out.println("Failed to load options");
  			var6.printStackTrace();
  		}
@@ -4004,7 +4028,7 @@
  	}
  
  	private float parseFloat(String var1) {
-@@ -279,15 +549,35 @@
+@@ -279,15 +559,36 @@
  			var1.println("sound:" + this.soundVolume);
  			var1.println("invertYMouse:" + this.invertMouse);
  			var1.println("mouseSensitivity:" + this.mouseSensitivity);
@@ -4039,6 +4063,7 @@
 +			var1.println("vignette:" + this.vignette);
 +			var1.println("dropShadows:" + this.dropShadows);
 +			var1.println("brightness:" + this.brightness);
++			var1.println("creativeMusic:" + this.creativeMusic);
  			var1.println("skin:" + this.skin);
  			var1.println("lastServer:" + this.lastServer);
  
@@ -4108,6 +4133,26 @@
  		}
  
  		if(var1 == 0) {
+--- net/minecraft/game/entity/weather/LightningBoltEntity.java
++++ net/minecraft/game/entity/weather/LightningBoltEntity.java
+@@ -4,7 +4,7 @@
+ import java.util.List;
+ import net.minecraft.game.entity.Entity;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.block.Block;
+ import net.minecraft.util.MathHelper;
+@@ -89,7 +89,7 @@
+ 	protected void writeEntityToNBT(CompoundTag var1) {
+ 	}
+ 
+-	public boolean isInRangeToRenderVec3D(Vec3D var1) {
++	public boolean isInRangeToRenderVec3D(Vector3D var1) {
+ 		return this.flashTick >= 0;
+ 	}
+ }
 --- net/minecraft/network/packet/Packet105UpdateProgressbar.java
 +++ /dev/null
 @@ -1,41 +1,0 @@
@@ -4747,6 +4792,34 @@
 +}
 --- net/minecraft/game/entity/misc/FishEntity.java
 +++ net/minecraft/game/entity/misc/FishEntity.java
+@@ -7,7 +7,7 @@
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.stats.StatList;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+@@ -198,13 +198,13 @@
+ 				++this.ticksInAir;
+ 			}
+ 
+-			Vec3D var20 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-			Vec3D var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++			Vector3D var20 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++			Vector3D var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 			MovingObjectPosition var3 = this.worldObj.rayTraceBlocks(var20, var2);
+-			var20 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-			var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++			var20 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++			var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 			if(var3 != null) {
+-				var2 = Vec3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
++				var2 = Vector3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
+ 			}
+ 
+ 			Entity var4 = null;
 @@ -337,7 +337,7 @@
  		var1.setShort("xTile", (short)this.xTile);
  		var1.setShort("yTile", (short)this.yTile);
@@ -4906,7 +4979,7 @@
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.item.ItemStack;
-+import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.World;
  import net.minecraft.game.world.block.Block;
  import net.minecraft.network.NetClientHandler;
@@ -4939,7 +5012,7 @@
  					}
  				} else {
  					this.clickBlock(var1, var2, var3, var4);
-@@ -136,9 +137,17 @@
+@@ -136,9 +137,9 @@
  	}
  
  	public void updateController() {
@@ -4947,23 +5020,15 @@
  		this.syncCurrentPlayItem();
  		this.prevBlockDamageMP = this.curBlockDamageMP;
 -		this.mc.sndManager.playRandomMusicIfReady();
-+
-+		double y = this.mc.thePlayer.posY;
-+		SoundManager.MusicType musicType = SoundManager.MusicType.GAME;
-+		if (y < 224) {
-+			musicType = SoundManager.MusicType.CAVE;
-+		}
-+
-+		this.mc.sndManager.playRandomMusicIfReady(musicType);
  	}
  
  	private void syncCurrentPlayItem() {
-@@ -150,16 +159,17 @@
+@@ -150,16 +151,17 @@
  
  	}
  
 -	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7) {
-+	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vec3D hit) {
++	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vector3D hit) {
  		this.syncCurrentPlayItem();
 -		this.netClientHandler.addToSendQueue(new Packet15Place(var4, var5, var6, var7, var1.inventory.getCurrentItem()));
 -		boolean var8 = super.sendPlaceBlock(var1, var2, var3, var4, var5, var6, var7);
@@ -4980,7 +5045,7 @@
  		boolean var4 = super.sendUseItem(var1, var2, var3);
  		return var4;
  	}
-@@ -185,6 +195,12 @@
+@@ -185,6 +187,12 @@
  		ItemStack var7 = super.func_27174_a(var1, var2, var3, var4, var5);
  		this.netClientHandler.addToSendQueue(new Packet102WindowClick(var1, var2, var3, var4, var7, var6));
  		return var7;
@@ -6064,6 +6129,24 @@
 +}
 --- net/minecraft/game/world/Explosion.java
 +++ net/minecraft/game/world/Explosion.java
+@@ -7,7 +7,7 @@
+ import java.util.Set;
+ import net.minecraft.game.entity.Entity;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.block.Block;
+ import net.minecraft.game.world.chunk.ChunkPosition;
+ import net.minecraft.util.MathHelper;
+@@ -88,7 +88,7 @@
+ 		int var7 = MathHelper.floor(this.explosionZ - (double)this.explosionSize - 1.0D);
+ 		int var30 = MathHelper.floor(this.explosionZ + (double)this.explosionSize + 1.0D);
+ 		List var9 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this.exploder, AxisAlignedBB.getBoundingBoxFromPool((double)var3, (double)var5, (double)var7, (double)var4, (double)var29, (double)var30));
+-		Vec3D var31 = Vec3D.createVector(this.explosionX, this.explosionY, this.explosionZ);
++		Vector3D var31 = Vector3D.createVector(this.explosionX, this.explosionY, this.explosionZ);
+ 
+ 		for(int var11 = 0; var11 < var9.size(); ++var11) {
+ 			Entity var33 = (Entity)var9.get(var11);
 @@ -111,8 +111,7 @@
  		}
  
@@ -6084,6 +6167,15 @@
  
  		for(int var3 = var2.size() - 1; var3 >= 0; --var3) {
  			ChunkPosition var4 = (ChunkPosition)var2.get(var3);
+@@ -225,7 +223,7 @@
+ 		int var7 = MathHelper.floor(this.explosionZ - (double)this.explosionSize - 1.0D);
+ 		int var30 = MathHelper.floor(this.explosionZ + (double)this.explosionSize + 1.0D);
+ 		List var9 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this.exploder, AxisAlignedBB.getBoundingBoxFromPool((double)var3, (double)var5, (double)var7, (double)var4, (double)var29, (double)var30));
+-		Vec3D var31 = Vec3D.createVector(this.explosionX, this.explosionY, this.explosionZ);
++		Vector3D var31 = Vector3D.createVector(this.explosionX, this.explosionY, this.explosionZ);
+ 
+ 		for(int var11 = 0; var11 < var9.size(); ++var11) {
+ 			Entity var33 = (Entity)var9.get(var11);
 @@ -248,8 +246,7 @@
  		}
  
@@ -7662,8 +7754,12 @@
  				this.clampTexture = false;
 --- net/minecraft/client/render/RenderBlocks.java
 +++ net/minecraft/client/render/RenderBlocks.java
-@@ -4,25 +4,21 @@
- import net.minecraft.game.physics.Vec3D;
+@@ -1,28 +1,24 @@
+ package net.minecraft.client.render;
+ 
+ import net.minecraft.client.Minecraft;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.World;
 -import net.minecraft.game.world.block.BedBlock;
@@ -8282,7 +8378,7 @@
  		boolean var9 = this.overrideBlockTexture >= 0;
  		if(!var9) {
  			this.overrideBlockTexture = Block.cobblestone.textureIndex;
-@@ -664,12 +696,12 @@
+@@ -664,31 +696,31 @@
  			var14 = this.overrideBlockTexture;
  		}
  
@@ -8292,16 +8388,33 @@
 -		float var18 = ((float)var15 + 15.99F) / 256.0F;
 -		float var19 = (float)var16 / 256.0F;
 -		float var20 = ((float)var16 + 15.99F) / 256.0F;
+-		Vec3D[] var21 = new Vec3D[8];
 +		int var15 = (var14 & 31) << 4;
 +		int var16 = (var14 & 992) >> 1;
 +		float var17 = (float)var15 / 512.0F;
 +		float var18 = ((float)var15 + 15.99F) / 512.0F;
 +		float var19 = (float)var16 / 512.0F;
 +		float var20 = ((float)var16 + 15.99F) / 512.0F;
- 		Vec3D[] var21 = new Vec3D[8];
++		Vector3D[] var21 = new Vector3D[8];
  		float var22 = 1.0F / 16.0F;
  		float var23 = 1.0F / 16.0F;
-@@ -685,10 +717,10 @@
+ 		float var24 = 10.0F / 16.0F;
+-		var21[0] = Vec3D.createVector((double)(-var22), 0.0D, (double)(-var23));
+-		var21[1] = Vec3D.createVector((double)var22, 0.0D, (double)(-var23));
+-		var21[2] = Vec3D.createVector((double)var22, 0.0D, (double)var23);
+-		var21[3] = Vec3D.createVector((double)(-var22), 0.0D, (double)var23);
+-		var21[4] = Vec3D.createVector((double)(-var22), (double)var24, (double)(-var23));
+-		var21[5] = Vec3D.createVector((double)var22, (double)var24, (double)(-var23));
+-		var21[6] = Vec3D.createVector((double)var22, (double)var24, (double)var23);
+-		var21[7] = Vec3D.createVector((double)(-var22), (double)var24, (double)var23);
++		var21[0] = Vector3D.createVector((double)(-var22), 0.0D, (double)(-var23));
++		var21[1] = Vector3D.createVector((double)var22, 0.0D, (double)(-var23));
++		var21[2] = Vector3D.createVector((double)var22, 0.0D, (double)var23);
++		var21[3] = Vector3D.createVector((double)(-var22), 0.0D, (double)var23);
++		var21[4] = Vector3D.createVector((double)(-var22), (double)var24, (double)(-var23));
++		var21[5] = Vector3D.createVector((double)var22, (double)var24, (double)(-var23));
++		var21[6] = Vector3D.createVector((double)var22, (double)var24, (double)var23);
++		var21[7] = Vector3D.createVector((double)(-var22), (double)var24, (double)var23);
  
  		for(int var25 = 0; var25 < 8; ++var25) {
  			if(var7) {
@@ -8314,7 +8427,18 @@
  				var21[var25].rotateAroundX(-((float)Math.PI * 2.0F / 9.0F));
  			}
  
-@@ -732,15 +764,15 @@
+@@ -725,22 +757,22 @@
+ 			}
+ 		}
+ 
+-		Vec3D var30 = null;
+-		Vec3D var26 = null;
+-		Vec3D var27 = null;
+-		Vec3D var28 = null;
++		Vector3D var30 = null;
++		Vector3D var26 = null;
++		Vector3D var27 = null;
++		Vector3D var28 = null;
  
  		for(int var29 = 0; var29 < 6; ++var29) {
  			if(var29 == 0) {
@@ -11423,7 +11547,8 @@
 +
 +import net.minecraft.game.item.Item;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
@@ -11446,6 +11571,15 @@
  	public static final boolean isRailBlockAt(World var0, int var1, int var2, int var3) {
  		int var4 = var0.getBlockId(var1, var2, var3);
  		return var4 == Block.rail.blockID || var4 == Block.poweredRail.blockID || var4 == Block.detectorRail.blockID;
+@@ -38,7 +51,7 @@
+ 		return false;
+ 	}
+ 
+-	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
++	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vector3D var5, Vector3D var6) {
+ 		this.setBlockBoundsBasedOnState(var1, var2, var3, var4);
+ 		return super.collisionRayTrace(var1, var2, var3, var4, var5, var6);
+ 	}
 @@ -56,10 +69,10 @@
  	public int getBlockTextureFromSideAndMetadata(int var1, int var2) {
  		if(this.isPowered) {
@@ -12928,6 +13062,15 @@
  	}
  
  	protected boolean canTriggerWalking() {
+@@ -76,7 +79,7 @@
+ 	}
+ 
+ 	protected String getLivingSound() {
+-		return this.isAngry() ? "mob.wolf.growl" : (this.rand.nextInt(3) == 0 ? (this.isTamed() && this.properties.getInt(18) < 10 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
++		return this.isAngry() ? "mob.wolf.growl" : (this.rand.nextInt(3) == 0 ? (this.isTamed() && this.properties.getFloat(18) < 10 ? "mob.wolf.whine" : "mob.wolf.panting") : "mob.wolf.bark");
+ 	}
+ 
+ 	protected String getHurtSound() {
 @@ -91,10 +94,6 @@
  		return 0.4F;
  	}
@@ -12986,17 +13129,28 @@
  		this.setSitting(false);
  		if(var1 != null && !(var1 instanceof PlayerEntity) && !(var1 instanceof ArrowEntity)) {
  			var2 = (var2 + 1) / 2;
-@@ -373,8 +372,8 @@
+@@ -373,9 +372,9 @@
  				return true;
  			}
  		} else {
 -			if(var2 != null && Item.itemsList[var2.id] instanceof FoodItem) {
 -				FoodItem var3 = (FoodItem)Item.itemsList[var2.id];
+-				if(var3.getIsWolfsFavoriteMeat() && this.properties.getInt(18) < 20) {
 +			if(var2 != null && var2.getItem() instanceof FoodItem) {
 +				FoodItem var3 = (FoodItem)var2.getItem();
- 				if(var3.getIsWolfsFavoriteMeat() && this.properties.getInt(18) < 20) {
++				if(var3.getIsWolfsFavoriteMeat() && this.properties.getFloat(18) < 20) {
  					--var2.count;
  					if(var2.count <= 0) {
+ 						var1.inventory.setInventorySlotContents(var1.inventory.currentItem, (ItemStack)null);
+@@ -431,7 +430,7 @@
+ 	}
+ 
+ 	public float setTailRotation() {
+-		return this.isAngry() ? (float)Math.PI * 0.49F : (this.isTamed() ? (0.55F - (float)(20 - this.properties.getInt(18)) * 0.02F) * (float)Math.PI : (float)Math.PI * 0.2F);
++		return this.isAngry() ? (float)Math.PI * 0.49F : (this.isTamed() ? (0.55F - (float)(20 - this.properties.getFloat(18)) * 0.02F) * (float)Math.PI : (float)Math.PI * 0.2F);
+ 	}
+ 
+ 	public int getMaxSpawnedInChunk() {
 @@ -453,9 +452,9 @@
  	public void setSitting(boolean var1) {
  		byte var2 = this.properties.getByte(16);
@@ -13612,7 +13766,7 @@
  	}
 --- net/minecraft/game/world/block/Block.java
 +++ net/minecraft/game/world/block/Block.java
-@@ -1,21 +1,16 @@
+@@ -1,32 +1,69 @@
  package net.minecraft.game.world.block;
  
  import java.util.ArrayList;
@@ -13636,9 +13790,10 @@
 -import net.minecraft.game.item.WoolItem;
 +import net.minecraft.game.item.*;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.stats.StatCollector;
-@@ -23,10 +18,52 @@
+ import net.minecraft.game.stats.StatList;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
@@ -14113,7 +14268,59 @@
  		return 0;
  	}
  
-@@ -503,7 +636,7 @@
+@@ -377,16 +510,16 @@
+ 		return this.resistance / 5.0F;
+ 	}
+ 
+-	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
++	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vector3D var5, Vector3D var6) {
+ 		this.setBlockBoundsBasedOnState(var1, var2, var3, var4);
+ 		var5 = var5.addVector((double)(-var2), (double)(-var3), (double)(-var4));
+ 		var6 = var6.addVector((double)(-var2), (double)(-var3), (double)(-var4));
+-		Vec3D var7 = var5.getIntermediateWithXValue(var6, this.minX);
+-		Vec3D var8 = var5.getIntermediateWithXValue(var6, this.maxX);
+-		Vec3D var9 = var5.getIntermediateWithYValue(var6, this.minY);
+-		Vec3D var10 = var5.getIntermediateWithYValue(var6, this.maxY);
+-		Vec3D var11 = var5.getIntermediateWithZValue(var6, this.minZ);
+-		Vec3D var12 = var5.getIntermediateWithZValue(var6, this.maxZ);
++		Vector3D var7 = var5.getIntermediateWithXValue(var6, this.minX);
++		Vector3D var8 = var5.getIntermediateWithXValue(var6, this.maxX);
++		Vector3D var9 = var5.getIntermediateWithYValue(var6, this.minY);
++		Vector3D var10 = var5.getIntermediateWithYValue(var6, this.maxY);
++		Vector3D var11 = var5.getIntermediateWithZValue(var6, this.minZ);
++		Vector3D var12 = var5.getIntermediateWithZValue(var6, this.maxZ);
+ 		if(!this.isVecInsideYZBounds(var7)) {
+ 			var7 = null;
+ 		}
+@@ -411,7 +544,7 @@
+ 			var12 = null;
+ 		}
+ 
+-		Vec3D var13 = null;
++		Vector3D var13 = null;
+ 		if(var7 != null && (var13 == null || var5.distanceTo(var7) < var5.distanceTo(var13))) {
+ 			var13 = var7;
+ 		}
+@@ -468,15 +601,15 @@
+ 		}
+ 	}
+ 
+-	private boolean isVecInsideYZBounds(Vec3D var1) {
++	private boolean isVecInsideYZBounds(Vector3D var1) {
+ 		return var1 == null ? false : var1.yCoord >= this.minY && var1.yCoord <= this.maxY && var1.zCoord >= this.minZ && var1.zCoord <= this.maxZ;
+ 	}
+ 
+-	private boolean isVecInsideXZBounds(Vec3D var1) {
++	private boolean isVecInsideXZBounds(Vector3D var1) {
+ 		return var1 == null ? false : var1.xCoord >= this.minX && var1.xCoord <= this.maxX && var1.zCoord >= this.minZ && var1.zCoord <= this.maxZ;
+ 	}
+ 
+-	private boolean isVecInsideXYBounds(Vec3D var1) {
++	private boolean isVecInsideXYBounds(Vector3D var1) {
+ 		return var1 == null ? false : var1.xCoord >= this.minX && var1.xCoord <= this.maxX && var1.yCoord >= this.minY && var1.yCoord <= this.maxY;
+ 	}
+ 
+@@ -503,13 +636,13 @@
  	public void onEntityWalking(World var1, int var2, int var3, int var4, Entity var5) {
  	}
  
@@ -14122,6 +14329,13 @@
  	}
  
  	public void onBlockClicked(World var1, int var2, int var3, int var4, PlayerEntity var5) {
+ 	}
+ 
+-	public void velocityToAddToEntity(World var1, int var2, int var3, int var4, Entity var5, Vec3D var6) {
++	public void velocityToAddToEntity(World var1, int var2, int var3, int var4, Entity var5, Vector3D var6) {
+ 	}
+ 
+ 	public void setBlockBoundsBasedOnState(BlockAccess var1, int var2, int var3, int var4) {
 @@ -541,6 +674,10 @@
  	public void setBlockBoundsForItemRender() {
  	}
@@ -14192,7 +14406,8 @@
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.entity.weather.LightningBoltEntity;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.biome.Biome;
 -import net.minecraft.game.world.biome.ClimaticBiomeSource;
 +import net.minecraft.game.world.biome.BiomeSource;
@@ -14718,6 +14933,34 @@
  			}
  		}
  	}
+@@ -720,15 +705,15 @@
+ 		return this.skylightSubtracted < 4;
+ 	}
+ 
+-	public MovingObjectPosition rayTraceBlocks(Vec3D var1, Vec3D var2) {
++	public MovingObjectPosition rayTraceBlocks(Vector3D var1, Vector3D var2) {
+ 		return this.rayTraceBlocks_dodo(var1, var2, false, false);
+ 	}
+ 
+-	public MovingObjectPosition rayTraceBlocks_do(Vec3D var1, Vec3D var2, boolean var3) {
++	public MovingObjectPosition rayTraceBlocks_do(Vector3D var1, Vector3D var2, boolean var3) {
+ 		return this.rayTraceBlocks_dodo(var1, var2, var3, false);
+ 	}
+ 
+-	public MovingObjectPosition rayTraceBlocks_dodo(Vec3D var1, Vec3D var2, boolean var3, boolean var4) {
++	public MovingObjectPosition rayTraceBlocks_dodo(Vector3D var1, Vector3D var2, boolean var3, boolean var4) {
+ 		if(!Double.isNaN(var1.xCoord) && !Double.isNaN(var1.yCoord) && !Double.isNaN(var1.zCoord)) {
+ 			if(!Double.isNaN(var2.xCoord) && !Double.isNaN(var2.yCoord) && !Double.isNaN(var2.zCoord)) {
+ 				int var5 = MathHelper.floor(var2.xCoord);
+@@ -840,7 +825,7 @@
+ 						var1.zCoord = var19;
+ 					}
+ 
+-					Vec3D var34 = Vec3D.createVector(var1.xCoord, var1.yCoord, var1.zCoord);
++					Vector3D var34 = Vector3D.createVector(var1.xCoord, var1.yCoord, var1.zCoord);
+ 					var8 = (int)(var34.xCoord = (double)MathHelper.floor(var1.xCoord));
+ 					if(var42 == 5) {
+ 						--var8;
 @@ -915,12 +900,9 @@
  	public boolean entityJoinedWorld(Entity var1) {
  		int var2 = MathHelper.floor(var1.posX / 16.0D);
@@ -14742,6 +14985,15 @@
  		for(int var2 = 0; var2 < this.worldAccesses.size(); ++var2) {
  			((WorldAccess)this.worldAccesses.get(var2)).obtainEntitySkin(var1);
  		}
+@@ -1050,7 +1032,7 @@
+ 		return (int)(var3 * 11.0F);
+ 	}
+ 
+-	public Vec3D getSkyColor(Entity var1, float var2) {
++	public Vector3D getSkyColor(Entity var1, float var2) {
+ 		float var3 = this.getCelestialAngle(var2);
+ 		float var4 = MathHelper.cos(var3 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
+ 		if(var4 < 0.0F) {
 @@ -1061,10 +1043,9 @@
  			var4 = 1.0F;
  		}
@@ -14756,7 +15008,12 @@
  		float var9 = (float)(var8 >> 16 & 255) / 255.0F;
  		float var10 = (float)(var8 >> 8 & 255) / 255.0F;
  		float var11 = (float)(var8 & 255) / 255.0F;
-@@ -1107,6 +1088,9 @@
+@@ -1103,14 +1084,17 @@
+ 			var11 = var11 * (1.0F - var14) + 1.0F * var14;
+ 		}
+ 
+-		return Vec3D.createVector((double)var9, (double)var10, (double)var11);
++		return Vector3D.createVector((double)var9, (double)var10, (double)var11);
  	}
  
  	public float getCelestialAngle(float var1) {
@@ -14766,7 +15023,24 @@
  		return this.dimension.calculateCelestialAngle(this.worldInfo.getWorldTime(), var1);
  	}
  
-@@ -1157,10 +1141,10 @@
+-	public Vec3D getCloudColor(float var1) {
++	public Vector3D getCloudColor(float var1) {
+ 		float var2 = this.getCelestialAngle(var1);
+ 		float var3 = MathHelper.cos(var2 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
+ 		if(var3 < 0.0F) {
+@@ -1147,20 +1131,20 @@
+ 			var6 = var6 * var10 + var9 * (1.0F - var10);
+ 		}
+ 
+-		return Vec3D.createVector((double)var4, (double)var5, (double)var6);
++		return Vector3D.createVector((double)var4, (double)var5, (double)var6);
+ 	}
+ 
+-	public Vec3D getFogColor(float var1) {
++	public Vector3D getFogColor(float var1) {
+ 		float var2 = this.getCelestialAngle(var1);
+ 		return this.dimension.getFogColor(var2, var1);
+ 	}
  
  	public int getTopSolidOrLiquidBlock(int var1, int var2) {
  		Chunk var3 = this.getChunkFromBlockCoords(var1, var2);
@@ -14814,6 +15088,33 @@
  	public float getStarBrightness(float var1) {
  		float var2 = this.getCelestialAngle(var1);
  		float var3 = 1.0F - (MathHelper.cos(var2 * (float)Math.PI * 2.0F) * 2.0F + 12.0F / 16.0F);
+@@ -1518,7 +1517,7 @@
+ 			return false;
+ 		} else {
+ 			boolean var10 = false;
+-			Vec3D var11 = Vec3D.createVector(0.0D, 0.0D, 0.0D);
++			Vector3D var11 = Vector3D.createVector(0.0D, 0.0D, 0.0D);
+ 
+ 			for(int var12 = var4; var12 < var5; ++var12) {
+ 				for(int var13 = var6; var13 < var7; ++var13) {
+@@ -1611,7 +1610,7 @@
+ 		return var10;
+ 	}
+ 
+-	public float rayTraceVecAABB(Vec3D var1, AxisAlignedBB var2) {
++	public float rayTraceVecAABB(Vector3D var1, AxisAlignedBB var2) {
+ 		double var3 = 1.0D / ((var2.maxX - var2.minX) * 2.0D + 1.0D);
+ 		double var5 = 1.0D / ((var2.maxY - var2.minY) * 2.0D + 1.0D);
+ 		double var7 = 1.0D / ((var2.maxZ - var2.minZ) * 2.0D + 1.0D);
+@@ -1624,7 +1623,7 @@
+ 					double var14 = var2.minX + (var2.maxX - var2.minX) * (double)var11;
+ 					double var16 = var2.minY + (var2.maxY - var2.minY) * (double)var12;
+ 					double var18 = var2.minZ + (var2.maxZ - var2.minZ) * (double)var13;
+-					if(this.rayTraceBlocks(Vec3D.createVector(var14, var16, var18), var1) == null) {
++					if(this.rayTraceBlocks(Vector3D.createVector(var14, var16, var18), var1) == null) {
+ 						++var9;
+ 					}
+ 
 @@ -1685,6 +1684,16 @@
  		return var4 != null ? var4.getChunkBlockTileEntity(var1 & 15, var2, var3 & 15) : null;
  	}
@@ -16590,6 +16891,32 @@
 +
 +	public abstract NBTBaseTag copy();
  }
+--- net/minecraft/client/render/RenderHelper.java
++++ net/minecraft/client/render/RenderHelper.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.client.render;
+ 
+ import java.nio.FloatBuffer;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import org.lwjgl.opengl.GL11;
+ 
+ public class RenderHelper {
+@@ -23,12 +23,12 @@
+ 		float var0 = 0.4F;
+ 		float var1 = 0.6F;
+ 		float var2 = 0.0F;
+-		Vec3D var3 = Vec3D.createVector((double)0.2F, 1.0D, (double)-0.7F).normalize();
++		Vector3D var3 = Vector3D.createVector((double)0.2F, 1.0D, (double)-0.7F).normalize();
+ 		GL11.glLight(GL11.GL_LIGHT0, GL11.GL_POSITION, func_1157_a(var3.xCoord, var3.yCoord, var3.zCoord, 0.0D));
+ 		GL11.glLight(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, func_1156_a(var1, var1, var1, 1.0F));
+ 		GL11.glLight(GL11.GL_LIGHT0, GL11.GL_AMBIENT, func_1156_a(0.0F, 0.0F, 0.0F, 1.0F));
+ 		GL11.glLight(GL11.GL_LIGHT0, GL11.GL_SPECULAR, func_1156_a(var2, var2, var2, 1.0F));
+-		var3 = Vec3D.createVector((double)-0.2F, 1.0D, (double)0.7F).normalize();
++		var3 = Vector3D.createVector((double)-0.2F, 1.0D, (double)0.7F).normalize();
+ 		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_POSITION, func_1157_a(var3.xCoord, var3.yCoord, var3.zCoord, 0.0D));
+ 		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_DIFFUSE, func_1156_a(var1, var1, var1, 1.0F));
+ 		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_AMBIENT, func_1156_a(0.0F, 0.0F, 0.0F, 1.0F));
 --- net/minecraft/client/player/MovementInput.java
 +++ net/minecraft/client/player/MovementInput.java
 @@ -8,6 +8,7 @@
@@ -16656,7 +16983,7 @@
 +import net.minecraft.game.item.*;
 +import net.minecraft.game.item.equippable.ExtraJumpModifier;
  import net.minecraft.game.physics.AxisAlignedBB;
-+import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.stats.StatBase;
  import net.minecraft.game.stats.StatList;
  import net.minecraft.game.stats.achievement.AchievementList;
@@ -17150,10 +17477,10 @@
 +	protected void updateItemUse(ItemStack var1, int var2) {
 +		if(var1.getItemUseAction() == UseAction.EAT) {
 +			for(int var3 = 0; var3 < var2; ++var3) {
-+				Vec3D var4 = Vec3D.createVector(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
++				Vector3D var4 = Vector3D.createVector(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
 +				var4.rotateAroundX(-this.rotationPitch * (float)Math.PI / 180.0F);
 +				var4.rotateAroundY(-this.rotationYaw * (float)Math.PI / 180.0F);
-+				Vec3D var5 = Vec3D.createVector(((double)this.rand.nextFloat() - 0.5D) * 0.3D, (double)(-this.rand.nextFloat()) * 0.6D - 0.3D, 0.6D);
++				Vector3D var5 = Vector3D.createVector(((double)this.rand.nextFloat() - 0.5D) * 0.3D, (double)(-this.rand.nextFloat()) * 0.6D - 0.3D, 0.6D);
 +				var5.rotateAroundX(-this.rotationPitch * (float)Math.PI / 180.0F);
 +				var5.rotateAroundY(-this.rotationYaw * (float)Math.PI / 180.0F);
 +				var5 = var5.addVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ);
@@ -17279,7 +17606,7 @@
 +}
 --- net/minecraft/client/Option.java
 +++ net/minecraft/client/Option.java
-@@ -1,23 +1,73 @@
+@@ -1,23 +1,74 @@
  package net.minecraft.client;
  
 +import java.util.*;
@@ -17329,6 +17656,7 @@
 +	MUSIC               ("options.music",               "options.category.audio",       true,  false),
 +	SOUND               ("options.sound",               "options.category.audio",       true,  false),
 +	AMBIENCE            ("options.ambience",            "options.category.audio",       true,  false),
++	CREATIVE_MUSIC      ("options.creativeMusic",       "options.category.audio",       false, true),
 +	INVERT_MOUSE        ("options.invertMouse",         "options.category.controls",    false, true ),
 +	SENSITIVITY         ("options.sensitivity",         "options.category.controls",    true,  false),
 +	DIFFICULTY          ("options.difficulty",          "options.category.misc",        false, false),
@@ -17366,7 +17694,7 @@
  
  	public static Option getOptionFromId(int var0) {
  		Option[] var1 = values();
-@@ -33,8 +83,9 @@
+@@ -33,8 +84,9 @@
  		return null;
  	}
  
@@ -17377,7 +17705,7 @@
  		this.isSlider = var4;
  		this.isToggle = var5;
  	}
-@@ -53,5 +104,9 @@
+@@ -53,5 +105,9 @@
  
  	public String getName() {
  		return this.name;
@@ -19031,8 +19359,70 @@
 +        }
 +    }
  }
+--- net/minecraft/game/item/BucketItem.java
++++ net/minecraft/game/item/BucketItem.java
+@@ -2,7 +2,7 @@
+ 
+ import net.minecraft.game.entity.animal.CowEntity;
+ import net.minecraft.game.entity.player.PlayerEntity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.MovingObjectType;
+ import net.minecraft.game.world.World;
+@@ -26,7 +26,7 @@
+ 		double var7 = var3.prevPosX + (var3.posX - var3.prevPosX) * (double)var4;
+ 		double var9 = var3.prevPosY + (var3.posY - var3.prevPosY) * (double)var4 + 1.62D - (double)var3.yOffset;
+ 		double var11 = var3.prevPosZ + (var3.posZ - var3.prevPosZ) * (double)var4;
+-		Vec3D var13 = Vec3D.createVector(var7, var9, var11);
++		Vector3D var13 = Vector3D.createVector(var7, var9, var11);
+ 		float var14 = MathHelper.cos(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 		float var15 = MathHelper.sin(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 		float var16 = -MathHelper.cos(-var5 * ((float)Math.PI / 180.0F));
+@@ -34,7 +34,7 @@
+ 		float var18 = var15 * var16;
+ 		float var20 = var14 * var16;
+ 		double var21 = 5.0D;
+-		Vec3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
++		Vector3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
+ 		MovingObjectPosition var24 = var2.rayTraceBlocks_do(var13, var23, this.isFull == 0);
+ 		if(var24 == null) {
+ 			return var1;
 --- net/minecraft/client/render/entity/RenderMinecart.java
 +++ net/minecraft/client/render/entity/RenderMinecart.java
+@@ -5,7 +5,7 @@
+ import net.minecraft.client.render.RenderBlocks;
+ import net.minecraft.game.entity.Entity;
+ import net.minecraft.game.entity.vehicle.MinecartEntity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.block.Block;
+ import net.minecraft.util.MathHelper;
+ import org.lwjgl.opengl.GL11;
+@@ -24,11 +24,11 @@
+ 		double var12 = var1.lastTickPosY + (var1.posY - var1.lastTickPosY) * (double)var9;
+ 		double var14 = var1.lastTickPosZ + (var1.posZ - var1.lastTickPosZ) * (double)var9;
+ 		double var16 = (double)0.3F;
+-		Vec3D var18 = var1.getRailDirection(var10, var12, var14);
++		Vector3D var18 = var1.getRailDirection(var10, var12, var14);
+ 		float var19 = var1.prevRotationPitch + (var1.rotationPitch - var1.prevRotationPitch) * var9;
+ 		if(var18 != null) {
+-			Vec3D var20 = var1.getBlockDirection(var10, var12, var14, var16);
+-			Vec3D var21 = var1.getBlockDirection(var10, var12, var14, -var16);
++			Vector3D var20 = var1.getBlockDirection(var10, var12, var14, var16);
++			Vector3D var21 = var1.getBlockDirection(var10, var12, var14, -var16);
+ 			if(var20 == null) {
+ 				var20 = var18;
+ 			}
+@@ -40,7 +40,7 @@
+ 			var2 += var18.xCoord - var10;
+ 			var4 += (var20.yCoord + var21.yCoord) / 2.0D - var12;
+ 			var6 += var18.zCoord - var14;
+-			Vec3D var22 = var21.addVector(-var20.xCoord, -var20.yCoord, -var20.zCoord);
++			Vector3D var22 = var21.addVector(-var20.xCoord, -var20.yCoord, -var20.zCoord);
+ 			if(var22.lengthVector() != 0.0D) {
+ 				var22 = var22.normalize();
+ 				var8 = (float)(Math.atan2(var22.zCoord, var22.xCoord) * 180.0D / Math.PI);
 @@ -68,9 +68,9 @@
  			GL11.glTranslatef(0.0F, 5.0F / 16.0F, 0.0F);
  			GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
@@ -19301,9 +19691,28 @@
 +		}
 +	}
 +}
+--- net/minecraft/game/entity/CreatureEntity.java
++++ net/minecraft/game/entity/CreatureEntity.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.game.entity;
+ 
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.path.PathEntity;
+ import net.minecraft.util.MathHelper;
+@@ -50,7 +50,7 @@
+ 		boolean var4 = this.handleLavaMovement();
+ 		this.rotationPitch = 0.0F;
+ 		if(this.pathToEntity != null && this.rand.nextInt(100) != 0) {
+-			Vec3D var5 = this.pathToEntity.getPosition(this);
++			Vector3D var5 = this.pathToEntity.getPosition(this);
+ 			double var6 = (double)(this.width * 2.0F);
+ 
+ 			while(var5 != null && var5.squareDistanceTo(this.posX, var5.yCoord, this.posZ) < var6 * var6) {
 --- net/minecraft/game/world/block/LiquidBlock.java
 +++ net/minecraft/game/world/block/LiquidBlock.java
-@@ -1,22 +1,37 @@
+@@ -1,22 +1,36 @@
  package net.minecraft.game.world.block;
  
  import java.util.Random;
@@ -19312,10 +19721,10 @@
  import net.minecraft.game.entity.Entity;
 +import net.minecraft.game.item.Item;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.World;
-+import net.minecraft.game.world.biome.Biome;
 +import net.minecraft.game.world.block.properties.BooleanProperty;
 +import net.minecraft.game.world.block.properties.IntProperty;
 +import net.minecraft.game.world.block.properties.PropertyList;
@@ -19342,7 +19751,7 @@
  	public int getColorMultiplier(BlockAccess var1, int var2, int var3, int var4) {
  		return 16777215;
  	}
-@@ -69,8 +84,13 @@
+@@ -69,8 +83,13 @@
  	}
  
  	public boolean shouldSideBeRendered(BlockAccess var1, int var2, int var3, int var4, int var5) {
@@ -19358,22 +19767,45 @@
  	}
  
  	public AxisAlignedBB getCollisionBoundingBoxFromPool(World var1, int var2, int var3, int var4) {
-@@ -81,11 +101,11 @@
+@@ -81,16 +100,16 @@
  		return 4;
  	}
  
 -	public int idDropped(int var1, Random var2) {
 -		return 0;
+-	}
+-
+-	public int quantityDropped(Random var1) {
+-		return 0;
+-	}
+-
+-	private Vec3D getFlowVector(BlockAccess var1, int var2, int var3, int var4) {
+-		Vec3D var5 = Vec3D.createVector(0.0D, 0.0D, 0.0D);
 +	public Item itemDropped(int var1, Random var2) {
 +		return null;
- 	}
- 
--	public int quantityDropped(Random var1) {
++	}
++
 +	public int quantityDropped(Item var0a, int var0b, Random var1) {
- 		return 0;
++		return 0;
++	}
++
++	private Vector3D getFlowVector(BlockAccess var1, int var2, int var3, int var4) {
++		Vector3D var5 = Vector3D.createVector(0.0D, 0.0D, 0.0D);
+ 		int var6 = this.getEffectiveFlowDecay(var1, var2, var3, var4);
+ 
+ 		for(int var7 = 0; var7 < 4; ++var7) {
+@@ -171,8 +190,8 @@
+ 		return var5;
  	}
  
-@@ -185,7 +205,7 @@
+-	public void velocityToAddToEntity(World var1, int var2, int var3, int var4, Entity var5, Vec3D var6) {
+-		Vec3D var7 = this.getFlowVector(var1, var2, var3, var4);
++	public void velocityToAddToEntity(World var1, int var2, int var3, int var4, Entity var5, Vector3D var6) {
++		Vector3D var7 = this.getFlowVector(var1, var2, var3, var4);
+ 		var6.xCoord += var7.xCoord;
+ 		var6.yCoord += var7.yCoord;
+ 		var6.zCoord += var7.zCoord;
+@@ -185,7 +204,7 @@
  	public float getBlockBrightness(BlockAccess var1, int var2, int var3, int var4) {
  		float var5 = var1.getLightBrightness(var2, var3, var4);
  		float var6 = var1.getLightBrightness(var2, var3 + 1, var4);
@@ -19382,7 +19814,7 @@
  	}
  
  	public void updateTick(World var1, int var2, int var3, int var4, Random var5) {
-@@ -204,7 +224,7 @@
+@@ -204,7 +223,7 @@
  			}
  		}
  
@@ -19391,6 +19823,15 @@
  			double var12 = (double)((float)var2 + var5.nextFloat());
  			double var8 = (double)var3 + this.maxY;
  			double var10 = (double)((float)var4 + var5.nextFloat());
+@@ -214,7 +233,7 @@
+ 	}
+ 
+ 	public static double getFlowDirection(BlockAccess var0, int var1, int var2, int var3, Material var4) {
+-		Vec3D var5 = null;
++		Vector3D var5 = null;
+ 		if(var4 == Material.water) {
+ 			var5 = ((LiquidBlock)Block.flowingWater).getFlowVector(var0, var1, var2, var3);
+ 		}
 --- net/minecraft/game/item/ArmorItem.java
 +++ /dev/null
 @@ -1,20 +1,0 @@
@@ -19416,6 +19857,24 @@
 -}
 --- net/minecraft/client/render/entity/RenderFish.java
 +++ net/minecraft/client/render/entity/RenderFish.java
+@@ -3,7 +3,7 @@
+ import net.minecraft.client.render.Tessellator;
+ import net.minecraft.game.entity.Entity;
+ import net.minecraft.game.entity.misc.FishEntity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.util.MathHelper;
+ import org.lwjgl.opengl.GL11;
+ import org.lwjgl.opengl.GL12;
+@@ -42,7 +42,7 @@
+ 			double var23 = (double)MathHelper.cos(var20);
+ 			float var25 = var1.angler.getSwingProgress(var9);
+ 			float var26 = MathHelper.sin(MathHelper.sqrt(var25) * (float)Math.PI);
+-			Vec3D var27 = Vec3D.createVector(-0.5D, 0.03D, 0.8D);
++			Vector3D var27 = Vector3D.createVector(-0.5D, 0.03D, 0.8D);
+ 			var27.rotateAroundX(-(var1.angler.prevRotationPitch + (var1.angler.rotationPitch - var1.angler.prevRotationPitch) * var9) * (float)Math.PI / 180.0F);
+ 			var27.rotateAroundY(-(var1.angler.prevRotationYaw + (var1.angler.rotationYaw - var1.angler.prevRotationYaw) * var9) * (float)Math.PI / 180.0F);
+ 			var27.rotateAroundY(var26 * 0.5F);
 @@ -50,7 +50,7 @@
  			double var28 = var1.angler.prevPosX + (var1.angler.posX - var1.angler.prevPosX) * (double)var9 + var27.xCoord;
  			double var30 = var1.angler.prevPosY + (var1.angler.posY - var1.angler.prevPosY) * (double)var9 + var27.yCoord;
@@ -20527,8 +20986,9 @@
 @@ -1,16 +1,21 @@
  package net.minecraft.game.world.dimension;
  
+-import net.minecraft.game.physics.Vec3D;
 +import net.minecraft.SharedConstants;
- import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.World;
 -import net.minecraft.game.world.biome.ClimaticBiomeSource;
 +import net.minecraft.game.world.biome.Biome;
@@ -20582,6 +21042,24 @@
  	}
  
  	public float calculateCelestialAngle(long var1, float var3) {
+@@ -82,7 +94,7 @@
+ 		}
+ 	}
+ 
+-	public Vec3D getFogColor(float var1, float var2) {
++	public Vector3D getFogColor(float var1, float var2) {
+ 		float var3 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
+ 		if(var3 < 0.0F) {
+ 			var3 = 0.0F;
+@@ -98,7 +110,7 @@
+ 		var4 *= var3 * 0.94F + 0.06F;
+ 		var5 *= var3 * 0.94F + 0.06F;
+ 		var6 *= var3 * 0.91F + 0.09F;
+-		return Vec3D.createVector((double)var4, (double)var5, (double)var6);
++		return Vector3D.createVector((double)var4, (double)var5, (double)var6);
+ 	}
+ 
+ 	public boolean canRespawnHere() {
 @@ -110,7 +122,7 @@
  	}
  
@@ -20708,11 +21186,11 @@
  				this.field_587_e = (this.field_587_e + 1) % 256;
  				String var5 = "sound_" + this.field_587_e;
 -				sndSystem.newSource(false, var5, var4.soundUrl, var4.soundName, false, 0.0F, 0.0F, 0.0F, 0, 0.0F);
-+				sndSystem.newSource(false, var5, var4.soundUrl, var4.soundName, false, 0.0F, 0.0F, 0.0F, 0, 1.0F);
++			sndSystem.newSource(false, var5, var4.soundUrl, var4.soundName, false, 0.0F, 0.0F, 0.0F, 0, 0.0F);
  				if(var2 > 1.0F) {
  					var2 = 1.0F;
  				}
-@@ -194,6 +203,158 @@
+@@ -194,6 +203,160 @@
  				sndSystem.play(var5);
  			}
  
@@ -20734,7 +21212,7 @@
 +			for (AmbienceChannel channel : AmbienceChannel.values()) {
 +				if (entity == null) {
 +					channel.targetVolume = 0.0F;
-+				} else if (blocks != null && channel.triggerBlock != 0) {
++				} else if (blocks != null && channel.triggerBlock != -1) {
 +					channel.targetVolume = MathHelper.clampedLerp(blocks.get(channel.triggerBlock), channel.triggerMin, channel.triggerMax, 0.0F, 1.0F);
 +				}
 +
@@ -20758,7 +21236,7 @@
 +							channel.targetVolume *= MathHelper.clampedLerp(Math.abs(y - topOpaque), 0.0F, 32.0F, 1.0F, 0.0F);
 +						}
 +					} else if (channel == AmbienceChannel.CAVECHIMES) {
-+						channel.targetVolume = MathHelper.clampedLerp((float)entity.posY, 256, 224, 0.0F, 1.0F);
++						channel.targetVolume *= MathHelper.clampedLerp((float)entity.posY, 256, 224, 0.0F, 1.0F);
 +						channel.targetVolume *= 1.0F - entity.worldObj.getSavedLightValue(LightType.SKY, x, y, z) / 15.0F;
 +					}
 +				}
@@ -20774,7 +21252,9 @@
 +				float mixedPitch = 1.0F;
 +
 +				if (entity != null) {
-+					if (channel == AmbienceChannel.OCEAN && entity.isInsideOfMaterial(Material.water)) {
++					if (channel == AmbienceChannel.BIRDS) {
++						mixedVolume /= 1.5F;
++					} else if (channel == AmbienceChannel.OCEAN && entity.isInsideOfMaterial(Material.water)) {
 +						mixedPitch /= 2.0F;
 +						mixedVolume /= 2.0F;
 +					} else if (channel == AmbienceChannel.CAVECHIMES) {
@@ -20846,10 +21326,10 @@
 +
 +	private enum AmbienceChannel {
 +		OCEAN("ambient.ocean", Block.stillWater.blockID, 250, 5000),
-+		BIRDS("ambient.birds", Block.leaves.blockID, 250, 2500),
++		BIRDS("ambient.birds", Block.leaves.blockID, 500, 1000),
 +		WIND("ambient.wind"),
 +		CRICKETS("ambient.crickets"),
-+		CAVECHIMES("ambient.cavechimes"),
++		CAVECHIMES("ambient.cavechimes", 0, 0, 10000),
 +		;
 +
 +		public final String sound;
@@ -20860,7 +21340,7 @@
 +		float targetVolume;
 +
 +		AmbienceChannel(String sound) {
-+			this(sound, 0, 0, 0);
++			this(sound, -1, 0, 0);
 +		}
 +
 +		AmbienceChannel(String sound, int triggerBlock, int triggerMin, int triggerMax) {
@@ -21440,6 +21920,34 @@
  }
 --- net/minecraft/game/entity/projectile/FireballEntity.java
 +++ net/minecraft/game/entity/projectile/FireballEntity.java
+@@ -5,7 +5,7 @@
+ import net.minecraft.game.entity.Entity;
+ import net.minecraft.game.entity.LivingEntity;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+ import net.minecraft.util.MathHelper;
+@@ -94,13 +94,13 @@
+ 			++this.ticksInAir;
+ 		}
+ 
+-		Vec3D var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		Vec3D var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		Vector3D var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		Vector3D var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		MovingObjectPosition var3 = this.worldObj.rayTraceBlocks(var15, var2);
+-		var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		if(var3 != null) {
+-			var2 = Vec3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
++			var2 = Vector3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
+ 		}
+ 
+ 		Entity var4 = null;
 @@ -185,7 +185,7 @@
  		var1.setShort("xTile", (short)this.xTile);
  		var1.setShort("yTile", (short)this.yTile);
@@ -21458,7 +21966,7 @@
  		this.shake = var1.getByte("shake") & 255;
  		this.inGround = var1.getByte("inGround") == 1;
  	}
-@@ -207,7 +207,7 @@
+@@ -207,10 +207,10 @@
  		return 1.0F;
  	}
  
@@ -21466,7 +21974,11 @@
 +	public boolean hurt(Entity var1, float var2) {
  		this.setBeenAttacked();
  		if(var1 != null) {
- 			Vec3D var3 = var1.getLookVec();
+-			Vec3D var3 = var1.getLookVec();
++			Vector3D var3 = var1.getLookVec();
+ 			if(var3 != null) {
+ 				this.motionX = var3.xCoord;
+ 				this.motionY = var3.yCoord;
 --- net/minecraft/client/PanelCrashReport.java
 +++ net/minecraft/client/PanelCrashReport.java
 @@ -9,6 +9,8 @@
@@ -21523,22 +22035,25 @@
  		if(super.hurt(var1, var2)) {
  			if(this.riddenByEntity != var1 && this.ridingEntity != var1) {
  				if(var1 != this) {
-@@ -81,15 +84,18 @@
+@@ -81,15 +84,17 @@
  		if(this.worldObj.getSavedLightValue(LightType.SKY, var1, var2, var3) > this.rand.nextInt(32)) {
  			return false;
  		} else {
 -			int var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
 +			int var4b = this.worldObj.getSavedLightValue(LightType.BLOCK, var1, var2, var3);
 +			int var4s = this.worldObj.getSavedLightValue(LightType.SKY, var1, var2, var3);
++			int var5 = this.worldObj.skylightSubtracted;
  			if(this.worldObj.canThunder()) {
- 				int var5 = this.worldObj.skylightSubtracted;
- 				this.worldObj.skylightSubtracted = 10;
+-				int var5 = this.worldObj.skylightSubtracted;
+-				this.worldObj.skylightSubtracted = 10;
 -				var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
-+				var4s = this.worldObj.getSavedLightValue(LightType.SKY, var1, var2, var3);
- 				this.worldObj.skylightSubtracted = var5;
+-				this.worldObj.skylightSubtracted = var5;
++				var5 = 10;
  			}
- 
+-
 -			return var4 <= this.rand.nextInt(8) && super.getCanSpawnHere();
++			var4s -= var5;
++
 +			int maxBlockLight = (int)MathHelper.clampedLerp(var2, 128.0F, 256.0F, 0.0F, 12.0F);
 +
 +			return (var4s <= this.rand.nextInt(8) && var4b <= maxBlockLight) && super.getCanSpawnHere();
@@ -23070,7 +23585,15 @@
  import net.minecraft.client.render.camera.ICamera;
  import net.minecraft.client.render.tileentity.TileEntityRenderer;
  import net.minecraft.game.entity.Entity;
-@@ -37,12 +30,11 @@
+@@ -30,19 +23,18 @@
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.item.MusicDiscItem;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.MovingObjectType;
+ import net.minecraft.game.world.World;
  import net.minecraft.game.world.WorldAccess;
  import net.minecraft.game.world.block.Block;
  import net.minecraft.game.world.block.tileentity.TileEntity;
@@ -23167,6 +23690,15 @@
  		this.worldRenderers = new ChunkRenderer[this.renderChunksWide * this.renderChunksTall * this.renderChunksDeep];
  		this.sortedWorldRenderers = new ChunkRenderer[this.renderChunksWide * this.renderChunksTall * this.renderChunksDeep];
  		int var2 = 0;
+@@ -283,7 +288,7 @@
+ 		this.renderEntitiesStartupCounter = 2;
+ 	}
+ 
+-	public void renderEntities(Vec3D var1, ICamera var2, float var3) {
++	public void renderEntities(Vector3D var1, ICamera var2, float var3) {
+ 		if(this.renderEntitiesStartupCounter > 0) {
+ 			--this.renderEntitiesStartupCounter;
+ 		} else {
 @@ -314,16 +319,8 @@
  
  			for(var6 = 0; var6 < var5.size(); ++var6) {
@@ -23286,6 +23818,15 @@
  	}
  
  	public void updateClouds() {
+@@ -632,7 +677,7 @@
+ 	public void renderSky(float var1) {
+ 		if(!this.mc.theWorld.dimension.isNether) {
+ 			GL11.glDisable(GL11.GL_TEXTURE_2D);
+-			Vec3D var2 = this.worldObj.getSkyColor(this.mc.renderViewEntity, var1);
++			Vector3D var2 = this.worldObj.getSkyColor(this.mc.renderViewEntity, var1);
+ 			float var3 = (float)var2.xCoord;
+ 			float var4 = (float)var2.yCoord;
+ 			float var5 = (float)var2.zCoord;
 @@ -663,7 +708,7 @@
  			float var10;
  			float var11;
@@ -23320,6 +23861,15 @@
  			} else {
  				GL11.glDisable(GL11.GL_CULL_FACE);
  				float var2 = (float)(this.mc.renderViewEntity.lastTickPosY + (this.mc.renderViewEntity.posY - this.mc.renderViewEntity.lastTickPosY) * (double)var1);
+@@ -766,7 +816,7 @@
+ 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureRegistry.getTexture("/environment/clouds.png"));
+ 				GL11.glEnable(GL11.GL_BLEND);
+ 				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+-				Vec3D var6 = this.worldObj.getCloudColor(var1);
++				Vector3D var6 = this.worldObj.getCloudColor(var1);
+ 				float var7 = (float)var6.xCoord;
+ 				float var8 = (float)var6.yCoord;
+ 				float var9 = (float)var6.zCoord;
 @@ -814,15 +864,17 @@
  		return false;
  	}
@@ -23343,6 +23893,15 @@
  		int var11 = MathHelper.floor(var6 / 2048.0D);
  		int var12 = MathHelper.floor(var8 / 2048.0D);
  		var6 -= (double)(var11 * 2048);
+@@ -830,7 +882,7 @@
+ 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureRegistry.getTexture("/environment/clouds.png"));
+ 		GL11.glEnable(GL11.GL_BLEND);
+ 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+-		Vec3D var13 = this.worldObj.getCloudColor(var1);
++		Vector3D var13 = this.worldObj.getCloudColor(var1);
+ 		float var14 = (float)var13.xCoord;
+ 		float var15 = (float)var13.yCoord;
+ 		float var16 = (float)var13.zCoord;
 @@ -879,7 +931,7 @@
  					float var30 = var28 - var20;
  					float var31 = var29 - var21;
@@ -24695,6 +25254,27 @@
 +		return placed;
 +	}
 +}
+--- net/minecraft/game/world/dimension/NetherDimension.java
++++ net/minecraft/game/world/dimension/NetherDimension.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.game.world.dimension;
+ 
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.biome.Biome;
+ import net.minecraft.game.world.biome.SingleBiomeSource;
+ import net.minecraft.game.world.block.Block;
+@@ -16,8 +16,8 @@
+ 		this.worldType = -1;
+ 	}
+ 
+-	public Vec3D getFogColor(float var1, float var2) {
+-		return Vec3D.createVector((double)0.2F, (double)0.03F, (double)0.03F);
++	public Vector3D getFogColor(float var1, float var2) {
++		return Vector3D.createVector((double)0.2F, (double)0.03F, (double)0.03F);
+ 	}
+ 
+ 	protected void generateLightBrightnessTable() {
 --- /dev/null
 +++ net/minecraft/game/world/terrain/feature/SeaweedFeature.java
 @@ -1,0 +1,35 @@
@@ -25508,6 +26088,43 @@
  	}
  
  	public void damageArmor(int var1) {
+--- net/minecraft/game/world/MovingObjectPosition.java
++++ net/minecraft/game/world/MovingObjectPosition.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.game.world;
+ 
+ import net.minecraft.game.entity.Entity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ 
+ public class MovingObjectPosition {
+ 	public MovingObjectType typeOfHit;
+@@ -9,21 +9,21 @@
+ 	public int blockY;
+ 	public int blockZ;
+ 	public int sideHit;
+-	public Vec3D hitVec;
++	public Vector3D hitVec;
+ 	public Entity entityHit;
+ 
+-	public MovingObjectPosition(int var1, int var2, int var3, int var4, Vec3D var5) {
++	public MovingObjectPosition(int var1, int var2, int var3, int var4, Vector3D var5) {
+ 		this.typeOfHit = MovingObjectType.BLOCK;
+ 		this.blockX = var1;
+ 		this.blockY = var2;
+ 		this.blockZ = var3;
+ 		this.sideHit = var4;
+-		this.hitVec = Vec3D.createVector(var5.xCoord, var5.yCoord, var5.zCoord);
++		this.hitVec = Vector3D.createVector(var5.xCoord, var5.yCoord, var5.zCoord);
+ 	}
+ 
+ 	public MovingObjectPosition(Entity var1) {
+ 		this.typeOfHit = MovingObjectType.ENTITY;
+ 		this.entityHit = var1;
+-		this.hitVec = Vec3D.createVector(var1.posX, var1.posY, var1.posZ);
++		this.hitVec = Vector3D.createVector(var1.posX, var1.posY, var1.posZ);
+ 	}
+ }
 --- /dev/null
 +++ net/minecraft/game/world/block/properties/Direction2D.java
 @@ -1,0 +1,142 @@
@@ -27437,6 +28054,43 @@
  			this.mcServer.networkServer.addPlayer(var5);
 --- net/minecraft/game/entity/projectile/ArrowEntity.java
 +++ net/minecraft/game/entity/projectile/ArrowEntity.java
+@@ -8,7 +8,7 @@
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.block.Block;
+@@ -107,7 +107,7 @@
+ 		if(var15 > 0) {
+ 			Block.blocksList[var15].setBlockBoundsBasedOnState(this.worldObj, this.xTile, this.yTile, this.zTile);
+ 			AxisAlignedBB var2 = Block.blocksList[var15].getCollisionBoundingBoxFromPool(this.worldObj, this.xTile, this.yTile, this.zTile);
+-			if(var2 != null && var2.isVecInside(Vec3D.createVector(this.posX, this.posY, this.posZ))) {
++			if(var2 != null && var2.isVecInside(Vector3D.createVector(this.posX, this.posY, this.posZ))) {
+ 				this.inGround = true;
+ 			}
+ 		}
+@@ -135,13 +135,13 @@
+ 			}
+ 		} else {
+ 			++this.ticksInAir;
+-			Vec3D var16 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-			Vec3D var17 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++			Vector3D var16 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++			Vector3D var17 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 			MovingObjectPosition var3 = this.worldObj.rayTraceBlocks_dodo(var16, var17, false, true);
+-			var16 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-			var17 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++			var16 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++			var17 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 			if(var3 != null) {
+-				var17 = Vec3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
++				var17 = Vector3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
+ 			}
+ 
+ 			Entity var4 = null;
 @@ -248,7 +248,7 @@
  		var1.setShort("xTile", (short)this.xTile);
  		var1.setShort("yTile", (short)this.yTile);
@@ -27557,7 +28211,8 @@
 +import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 +import net.minecraft.SharedConstants;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.stats.StatList;
  import net.minecraft.game.world.BlockPos;
 +import net.minecraft.game.world.NewWorldInfo;
@@ -27670,7 +28325,7 @@
  			} else {
  				var1.add(var3);
  			}
-@@ -303,7 +309,7 @@
+@@ -303,11 +309,11 @@
  
  		int var6;
  		for(var6 = 0; var6 < var1.size(); ++var6) {
@@ -27679,6 +28334,11 @@
  		}
  
  		AxisAlignedBB.resetBoundingBoxPool();
+-		Vec3D.initialize();
++		Vector3D.initialize();
+ 		++this.deathTime;
+ 
+ 		for(var6 = 0; var6 < this.worldMngr.length; ++var6) {
 @@ -403,5 +409,9 @@
  
  	public static boolean isServerRunning(MinecraftServer var0) {
@@ -28263,12 +28923,14 @@
 +}
 --- net/minecraft/client/gui/container/CraftingScreen.java
 +++ net/minecraft/client/gui/container/CraftingScreen.java
-@@ -1,13 +1,32 @@
+@@ -1,13 +1,34 @@
  package net.minecraft.client.gui.container;
  
 +import net.minecraft.client.gui.component.GuiSliderGeneric;
  import net.minecraft.game.entity.player.InventoryPlayer;
 +import net.minecraft.game.item.recipe.ICrafting;
++import net.minecraft.game.item.slot.CraftingSlot;
++import net.minecraft.game.item.slot.Slot;
  import net.minecraft.game.world.World;
  import net.minecraft.game.world.block.WorkbenchContainer;
 +import org.lwjgl.input.Mouse;
@@ -28298,7 +28960,7 @@
  	}
  
  	public void onGuiClosed() {
-@@ -16,7 +35,7 @@
+@@ -16,7 +37,7 @@
  	}
  
  	protected void drawGuiContainerForegroundLayer() {
@@ -28307,7 +28969,7 @@
  		this.fontRenderer.drawString("Inventory", 8, this.ySize - 96 + 2, 4210752);
  	}
  
-@@ -27,5 +46,38 @@
+@@ -27,5 +48,47 @@
  		int var3 = (this.width - this.xSize) / 2;
  		int var4 = (this.height - this.ySize) / 2;
  		this.drawTexturedRect(var3, var4, 0, 0, this.xSize, this.ySize);
@@ -28335,6 +28997,15 @@
 +	}
 +
 +	protected void mouseClicked(int var1, int var2, int var3) {
++		Slot slot = this.getSlotAtPosition(var1, var2);
++		if (slot instanceof CraftingSlot) {
++			if (slot.getStack() == null || slot.getStack().count <= 0) {
++				this.mc.sndManager.playSoundFX("random.craftfail", 1.0F, 1.0F);
++			} else {
++				this.mc.sndManager.playSoundFX("random.pop", 1.0F, 1.0F);
++			}
++		}
++
 +		super.mouseClicked(var1, var2, var3);
 +		this.slider.visible = this.workbenchContainer.getPageCount() > 0;
 +		if (!this.slider.visible) {
@@ -28343,7 +29014,7 @@
 +	}
 +
 +	protected void mouseScrolled(int delta) {
-+		this.slider.mouseScrolled(delta / 9.0F);
++		this.slider.mouseScrolled(delta / (float)this.workbenchContainer.getPageCount());
  	}
  }
 --- /dev/null
@@ -28497,6 +29168,34 @@
  				var7 = true;
  			}
  
+--- net/minecraft/game/world/dimension/SkyDimension.java
++++ net/minecraft/game/world/dimension/SkyDimension.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.game.world.dimension;
+ 
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.biome.Biome;
+ import net.minecraft.game.world.biome.SingleBiomeSource;
+ import net.minecraft.game.world.block.Block;
+@@ -26,7 +26,7 @@
+ 		return null;
+ 	}
+ 
+-	public Vec3D getFogColor(float var1, float var2) {
++	public Vector3D getFogColor(float var1, float var2) {
+ 		int var3 = 8421536;
+ 		float var4 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
+ 		if(var4 < 0.0F) {
+@@ -43,7 +43,7 @@
+ 		var5 *= var4 * 0.94F + 0.06F;
+ 		var6 *= var4 * 0.94F + 0.06F;
+ 		var7 *= var4 * 0.91F + 0.09F;
+-		return Vec3D.createVector((double)var5, (double)var6, (double)var7);
++		return Vector3D.createVector((double)var5, (double)var6, (double)var7);
+ 	}
+ 
+ 	public boolean canSleep() {
 --- net/minecraft/game/item/ShovelItem.java
 +++ net/minecraft/game/item/ShovelItem.java
 @@ -3,13 +3,11 @@
@@ -29064,6 +29763,35 @@
 +		}
 +	}
 +}
+--- net/minecraft/game/item/BoatItem.java
++++ net/minecraft/game/item/BoatItem.java
+@@ -2,7 +2,7 @@
+ 
+ import net.minecraft.game.entity.player.PlayerEntity;
+ import net.minecraft.game.entity.vehicle.BoatEntity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.MovingObjectType;
+ import net.minecraft.game.world.World;
+@@ -22,7 +22,7 @@
+ 		double var7 = var3.prevPosX + (var3.posX - var3.prevPosX) * (double)var4;
+ 		double var9 = var3.prevPosY + (var3.posY - var3.prevPosY) * (double)var4 + 1.62D - (double)var3.yOffset;
+ 		double var11 = var3.prevPosZ + (var3.posZ - var3.prevPosZ) * (double)var4;
+-		Vec3D var13 = Vec3D.createVector(var7, var9, var11);
++		Vector3D var13 = Vector3D.createVector(var7, var9, var11);
+ 		float var14 = MathHelper.cos(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 		float var15 = MathHelper.sin(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 		float var16 = -MathHelper.cos(-var5 * ((float)Math.PI / 180.0F));
+@@ -30,7 +30,7 @@
+ 		float var18 = var15 * var16;
+ 		float var20 = var14 * var16;
+ 		double var21 = 5.0D;
+-		Vec3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
++		Vector3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
+ 		MovingObjectPosition var24 = var2.rayTraceBlocks_do(var13, var23, true);
+ 		if(var24 == null) {
+ 			return var1;
 --- /dev/null
 +++ net/minecraft/client/gui/component/GuiSliderGeneric.java
 @@ -1,0 +1,157 @@
@@ -30082,6 +30810,172 @@
  					--var1.count;
  				}
  			}
+--- net/minecraft/game/physics/Vec3D.java
++++ /dev/null
+@@ -1,163 +1,0 @@
+-package net.minecraft.game.physics;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+-import net.minecraft.util.MathHelper;
+-
+-public class Vec3D {
+-	private static List vectorList = new ArrayList();
+-	private static int nextVector = 0;
+-	public double xCoord;
+-	public double yCoord;
+-	public double zCoord;
+-
+-	public static Vec3D createVectorHelper(double var0, double var2, double var4) {
+-		return new Vec3D(var0, var2, var4);
+-	}
+-
+-	public static void clear() {
+-		vectorList.clear();
+-		nextVector = 0;
+-	}
+-
+-	public static void initialize() {
+-		nextVector = 0;
+-	}
+-
+-	public static Vec3D createVector(double var0, double var2, double var4) {
+-		if(nextVector >= vectorList.size()) {
+-			vectorList.add(createVectorHelper(0.0D, 0.0D, 0.0D));
+-		}
+-
+-		return ((Vec3D)vectorList.get(nextVector++)).setComponents(var0, var2, var4);
+-	}
+-
+-	private Vec3D(double var1, double var3, double var5) {
+-		if(var1 == -0.0D) {
+-			var1 = 0.0D;
+-		}
+-
+-		if(var3 == -0.0D) {
+-			var3 = 0.0D;
+-		}
+-
+-		if(var5 == -0.0D) {
+-			var5 = 0.0D;
+-		}
+-
+-		this.xCoord = var1;
+-		this.yCoord = var3;
+-		this.zCoord = var5;
+-	}
+-
+-	private Vec3D setComponents(double var1, double var3, double var5) {
+-		this.xCoord = var1;
+-		this.yCoord = var3;
+-		this.zCoord = var5;
+-		return this;
+-	}
+-
+-	public Vec3D subtract(Vec3D var1) {
+-		return createVector(var1.xCoord - this.xCoord, var1.yCoord - this.yCoord, var1.zCoord - this.zCoord);
+-	}
+-
+-	public Vec3D normalize() {
+-		double var1 = (double)MathHelper.sqrt(this.xCoord * this.xCoord + this.yCoord * this.yCoord + this.zCoord * this.zCoord);
+-		return var1 < 1.0E-4D ? createVector(0.0D, 0.0D, 0.0D) : createVector(this.xCoord / var1, this.yCoord / var1, this.zCoord / var1);
+-	}
+-
+-	public Vec3D crossProduct(Vec3D var1) {
+-		return createVector(this.yCoord * var1.zCoord - this.zCoord * var1.yCoord, this.zCoord * var1.xCoord - this.xCoord * var1.zCoord, this.xCoord * var1.yCoord - this.yCoord * var1.xCoord);
+-	}
+-
+-	public Vec3D addVector(double var1, double var3, double var5) {
+-		return createVector(this.xCoord + var1, this.yCoord + var3, this.zCoord + var5);
+-	}
+-
+-	public double distanceTo(Vec3D var1) {
+-		double var2 = var1.xCoord - this.xCoord;
+-		double var4 = var1.yCoord - this.yCoord;
+-		double var6 = var1.zCoord - this.zCoord;
+-		return (double)MathHelper.sqrt(var2 * var2 + var4 * var4 + var6 * var6);
+-	}
+-
+-	public double squareDistanceTo(Vec3D var1) {
+-		double var2 = var1.xCoord - this.xCoord;
+-		double var4 = var1.yCoord - this.yCoord;
+-		double var6 = var1.zCoord - this.zCoord;
+-		return var2 * var2 + var4 * var4 + var6 * var6;
+-	}
+-
+-	public double squareDistanceTo(double var1, double var3, double var5) {
+-		double var7 = var1 - this.xCoord;
+-		double var9 = var3 - this.yCoord;
+-		double var11 = var5 - this.zCoord;
+-		return var7 * var7 + var9 * var9 + var11 * var11;
+-	}
+-
+-	public double lengthVector() {
+-		return (double)MathHelper.sqrt(this.xCoord * this.xCoord + this.yCoord * this.yCoord + this.zCoord * this.zCoord);
+-	}
+-
+-	public Vec3D getIntermediateWithXValue(Vec3D var1, double var2) {
+-		double var4 = var1.xCoord - this.xCoord;
+-		double var6 = var1.yCoord - this.yCoord;
+-		double var8 = var1.zCoord - this.zCoord;
+-		if(var4 * var4 < (double)1.0E-7F) {
+-			return null;
+-		} else {
+-			double var10 = (var2 - this.xCoord) / var4;
+-			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
+-		}
+-	}
+-
+-	public Vec3D getIntermediateWithYValue(Vec3D var1, double var2) {
+-		double var4 = var1.xCoord - this.xCoord;
+-		double var6 = var1.yCoord - this.yCoord;
+-		double var8 = var1.zCoord - this.zCoord;
+-		if(var6 * var6 < (double)1.0E-7F) {
+-			return null;
+-		} else {
+-			double var10 = (var2 - this.yCoord) / var6;
+-			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
+-		}
+-	}
+-
+-	public Vec3D getIntermediateWithZValue(Vec3D var1, double var2) {
+-		double var4 = var1.xCoord - this.xCoord;
+-		double var6 = var1.yCoord - this.yCoord;
+-		double var8 = var1.zCoord - this.zCoord;
+-		if(var8 * var8 < (double)1.0E-7F) {
+-			return null;
+-		} else {
+-			double var10 = (var2 - this.zCoord) / var8;
+-			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
+-		}
+-	}
+-
+-	public String toString() {
+-		return "(" + this.xCoord + ", " + this.yCoord + ", " + this.zCoord + ")";
+-	}
+-
+-	public void rotateAroundX(float var1) {
+-		float var2 = MathHelper.cos(var1);
+-		float var3 = MathHelper.sin(var1);
+-		double var4 = this.xCoord;
+-		double var6 = this.yCoord * (double)var2 + this.zCoord * (double)var3;
+-		double var8 = this.zCoord * (double)var2 - this.yCoord * (double)var3;
+-		this.xCoord = var4;
+-		this.yCoord = var6;
+-		this.zCoord = var8;
+-	}
+-
+-	public void rotateAroundY(float var1) {
+-		float var2 = MathHelper.cos(var1);
+-		float var3 = MathHelper.sin(var1);
+-		double var4 = this.xCoord * (double)var2 + this.zCoord * (double)var3;
+-		double var6 = this.yCoord;
+-		double var8 = this.zCoord * (double)var2 - this.xCoord * (double)var3;
+-		this.xCoord = var4;
+-		this.yCoord = var6;
+-		this.zCoord = var8;
+-	}
+-}
 --- net/minecraft/game/item/recipe/RecipesIngots.java
 +++ /dev/null
 @@ -1,19 +1,0 @@
@@ -31811,6 +32705,34 @@
  }
 --- net/minecraft/game/entity/projectile/SnowballEntity.java
 +++ net/minecraft/game/entity/projectile/SnowballEntity.java
+@@ -8,7 +8,7 @@
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+ import net.minecraft.util.MathHelper;
+@@ -125,13 +125,13 @@
+ 			++this.ticksInAir;
+ 		}
+ 
+-		Vec3D var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		Vec3D var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		Vector3D var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		Vector3D var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		MovingObjectPosition var3 = this.worldObj.rayTraceBlocks(var15, var2);
+-		var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		if(var3 != null) {
+-			var2 = Vec3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
++			var2 = Vector3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
+ 		}
+ 
+ 		if(!this.worldObj.remoteWorld) {
 @@ -216,7 +216,7 @@
  		var1.setShort("xTile", (short)this.xTileSnowball);
  		var1.setShort("yTile", (short)this.yTileSnowball);
@@ -32650,7 +33572,8 @@
 +import java.util.Arrays;
  import java.util.Random;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
 +import net.minecraft.game.world.block.properties.*;
@@ -32764,6 +33687,15 @@
  				var7 = true;
  			}
  
+@@ -128,7 +138,7 @@
+ 		}
+ 	}
+ 
+-	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
++	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vector3D var5, Vector3D var6) {
+ 		int var7 = var1.getBlockMetadata(var2, var3, var4) & 7;
+ 		float var8 = 0.15F;
+ 		if(var7 == 1) {
 @@ -171,5 +181,36 @@
  			var1.spawnParticle("flame", var7, var9, var11, 0.0D, 0.0D, 0.0D);
  		}
@@ -33178,6 +34110,172 @@
  			int var5 = var1.getFleeceColor();
  			GL11.glColor3f(var4 * SheepEntity.fleeceColorTable[var5][0], var4 * SheepEntity.fleeceColorTable[var5][1], var4 * SheepEntity.fleeceColorTable[var5][2]);
  			return true;
+--- /dev/null
++++ net/minecraft/game/physics/Vector3D.java
+@@ -1,0 +1,163 @@
++package net.minecraft.game.physics;
++
++import java.util.ArrayList;
++import java.util.List;
++import net.minecraft.util.MathHelper;
++
++public class Vector3D {
++	private static List vectorList = new ArrayList();
++	private static int nextVector = 0;
++	public double xCoord;
++	public double yCoord;
++	public double zCoord;
++
++	public static Vector3D createVectorHelper(double var0, double var2, double var4) {
++		return new Vector3D(var0, var2, var4);
++	}
++
++	public static void clear() {
++		vectorList.clear();
++		nextVector = 0;
++	}
++
++	public static void initialize() {
++		nextVector = 0;
++	}
++
++	public static Vector3D createVector(double var0, double var2, double var4) {
++		if(nextVector >= vectorList.size()) {
++			vectorList.add(createVectorHelper(0.0D, 0.0D, 0.0D));
++		}
++
++		return ((Vector3D)vectorList.get(nextVector++)).setComponents(var0, var2, var4);
++	}
++
++	private Vector3D(double var1, double var3, double var5) {
++		if(var1 == -0.0D) {
++			var1 = 0.0D;
++		}
++
++		if(var3 == -0.0D) {
++			var3 = 0.0D;
++		}
++
++		if(var5 == -0.0D) {
++			var5 = 0.0D;
++		}
++
++		this.xCoord = var1;
++		this.yCoord = var3;
++		this.zCoord = var5;
++	}
++
++	private Vector3D setComponents(double var1, double var3, double var5) {
++		this.xCoord = var1;
++		this.yCoord = var3;
++		this.zCoord = var5;
++		return this;
++	}
++
++	public Vector3D subtract(Vector3D var1) {
++		return createVector(var1.xCoord - this.xCoord, var1.yCoord - this.yCoord, var1.zCoord - this.zCoord);
++	}
++
++	public Vector3D normalize() {
++		double var1 = (double)MathHelper.sqrt(this.xCoord * this.xCoord + this.yCoord * this.yCoord + this.zCoord * this.zCoord);
++		return var1 < 1.0E-4D ? createVector(0.0D, 0.0D, 0.0D) : createVector(this.xCoord / var1, this.yCoord / var1, this.zCoord / var1);
++	}
++
++	public Vector3D crossProduct(Vector3D var1) {
++		return createVector(this.yCoord * var1.zCoord - this.zCoord * var1.yCoord, this.zCoord * var1.xCoord - this.xCoord * var1.zCoord, this.xCoord * var1.yCoord - this.yCoord * var1.xCoord);
++	}
++
++	public Vector3D addVector(double var1, double var3, double var5) {
++		return createVector(this.xCoord + var1, this.yCoord + var3, this.zCoord + var5);
++	}
++
++	public double distanceTo(Vector3D var1) {
++		double var2 = var1.xCoord - this.xCoord;
++		double var4 = var1.yCoord - this.yCoord;
++		double var6 = var1.zCoord - this.zCoord;
++		return (double)MathHelper.sqrt(var2 * var2 + var4 * var4 + var6 * var6);
++	}
++
++	public double squareDistanceTo(Vector3D var1) {
++		double var2 = var1.xCoord - this.xCoord;
++		double var4 = var1.yCoord - this.yCoord;
++		double var6 = var1.zCoord - this.zCoord;
++		return var2 * var2 + var4 * var4 + var6 * var6;
++	}
++
++	public double squareDistanceTo(double var1, double var3, double var5) {
++		double var7 = var1 - this.xCoord;
++		double var9 = var3 - this.yCoord;
++		double var11 = var5 - this.zCoord;
++		return var7 * var7 + var9 * var9 + var11 * var11;
++	}
++
++	public double lengthVector() {
++		return (double)MathHelper.sqrt(this.xCoord * this.xCoord + this.yCoord * this.yCoord + this.zCoord * this.zCoord);
++	}
++
++	public Vector3D getIntermediateWithXValue(Vector3D var1, double var2) {
++		double var4 = var1.xCoord - this.xCoord;
++		double var6 = var1.yCoord - this.yCoord;
++		double var8 = var1.zCoord - this.zCoord;
++		if(var4 * var4 < (double)1.0E-7F) {
++			return null;
++		} else {
++			double var10 = (var2 - this.xCoord) / var4;
++			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
++		}
++	}
++
++	public Vector3D getIntermediateWithYValue(Vector3D var1, double var2) {
++		double var4 = var1.xCoord - this.xCoord;
++		double var6 = var1.yCoord - this.yCoord;
++		double var8 = var1.zCoord - this.zCoord;
++		if(var6 * var6 < (double)1.0E-7F) {
++			return null;
++		} else {
++			double var10 = (var2 - this.yCoord) / var6;
++			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
++		}
++	}
++
++	public Vector3D getIntermediateWithZValue(Vector3D var1, double var2) {
++		double var4 = var1.xCoord - this.xCoord;
++		double var6 = var1.yCoord - this.yCoord;
++		double var8 = var1.zCoord - this.zCoord;
++		if(var8 * var8 < (double)1.0E-7F) {
++			return null;
++		} else {
++			double var10 = (var2 - this.zCoord) / var8;
++			return var10 >= 0.0D && var10 <= 1.0D ? createVector(this.xCoord + var4 * var10, this.yCoord + var6 * var10, this.zCoord + var8 * var10) : null;
++		}
++	}
++
++	public String toString() {
++		return "(" + this.xCoord + ", " + this.yCoord + ", " + this.zCoord + ")";
++	}
++
++	public void rotateAroundX(float var1) {
++		float var2 = MathHelper.cos(var1);
++		float var3 = MathHelper.sin(var1);
++		double var4 = this.xCoord;
++		double var6 = this.yCoord * (double)var2 + this.zCoord * (double)var3;
++		double var8 = this.zCoord * (double)var2 - this.yCoord * (double)var3;
++		this.xCoord = var4;
++		this.yCoord = var6;
++		this.zCoord = var8;
++	}
++
++	public void rotateAroundY(float var1) {
++		float var2 = MathHelper.cos(var1);
++		float var3 = MathHelper.sin(var1);
++		double var4 = this.xCoord * (double)var2 + this.zCoord * (double)var3;
++		double var6 = this.yCoord;
++		double var8 = this.zCoord * (double)var2 - this.xCoord * (double)var3;
++		this.xCoord = var4;
++		this.yCoord = var6;
++		this.zCoord = var8;
++	}
++}
 --- net/minecraft/game/world/block/tileentity/MobSpawnerTileEntity.java
 +++ net/minecraft/game/world/block/tileentity/MobSpawnerTileEntity.java
 @@ -1,10 +1,13 @@
@@ -33207,14 +34305,17 @@
  	}
 --- net/minecraft/game/entity/monster/GhastEntity.java
 +++ net/minecraft/game/entity/monster/GhastEntity.java
-@@ -3,7 +3,6 @@
+@@ -3,9 +3,8 @@
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.FlyingEntity;
  import net.minecraft.game.entity.projectile.FireballEntity;
 -import net.minecraft.game.item.Item;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.World;
+ import net.minecraft.util.MathHelper;
+ 
 @@ -28,7 +27,7 @@
  
  	protected void entityInit() {
@@ -33224,6 +34325,15 @@
  	}
  
  	public void onUpdate() {
+@@ -94,7 +93,7 @@
+ 					this.worldObj.playSoundAtEntity(this, "mob.ghast.fireball", this.getSoundVolume(), (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F);
+ 					FireballEntity var17 = new FireballEntity(this.worldObj, this, var11, var13, var15);
+ 					double var18 = 4.0D;
+-					Vec3D var20 = this.getLook(1.0F);
++					Vector3D var20 = this.getLook(1.0F);
+ 					var17.posX = this.posX + var20.xCoord * var18;
+ 					var17.posY = this.posY + (double)(this.height / 2.0F) + 0.5D;
+ 					var17.posZ = this.posZ + var20.zCoord * var18;
 @@ -115,7 +114,7 @@
  			byte var21 = this.properties.getByte(16);
  			byte var12 = (byte)(this.attackCounter > 10 ? 1 : 0);
@@ -34409,7 +35519,7 @@
 +
 +	static {
 +		GOLD.attackSpeed = 8;
-+		GOLD.attackReach = -0.5F;
++		GOLD.attackReach = -0.25F;
 +		PLATINUM.attackSpeed = 12;
 +		PLATINUM.attackReach = 0.5F;
 +	}
@@ -35304,7 +36414,7 @@
 -	public static Item diamondShovel = (new ShovelItem(21, ToolMaterial.DIAMOND)).setTextureCoord(3, 5).setName("shovelDiamond");
 -	public static Item diamondPickaxe = (new PickaxeItem(22, ToolMaterial.DIAMOND)).setTextureCoord(3, 6).setName("pickaxeDiamond");
 -	public static Item diamondAxe = (new AxeItem(23, ToolMaterial.DIAMOND)).setTextureCoord(3, 7).setName("hatchetDiamond");
-+	public static Item flintShiv = (new SwordItem(12, 0, 2.0F, 5, 0.5F, -1.0F)).setTextureCoord(0, 4).setName("shivFlint");
++	public static Item flintShiv = (new SwordItem(12, 0, 2.0F, 5, 0.5F, -0.5F)).setTextureCoord(0, 4).setName("shivFlint");
 +	public static Item flintMattock = (new AxeItem(13, 0, ToolMaterial.FLINT, ToolType.MATTOCK)).setTextureCoord(0, 5).setName("mattockFlint");
 +	public static Item copperSword = (new SwordItem(16, ToolMaterial.COPPER)).setTextureCoord(1, 4).setName("swordCopper");
 +	public static Item copperShovel = (new ShovelItem(17, ToolMaterial.COPPER)).setTextureCoord(1, 5).setName("shovelCopper");
@@ -35317,13 +36427,12 @@
  	public static Item stick = (new Item(24)).setTextureCoord(5, 3).setToolGrip().setName("stick");
  	public static Item bowlEmpty = (new Item(25)).setTextureCoord(7, 4).setName("bowl");
  	public static Item bowlSoup = (new SoupItem(26, 10)).setTextureCoord(8, 4).setName("mushroomStew");
-@@ -47,34 +59,34 @@
+@@ -47,34 +59,33 @@
  	public static Item string = (new Item(31)).setTextureCoord(8, 0).setName("string");
  	public static Item feather = (new Item(32)).setTextureCoord(8, 1).setName("feather");
  	public static Item gunpowder = (new Item(33)).setTextureCoord(8, 2).setName("sulphur");
 -	public static Item woodHoe = (new HoeItem(34, ToolMaterial.WOOD)).setTextureCoord(0, 8).setName("hoeWood");
 -	public static Item stoneHoe = (new HoeItem(35, ToolMaterial.STONE)).setTextureCoord(1, 8).setName("hoeStone");
-+//	public static Item flintHoe = (new HoeItem(34, ToolMaterial.FLINT)).setTextureCoord(0, 8).setName("hoeFlint");
 +	public static Item copperHoe = (new HoeItem(35, ToolMaterial.COPPER)).setTextureCoord(1, 8).setName("hoeCopper");
  	public static Item ironHoe = (new HoeItem(36, ToolMaterial.IRON)).setTextureCoord(2, 8).setName("hoeIron");
 -	public static Item diamondHoe = (new HoeItem(37, ToolMaterial.DIAMOND)).setTextureCoord(3, 8).setName("hoeDiamond");
@@ -35375,7 +36484,7 @@
  	public static Item flint = (new Item(62)).setTextureCoord(6, 0).setName("flint");
  	public static Item rawPorkchop = (new FoodItem(63, 3, true)).setTextureCoord(7, 5).setName("porkchopRaw");
  	public static Item cookedPorkchop = (new FoodItem(64, 8, true)).setTextureCoord(8, 5).setName("porkchopCooked");
-@@ -108,7 +120,7 @@
+@@ -108,7 +119,7 @@
  	public static Item glowstoneDust = (new Item(92)).setTextureCoord(9, 4).setName("yellowDust");
  	public static Item rawFish = (new FoodItem(93, 2, false)).setTextureCoord(9, 5).setName("fishRaw");
  	public static Item cookedFish = (new FoodItem(94, 5, false)).setTextureCoord(10, 5).setName("fishCooked");
@@ -35384,7 +36493,7 @@
  	public static Item bone = (new Item(96)).setTextureCoord(12, 1).setName("bone").setToolGrip();
  	public static Item sugar = (new Item(97)).setTextureCoord(13, 0).setName("sugar").setToolGrip();
  	public static Item cake = (new AltBlockItem(98, Block.cake)).setMaxStackSize(1).setTextureCoord(13, 1).setName("cake");
-@@ -117,10 +129,51 @@
+@@ -117,10 +128,51 @@
  	public static Item cookie = (new CookieItem(101, 1, false, 8)).setTextureCoord(12, 5).setName("cookie");
  	public static MapItem map = (MapItem)(new MapItem(102)).setTextureCoord(12, 3).setName("map");
  	public static ShearsItem shears = (ShearsItem)(new ShearsItem(103)).setTextureCoord(13, 5).setName("shears");
@@ -35439,7 +36548,7 @@
  	private int maxDamage = 0;
  	protected int textureIndex;
  	protected boolean toolGrip = false;
-@@ -128,13 +181,27 @@
+@@ -128,13 +180,27 @@
  	private Item craftingResult = null;
  	private String name;
  
@@ -35472,7 +36581,7 @@
  	}
  
  	public Item setTextureCoord(int var1) {
-@@ -148,7 +215,7 @@
+@@ -148,7 +214,7 @@
  	}
  
  	public Item setTextureCoord(int var1, int var2) {
@@ -35481,7 +36590,7 @@
  		return this;
  	}
  
-@@ -160,7 +227,7 @@
+@@ -160,7 +226,7 @@
  		return this.getTextureFromDamage(var1.getItemDamage());
  	}
  
@@ -35490,7 +36599,7 @@
  		return false;
  	}
  
-@@ -210,8 +277,8 @@
+@@ -210,8 +276,8 @@
  		return false;
  	}
  
@@ -35501,7 +36610,7 @@
  	}
  
  	public boolean canHarvestBlock(Block var1) {
-@@ -247,6 +314,25 @@
+@@ -247,6 +313,25 @@
  		return this.name;
  	}
  
@@ -35527,7 +36636,7 @@
  	public Item setCraftingResult(Item var1) {
  		if(this.maxStackSize > 1) {
  			throw new IllegalArgumentException("Max stack size must be 1 for items with crafting results");
-@@ -269,7 +355,10 @@
+@@ -269,7 +354,10 @@
  	}
  
  	public int getColorFromDamage(int var1) {
@@ -35539,7 +36648,7 @@
  	}
  
  	public void onUpdate(ItemStack var1, World var2, Entity var3, int var4, boolean var5) {
-@@ -279,6 +368,41 @@
+@@ -279,6 +367,41 @@
  	}
  
  	public boolean isMap() {
@@ -36636,7 +37745,7 @@
  
 --- net/minecraft/client/Minecraft.java
 +++ net/minecraft/client/Minecraft.java
-@@ -1,56 +1,17 @@
+@@ -1,74 +1,29 @@
  package net.minecraft.client;
  
 -import java.awt.BorderLayout;
@@ -36697,7 +37806,11 @@
  import net.minecraft.client.sound.SoundManager;
  import net.minecraft.game.MinecraftException;
  import net.minecraft.game.entity.LivingEntity;
-@@ -61,14 +22,8 @@
+ import net.minecraft.game.entity.player.PlayerEntity;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.stats.StatList;
  import net.minecraft.game.stats.StatStringFormatKeyInv;
  import net.minecraft.game.stats.achievement.AchievementList;
@@ -36962,7 +38075,7 @@
 +
 +			double var14 = 0.125 + (double)var7 / (double)var9 * 5.0;
 +			AxisAlignedBB.resetBoundingBoxPool();
-+			Vec3D.clear();
++			Vector3D.clear();
 +			if (var7 < 0) {
 +				this.theWorld.setAllowedSpawnTypes(this.gameSettings.difficulty > 0, true);
 +				this.theWorld.tick();
@@ -37033,7 +38146,7 @@
  	public void run() {
  		this.running = true;
  
-@@ -483,6 +573,9 @@
+@@ -483,12 +573,15 @@
  
  			while(this.running) {
  				try {
@@ -37042,6 +38155,13 @@
 +
  					if(this.mcApplet != null && !this.mcApplet.isActive()) {
  						break;
+ 					}
+ 
+ 					AxisAlignedBB.resetBoundingBoxPool();
+-					Vec3D.initialize();
++					Vector3D.initialize();
+ 					if(this.mcCanvas == null && Display.isCloseRequested()) {
+ 						this.shutdown();
  					}
 @@ -517,7 +610,7 @@
  
@@ -37099,6 +38219,15 @@
  			this.worldRenderer.func_28137_f();
  		} catch (Throwable var4) {
  		}
+@@ -614,7 +709,7 @@
+ 		try {
+ 			System.gc();
+ 			AxisAlignedBB.clearBoundingBoxPool();
+-			Vec3D.clear();
++			Vector3D.clear();
+ 		} catch (Throwable var3) {
+ 		}
+ 
 @@ -712,6 +807,26 @@
  
  		var7.draw();
@@ -37257,7 +38386,7 @@
 -		if(this.ticksRan == 6000) {
 -			this.func_28001_B();
 +		if (SharedConstants.DEBUG_MODE) {
-+			this.timer.timerSpeed = Keyboard.isKeyDown(Keyboard.KEY_TAB) ? 5.0F : 1.0F;
++			this.timer.timerSpeed = (this.theWorld == null || !this.theWorld.remoteWorld) && Keyboard.isKeyDown(Keyboard.KEY_TAB) ? 5.0F : 1.0F;
  		}
  
  		this.statFileWriter.func_27178_d();
@@ -37352,7 +38481,7 @@
 +													this.displayGuiScreen(new MessagingScreen());
 +												}
 +
-+												if (SharedConstants.DEBUG_MODE) {
++												if (SharedConstants.DEBUG_MODE && !this.theWorld.remoteWorld) {
 +													if(Keyboard.getEventKey() == Keyboard.KEY_X && this.playerController instanceof CreativePlayerController) {
 +														this.thePlayer.noClip = !this.thePlayer.noClip;
 +													}
@@ -38069,6 +39198,15 @@
 +}
 --- net/minecraft/client/render/texture/TexturedQuad.java
 +++ net/minecraft/client/render/texture/TexturedQuad.java
+@@ -2,7 +2,7 @@
+ 
+ import net.minecraft.client.model.ModelVertex;
+ import net.minecraft.client.render.Tessellator;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ 
+ public class TexturedQuad {
+ 	public ModelVertex[] vertexPositions;
 @@ -17,13 +17,17 @@
  	}
  
@@ -38091,6 +39229,19 @@
  	}
  
  	public void flipFace() {
+@@ -37,9 +41,9 @@
+ 	}
+ 
+ 	public void draw(Tessellator var1, float var2) {
+-		Vec3D var3 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[0].vector3D);
+-		Vec3D var4 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[2].vector3D);
+-		Vec3D var5 = var4.crossProduct(var3).normalize();
++		Vector3D var3 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[0].vector3D);
++		Vector3D var4 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[2].vector3D);
++		Vector3D var5 = var4.crossProduct(var3).normalize();
+ 		var1.startDrawingQuads();
+ 		if(this.invertNormal) {
+ 			var1.setNormal(-((float)var5.xCoord), -((float)var5.yCoord), -((float)var5.zCoord));
 --- net/minecraft/game/world/block/WorkbenchContainer.java
 +++ net/minecraft/game/world/block/WorkbenchContainer.java
 @@ -7,40 +7,56 @@
@@ -42089,7 +43240,7 @@
  	}
  
  	protected void drawGuiContainerForegroundLayer() {
-@@ -102,14 +137,14 @@
+@@ -102,17 +137,17 @@
  			if(var5 >= 0) {
  				GL11.glDisable(GL11.GL_LIGHTING);
  				this.mc.textureRegistry.bindTexture(this.mc.textureRegistry.getTexture("/gui/items.png"));
@@ -42106,7 +43257,20 @@
 +		itemRenderer.renderItemOverlayIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var4, var2, var3);
  	}
  
- 	private Slot getSlotAtPosition(int var1, int var2) {
+-	private Slot getSlotAtPosition(int var1, int var2) {
++	protected Slot getSlotAtPosition(int var1, int var2) {
+ 		for(int var3 = 0; var3 < this.inventorySlots.inventorySlots.size(); ++var3) {
+ 			Slot var4 = (Slot)this.inventorySlots.inventorySlots.get(var3);
+ 			if(this.getIsMouseOverSlot(var4, var1, var2)) {
+@@ -123,7 +158,7 @@
+ 		return null;
+ 	}
+ 
+-	private boolean getIsMouseOverSlot(Slot var1, int var2, int var3) {
++	protected boolean getIsMouseOverSlot(Slot var1, int var2, int var3) {
+ 		int var4 = (this.width - this.xSize) / 2;
+ 		int var5 = (this.height - this.ySize) / 2;
+ 		var2 -= var4;
 @@ -133,32 +168,32 @@
  
  	protected void mouseClicked(int var1, int var2, int var3) {
@@ -42172,6 +43336,34 @@
  }
 --- net/minecraft/game/entity/projectile/EggEntity.java
 +++ net/minecraft/game/entity/projectile/EggEntity.java
+@@ -9,7 +9,7 @@
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+ import net.minecraft.util.MathHelper;
+@@ -126,13 +126,13 @@
+ 			++this.unused;
+ 		}
+ 
+-		Vec3D var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		Vec3D var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		Vector3D var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		Vector3D var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		MovingObjectPosition var3 = this.worldObj.rayTraceBlocks(var15, var2);
+-		var15 = Vec3D.createVector(this.posX, this.posY, this.posZ);
+-		var2 = Vec3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
++		var15 = Vector3D.createVector(this.posX, this.posY, this.posZ);
++		var2 = Vector3D.createVector(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+ 		if(var3 != null) {
+-			var2 = Vec3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
++			var2 = Vector3D.createVector(var3.hitVec.xCoord, var3.hitVec.yCoord, var3.hitVec.zCoord);
+ 		}
+ 
+ 		if(!this.worldObj.remoteWorld) {
 @@ -230,7 +230,7 @@
  		var1.setShort("xTile", (short)this.xTile);
  		var1.setShort("yTile", (short)this.yTile);
@@ -42190,6 +43382,35 @@
  		this.shake = var1.getByte("shake") & 255;
  		this.inGround = var1.getByte("inGround") == 1;
  	}
+--- net/minecraft/client/model/ModelVertex.java
++++ net/minecraft/client/model/ModelVertex.java
+@@ -1,14 +1,14 @@
+ package net.minecraft.client.model;
+ 
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ 
+ public class ModelVertex {
+-	public Vec3D vector3D;
++	public Vector3D vector3D;
+ 	public float texturePositionX;
+ 	public float texturePositionY;
+ 
+ 	public ModelVertex(float var1, float var2, float var3, float var4, float var5) {
+-		this(Vec3D.createVectorHelper((double)var1, (double)var2, (double)var3), var4, var5);
++		this(Vector3D.createVectorHelper((double)var1, (double)var2, (double)var3), var4, var5);
+ 	}
+ 
+ 	public ModelVertex setTexturePosition(float var1, float var2) {
+@@ -21,7 +21,7 @@
+ 		this.texturePositionY = var3;
+ 	}
+ 
+-	public ModelVertex(Vec3D var1, float var2, float var3) {
++	public ModelVertex(Vector3D var1, float var2, float var3) {
+ 		this.vector3D = var1;
+ 		this.texturePositionX = var2;
+ 		this.texturePositionY = var3;
 --- net/minecraft/game/world/terrain/feature/TreeFeature.java
 +++ net/minecraft/game/world/terrain/feature/TreeFeature.java
 @@ -3,78 +3,86 @@
@@ -43406,21 +44627,13 @@
  				}
  			} else {
  				this.curBlockDamage = 0.0F;
-@@ -119,7 +119,15 @@
+@@ -119,7 +119,7 @@
  	}
  
  	public void updateController() {
 +		super.updateController();
  		this.prevBlockDamage = this.curBlockDamage;
 -		this.mc.sndManager.playRandomMusicIfReady();
-+
-+		double y = this.mc.thePlayer.posY;
-+		SoundManager.MusicType musicType = SoundManager.MusicType.GAME;
-+		if (y < 224) {
-+			musicType = SoundManager.MusicType.CAVE;
-+		}
-+
-+		this.mc.sndManager.playRandomMusicIfReady(musicType);
  	}
  }
 --- net/minecraft/game/world/block/SignBlock.java
@@ -45690,7 +46903,7 @@
 +}
 --- net/minecraft/game/entity/LivingEntity.java
 +++ net/minecraft/game/entity/LivingEntity.java
-@@ -2,8 +2,10 @@
+@@ -2,10 +2,12 @@
  
  import com.mojang.nbt.CompoundTag;
  import java.util.List;
@@ -45699,8 +46912,11 @@
  import net.minecraft.game.item.ItemStack;
 +import net.minecraft.game.item.loot.LootEntry;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.MovingObjectPosition;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.block.Block;
 @@ -34,8 +36,8 @@
  	public boolean isRemoteEntity = false;
  	public float prevSwingProgress;
@@ -45739,7 +46955,7 @@
  		this.preventEntitySpawning = true;
  		this.unusedRand1 = (float)(Math.random() + 1.0D) * 0.01F;
  		this.setPosition(this.posX, this.posY, this.posZ);
-@@ -78,9 +86,17 @@
+@@ -78,11 +86,19 @@
  		this.stepHeight = 0.5F;
  	}
  
@@ -45755,8 +46971,11 @@
 +	}
 +
  	public boolean canEntityBeSeen(Entity var1) {
- 		return this.worldObj.rayTraceBlocks(Vec3D.createVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ), Vec3D.createVector(var1.posX, var1.posY + (double)var1.getEyeHeight(), var1.posZ)) == null;
+-		return this.worldObj.rayTraceBlocks(Vec3D.createVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ), Vec3D.createVector(var1.posX, var1.posY + (double)var1.getEyeHeight(), var1.posZ)) == null;
++		return this.worldObj.rayTraceBlocks(Vector3D.createVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ), Vector3D.createVector(var1.posX, var1.posY + (double)var1.getEyeHeight(), var1.posZ)) == null;
  	}
+ 
+ 	public String getEntityTexture() {
 @@ -304,18 +320,22 @@
  		super.setSize(var1, var2);
  	}
@@ -45992,6 +47211,62 @@
  	}
  
  	protected boolean canDespawn() {
+@@ -806,22 +832,22 @@
+ 		return this.prevSwingProgress + var2 * var1;
+ 	}
+ 
+-	public Vec3D getPosition(float var1) {
++	public Vector3D getPosition(float var1) {
+ 		if(var1 == 1.0F) {
+-			return Vec3D.createVector(this.posX, this.posY, this.posZ);
++			return Vector3D.createVector(this.posX, this.posY, this.posZ);
+ 		} else {
+ 			double var2 = this.prevPosX + (this.posX - this.prevPosX) * (double)var1;
+ 			double var4 = this.prevPosY + (this.posY - this.prevPosY) * (double)var1;
+ 			double var6 = this.prevPosZ + (this.posZ - this.prevPosZ) * (double)var1;
+-			return Vec3D.createVector(var2, var4, var6);
++			return Vector3D.createVector(var2, var4, var6);
+ 		}
+ 	}
+ 
+-	public Vec3D getLookVec() {
++	public Vector3D getLookVec() {
+ 		return this.getLook(1.0F);
+ 	}
+ 
+-	public Vec3D getLook(float var1) {
++	public Vector3D getLook(float var1) {
+ 		float var2;
+ 		float var3;
+ 		float var4;
+@@ -831,7 +857,7 @@
+ 			var3 = MathHelper.sin(-this.rotationYaw * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 			var4 = -MathHelper.cos(-this.rotationPitch * ((float)Math.PI / 180.0F));
+ 			var5 = MathHelper.sin(-this.rotationPitch * ((float)Math.PI / 180.0F));
+-			return Vec3D.createVector((double)(var3 * var4), (double)var5, (double)(var2 * var4));
++			return Vector3D.createVector((double)(var3 * var4), (double)var5, (double)(var2 * var4));
+ 		} else {
+ 			var2 = this.prevRotationPitch + (this.rotationPitch - this.prevRotationPitch) * var1;
+ 			var3 = this.prevRotationYaw + (this.rotationYaw - this.prevRotationYaw) * var1;
+@@ -839,14 +865,14 @@
+ 			var5 = MathHelper.sin(-var3 * ((float)Math.PI / 180.0F) - (float)Math.PI);
+ 			float var6 = -MathHelper.cos(-var2 * ((float)Math.PI / 180.0F));
+ 			float var7 = MathHelper.sin(-var2 * ((float)Math.PI / 180.0F));
+-			return Vec3D.createVector((double)(var5 * var6), (double)var7, (double)(var4 * var6));
++			return Vector3D.createVector((double)(var5 * var6), (double)var7, (double)(var4 * var6));
+ 		}
+ 	}
+ 
+ 	public MovingObjectPosition rayTrace(double var1, float var3) {
+-		Vec3D var4 = this.getPosition(var3);
+-		Vec3D var5 = this.getLook(var3);
+-		Vec3D var6 = var4.addVector(var5.xCoord * var1, var5.yCoord * var1, var5.zCoord * var1);
++		Vector3D var4 = this.getPosition(var3);
++		Vector3D var5 = this.getLook(var3);
++		Vector3D var6 = var4.addVector(var5.xCoord * var1, var5.yCoord * var1, var5.zCoord * var1);
+ 		return this.worldObj.rayTraceBlocks(var4, var6);
+ 	}
+ 
 --- /dev/null
 +++ net/minecraft/util/ShortArray3D.java
 @@ -1,0 +1,35 @@
@@ -46189,7 +47464,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/game/world/terrain/generate/SurfaceRuinsStructure.java
-@@ -1,0 +1,66 @@
+@@ -1,0 +1,67 @@
 +package net.minecraft.game.world.terrain.generate;
 +
 +import net.minecraft.game.world.World;
@@ -46213,7 +47488,8 @@
 +            Biome.taiga,
 +            Biome.bloomingTaiga,
 +            Biome.snowyTaiga,
-+            Biome.tundra
++            Biome.tundra,
++            Biome.savanna
 +    ).collect(Collectors.toSet());
 +
 +    public boolean generateAt(World world, int x, int z) {
@@ -47052,7 +48328,7 @@
 +package net.minecraft;
 +
 +public class SharedConstants {
-+    public static final String SHORT_VERSION = "1.0-a9";
++    public static final String SHORT_VERSION = "1.0-a9.1";
 +    public static final String VERSION = "Minecraft Diverge " + SHORT_VERSION;
 +    public static final int PROTOCOL_VERSION = 810300005;
 +    public static final boolean DEBUG_MODE = true;
@@ -47107,16 +48383,14 @@
  import net.minecraft.client.Minecraft;
  import net.minecraft.client.MouseFilter;
  import net.minecraft.client.controller.CreativePlayerController;
-@@ -14,24 +13,26 @@
- import net.minecraft.client.render.camera.Frustum;
+@@ -15,23 +14,23 @@
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.LivingEntity;
-+import net.minecraft.game.entity.player.InventoryPlayer;
  import net.minecraft.game.entity.player.PlayerEntity;
-+import net.minecraft.game.item.Item;
 +import net.minecraft.game.item.ItemStack;
  import net.minecraft.game.physics.AxisAlignedBB;
- import net.minecraft.game.physics.Vec3D;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
  import net.minecraft.game.world.biome.Biome;
@@ -47140,7 +48414,7 @@
  public class EntityRenderer {
  	public static boolean field_28135_a = false;
  	public static int anaglyphField;
-@@ -72,6 +73,10 @@
+@@ -72,6 +71,10 @@
  	float fogColorBlue;
  	private float fogColor2;
  	private float fogColor1;
@@ -47151,7 +48425,7 @@
  
  	public EntityRenderer(Minecraft var1) {
  		this.mc = var1;
-@@ -79,6 +84,8 @@
+@@ -79,6 +82,8 @@
  	}
  
  	public void updateRenderer() {
@@ -47160,7 +48434,7 @@
  		this.fogColor2 = this.fogColor1;
  		this.field_22227_s = this.field_22228_r;
  		this.field_22225_u = this.field_22226_t;
-@@ -90,7 +97,7 @@
+@@ -90,7 +95,7 @@
  		}
  
  		float var1 = this.mc.theWorld.getLightBrightness(MathHelper.floor(this.mc.renderViewEntity.posX), MathHelper.floor(this.mc.renderViewEntity.posY), MathHelper.floor(this.mc.renderViewEntity.posZ));
@@ -47169,7 +48443,7 @@
  		float var3 = var1 * (1.0F - var2) + var2;
  		this.fogColor1 += (var3 - this.fogColor1) * 0.1F;
  		++this.rendererUpdateCount;
-@@ -98,10 +105,20 @@
+@@ -98,29 +103,37 @@
  		this.addRainParticles();
  	}
  
@@ -47182,15 +48456,43 @@
  		if(this.mc.renderViewEntity != null) {
  			if(this.mc.theWorld != null) {
  				double var2 = (double)this.mc.playerController.getBlockReachDistance();
++				double var2e = (double)this.mc.playerController.getEntityReachDistance();
++				double reachBoost = 0.0D;
 +				ItemStack item = this.mc.thePlayer.inventory.getCurrentItem();
 +				if (item != null) {
-+					var2 += (double)item.getAttackReach();
++					reachBoost = (double)item.getAttackReach();
 +				}
 +
  				this.mc.objectMouseOver = this.mc.renderViewEntity.rayTrace(var2, var1);
  				double var4 = var2;
- 				Vec3D var6 = this.mc.renderViewEntity.getPosition(var1);
-@@ -147,7 +164,7 @@
+-				Vec3D var6 = this.mc.renderViewEntity.getPosition(var1);
++				Vector3D var6 = this.mc.renderViewEntity.getPosition(var1);
+ 				if(this.mc.objectMouseOver != null) {
+ 					var4 = this.mc.objectMouseOver.hitVec.distanceTo(var6);
+ 				}
+ 
+-				if(this.mc.playerController instanceof CreativePlayerController) {
+-					var2 = 32.0D;
+-				} else {
+-					if(var4 > 3.0D) {
+-						var4 = 3.0D;
+-					}
+-
+-					var2 = var4;
++				if(var4 > var2e + reachBoost) {
++					var4 = var2e + reachBoost;
+ 				}
+ 
+-				Vec3D var7 = this.mc.renderViewEntity.getLook(var1);
+-				Vec3D var8 = var6.addVector(var7.xCoord * var2, var7.yCoord * var2, var7.zCoord * var2);
++				var2 = var4;
++
++				Vector3D var7 = this.mc.renderViewEntity.getLook(var1);
++				Vector3D var8 = var6.addVector(var7.xCoord * var2, var7.yCoord * var2, var7.zCoord * var2);
+ 				this.pointedEntity = null;
+ 				float var9 = 1.0F;
+ 				List var10 = this.mc.theWorld.getEntitiesWithinAABBExcludingEntity(this.mc.renderViewEntity, this.mc.renderViewEntity.boundingBox.addCoord(var7.xCoord * var2, var7.yCoord * var2, var7.zCoord * var2).expand((double)var9, (double)var9, (double)var9));
+@@ -147,7 +160,7 @@
  					}
  				}
  
@@ -47199,7 +48501,7 @@
  					this.mc.objectMouseOver = new MovingObjectPosition(this.pointedEntity);
  				}
  
-@@ -155,11 +172,21 @@
+@@ -155,11 +168,21 @@
  		}
  	}
  
@@ -47224,7 +48526,7 @@
  		}
  
  		if(var2.health <= 0) {
-@@ -167,6 +194,11 @@
+@@ -167,6 +190,11 @@
  			var3 /= (1.0F - 500.0F / (var4 + 500.0F)) * 2.0F + 1.0F;
  		}
  
@@ -47236,7 +48538,7 @@
  		return var3 + this.field_22221_y + (this.field_22222_x - this.field_22221_y) * var1;
  	}
  
-@@ -224,7 +256,7 @@
+@@ -224,7 +252,7 @@
  				GL11.glRotatef(var2.prevRotationYaw + (var2.rotationYaw - var2.prevRotationYaw) * var1 + 180.0F, 0.0F, -1.0F, 0.0F);
  				GL11.glRotatef(var2.prevRotationPitch + (var2.rotationPitch - var2.prevRotationPitch) * var1, -1.0F, 0.0F, 0.0F);
  			}
@@ -47245,7 +48547,7 @@
  			double var27 = (double)(this.field_22227_s + (this.field_22228_r - this.field_22227_s) * var1);
  			float var13;
  			float var28;
-@@ -237,10 +269,17 @@
+@@ -237,10 +265,17 @@
  			} else {
  				var28 = var2.rotationYaw;
  				var13 = var2.rotationPitch;
@@ -47263,7 +48565,18 @@
  				for(int var20 = 0; var20 < 8; ++var20) {
  					float var21 = (float)((var20 & 1) * 2 - 1);
  					float var22 = (float)((var20 >> 1 & 1) * 2 - 1);
-@@ -257,8 +296,13 @@
+@@ -248,17 +283,22 @@
+ 					var21 *= 0.1F;
+ 					var22 *= 0.1F;
+ 					var23 *= 0.1F;
+-					MovingObjectPosition var24 = this.mc.theWorld.rayTraceBlocks(Vec3D.createVector(var4 + (double)var21, var6 + (double)var22, var8 + (double)var23), Vec3D.createVector(var4 - var14 + (double)var21 + (double)var23, var6 - var18 + (double)var22, var8 - var16 + (double)var23));
++					MovingObjectPosition var24 = this.mc.theWorld.rayTraceBlocks(Vector3D.createVector(var4 + (double)var21, var6 + (double)var22, var8 + (double)var23), Vector3D.createVector(var4 - var14 + (double)var21 + (double)var23, var6 - var18 + (double)var22, var8 - var16 + (double)var23));
+ 					if(var24 != null) {
+-						double var25 = var24.hitVec.distanceTo(Vec3D.createVector(var4, var6, var8));
++						double var25 = var24.hitVec.distanceTo(Vector3D.createVector(var4, var6, var8));
+ 						if(var25 < var27) {
+ 							var27 = var25;
+ 						}
  					}
  				}
  
@@ -47278,7 +48591,7 @@
  				GL11.glTranslatef(0.0F, 0.0F, (float)(-var27));
  				GL11.glRotatef(var28 - var2.rotationYaw, 0.0F, 1.0F, 0.0F);
  				GL11.glRotatef(var13 - var2.rotationPitch, 1.0F, 0.0F, 0.0F);
-@@ -280,7 +324,7 @@
+@@ -280,7 +320,7 @@
  	}
  
  	private void setupCameraTransform(float var1, int var2) {
@@ -47287,7 +48600,7 @@
  		GL11.glMatrixMode(GL11.GL_PROJECTION);
  		GL11.glLoadIdentity();
  		float var3 = 0.07F;
-@@ -291,9 +335,9 @@
+@@ -291,9 +331,9 @@
  		if(this.cameraZoom != 1.0D) {
  			GL11.glTranslatef((float)this.cameraYaw, (float)(-this.cameraPitch), 0.0F);
  			GL11.glScaled(this.cameraZoom, this.cameraZoom, 1.0D);
@@ -47299,7 +48612,7 @@
  		}
  
  		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-@@ -320,6 +364,19 @@
+@@ -320,6 +360,19 @@
  	}
  
  	private void func_4135_b(float var1, int var2) {
@@ -47319,7 +48632,7 @@
  		GL11.glLoadIdentity();
  		if(this.mc.gameSettings.anaglyph) {
  			GL11.glTranslatef((float)(var2 * 2 - 1) * 0.1F, 0.0F, 0.0F);
-@@ -328,15 +385,18 @@
+@@ -328,15 +381,18 @@
  		GL11.glPushMatrix();
  		this.hurtCameraEffect(var1);
  		if(this.mc.gameSettings.viewBobbing) {
@@ -47341,7 +48654,7 @@
  			this.itemRenderer.renderOverlays(var1);
  			this.hurtCameraEffect(var1);
  		}
-@@ -347,7 +407,7 @@
+@@ -347,7 +403,7 @@
  
  	}
  
@@ -47350,7 +48663,7 @@
  		if(!Display.isActive()) {
  			if(System.currentTimeMillis() - this.prevFrameTime > 500L) {
  				this.mc.displayInGameMenu();
-@@ -382,32 +442,35 @@
+@@ -382,32 +438,35 @@
  			int var15 = var13.getScaledHeight();
  			int var16 = Mouse.getX() * var14 / this.mc.displayWidth;
  			int var17 = var15 - Mouse.getY() * var15 / this.mc.displayHeight - 1;
@@ -47406,7 +48719,7 @@
  				}
  
  				this.field_28133_I = System.nanoTime();
-@@ -421,21 +484,6 @@
+@@ -421,21 +480,6 @@
  				GL11.glMatrixMode(GL11.GL_MODELVIEW);
  				GL11.glLoadIdentity();
  				this.func_905_b();
@@ -47428,7 +48741,7 @@
  				this.field_28133_I = System.nanoTime();
  			}
  
-@@ -451,6 +499,8 @@
+@@ -451,6 +495,8 @@
  	}
  
  	public void renderWorld(float var1, long var2) {
@@ -47437,7 +48750,7 @@
  		GL11.glEnable(GL11.GL_CULL_FACE);
  		GL11.glEnable(GL11.GL_DEPTH_TEST);
  		if(this.mc.renderViewEntity == null) {
-@@ -464,14 +514,7 @@
+@@ -464,14 +510,7 @@
  		double var7 = var4.lastTickPosX + (var4.posX - var4.lastTickPosX) * (double)var1;
  		double var9 = var4.lastTickPosY + (var4.posY - var4.lastTickPosY) * (double)var1;
  		double var11 = var4.lastTickPosZ + (var4.posZ - var4.lastTickPosZ) * (double)var1;
@@ -47452,7 +48765,7 @@
  
  		for(int var18 = 0; var18 < 2; ++var18) {
  			if(this.mc.gameSettings.anaglyph) {
-@@ -489,14 +532,14 @@
+@@ -489,14 +528,14 @@
  			GL11.glEnable(GL11.GL_CULL_FACE);
  			this.setupCameraTransform(var1, var18);
  			ClippingHelperImpl.getInstance();
@@ -47469,7 +48782,7 @@
  				GL11.glShadeModel(GL11.GL_SMOOTH);
  			}
  
-@@ -504,12 +547,13 @@
+@@ -504,12 +543,13 @@
  			var19.setPosition(var7, var9, var11);
  			this.mc.worldRenderer.clipRenderersByFrustrum(var19, var1);
  			if(var18 == 0) {
@@ -47489,7 +48802,7 @@
  			}
  
  			this.setupFog(0, var1);
-@@ -538,8 +582,8 @@
+@@ -538,8 +578,8 @@
  			GL11.glEnable(GL11.GL_BLEND);
  			GL11.glDisable(GL11.GL_CULL_FACE);
  			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/terrain.png"));
@@ -47500,7 +48813,7 @@
  					GL11.glShadeModel(GL11.GL_SMOOTH);
  				}
  
-@@ -580,10 +624,12 @@
+@@ -580,10 +620,12 @@
  			if(this.pointedEntity != null) {
  			}
  
@@ -47517,7 +48830,7 @@
  			this.setupFog(1, var1);
  			if(this.cameraZoom == 1.0D) {
  				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-@@ -600,7 +646,7 @@
+@@ -600,7 +642,7 @@
  
  	private void addRainParticles() {
  		float var1 = this.mc.theWorld.getRainingStrength(1.0F);
@@ -47526,7 +48839,7 @@
  			var1 /= 2.0F;
  		}
  
-@@ -622,7 +668,7 @@
+@@ -622,7 +664,7 @@
  				int var17 = var6 + this.random.nextInt(var7) - this.random.nextInt(var7);
  				int var18 = var3.getTopSolidOrLiquidBlock(var16, var17);
  				int var19 = var3.getBlockId(var16, var18 - 1, var17);
@@ -47535,7 +48848,7 @@
  					float var20 = this.random.nextFloat();
  					float var21 = this.random.nextFloat();
  					if(var19 > 0) {
-@@ -645,9 +691,9 @@
+@@ -645,9 +687,9 @@
  			if(var14 > 0 && this.random.nextInt(3) < this.rainSoundCounter++) {
  				this.rainSoundCounter = 0;
  				if(var10 > var2.posY + 1.0D && var3.getTopSolidOrLiquidBlock(MathHelper.floor(var2.posX), MathHelper.floor(var2.posZ)) > MathHelper.floor(var2.posY)) {
@@ -47547,7 +48860,7 @@
  				}
  			}
  
-@@ -674,7 +720,7 @@
+@@ -674,7 +716,7 @@
  			double var13 = var3.lastTickPosZ + (var3.posZ - var3.lastTickPosZ) * (double)var1;
  			int var15 = MathHelper.floor(var11);
  			byte var16 = 5;
@@ -47556,7 +48869,7 @@
  				var16 = 10;
  			}
  
-@@ -742,7 +788,7 @@
+@@ -742,7 +784,7 @@
  			}
  
  			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/environment/rain.png"));
@@ -47565,16 +48878,33 @@
  				var16 = 10;
  			}
  
-@@ -809,7 +855,7 @@
+@@ -809,13 +851,13 @@
  	private void updateFogColor(float var1) {
  		World var2 = this.mc.theWorld;
  		LivingEntity var3 = this.mc.renderViewEntity;
 -		float var4 = 1.0F / (float)(4 - this.mc.gameSettings.renderDistance);
 +		float var4 = 1.0F / (float)(Math.log10(this.mc.gameSettings.renderDistance / 0.75F) / Math.log10(2));
  		var4 = 1.0F - (float)Math.pow((double)var4, 0.25D);
- 		Vec3D var5 = var2.getSkyColor(this.mc.renderViewEntity, var1);
+-		Vec3D var5 = var2.getSkyColor(this.mc.renderViewEntity, var1);
++		Vector3D var5 = var2.getSkyColor(this.mc.renderViewEntity, var1);
  		float var6 = (float)var5.xCoord;
-@@ -896,7 +942,7 @@
+ 		float var7 = (float)var5.yCoord;
+ 		float var8 = (float)var5.zCoord;
+-		Vec3D var9 = var2.getFogColor(var1);
++		Vector3D var9 = var2.getFogColor(var1);
+ 		this.fogColorRed = (float)var9.xCoord;
+ 		this.fogColorGreen = (float)var9.yCoord;
+ 		this.fogColorBlue = (float)var9.zCoord;
+@@ -842,7 +884,7 @@
+ 		}
+ 
+ 		if(this.cloudFog) {
+-			Vec3D var16 = var2.getCloudColor(var1);
++			Vector3D var16 = var2.getCloudColor(var1);
+ 			this.fogColorRed = (float)var16.xCoord;
+ 			this.fogColorGreen = (float)var16.yCoord;
+ 			this.fogColorBlue = (float)var16.zCoord;
+@@ -896,7 +938,7 @@
  			}
  		} else if(var3.isInsideOfMaterial(Material.water)) {
  			GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_EXP);
@@ -47583,7 +48913,7 @@
  			var4 = 0.4F;
  			var5 = 0.4F;
  			var6 = 0.9F;
-@@ -916,10 +962,15 @@
+@@ -916,10 +958,15 @@
  				var8 = (var4 * 30.0F + var5 * 70.0F) / 100.0F;
  				var9 = (var4 * 30.0F + var6 * 70.0F) / 100.0F;
  			}
@@ -47645,7 +48975,12 @@
  		var5.entityJoinedWorld(var4);
 --- net/minecraft/game/world/block/DoorBlock.java
 +++ net/minecraft/game/world/block/DoorBlock.java
-@@ -8,30 +8,40 @@
+@@ -4,34 +4,44 @@
+ import net.minecraft.game.entity.player.PlayerEntity;
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
@@ -47720,7 +49055,7 @@
  				var1.setBlockWithNotify(var2, var3, var4, 0);
  				var7 = true;
  				if(var1.getBlockId(var2, var3 + 1, var4) == this.blockID) {
-@@ -176,8 +186,8 @@
+@@ -176,11 +186,11 @@
  
  	}
  
@@ -47730,7 +49065,11 @@
 +		return (var1 & 8) != 0 ? null : (this.material == Material.iron ? Item.ironDoor : Item.door);
  	}
  
- 	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
+-	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6) {
++	public MovingObjectPosition collisionRayTrace(World var1, int var2, int var3, int var4, Vector3D var5, Vector3D var6) {
+ 		this.setBlockBoundsBasedOnState(var1, var2, var3, var4);
+ 		return super.collisionRayTrace(var1, var2, var3, var4, var5, var6);
+ 	}
 @@ -190,7 +200,7 @@
  	}
  
@@ -47840,15 +49179,19 @@
  		} else if(var7 == 1) {
 --- net/minecraft/client/controller/PlayerController.java
 +++ net/minecraft/client/controller/PlayerController.java
-@@ -5,6 +5,7 @@
+@@ -2,9 +2,11 @@
+ 
+ import net.minecraft.client.Minecraft;
+ import net.minecraft.client.player.ClientPlayerEntity;
++import net.minecraft.client.sound.SoundManager;
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.item.ItemStack;
-+import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.World;
  import net.minecraft.game.world.block.Block;
  
-@@ -27,11 +28,11 @@
+@@ -27,11 +29,11 @@
  	public boolean sendBlockRemoved(int var1, int var2, int var3, int var4) {
  		World var5 = this.mc.theWorld;
  		Block var6 = Block.blocksList[var5.getBlockId(var1, var2, var3)];
@@ -47862,12 +49205,40 @@
  		}
  
  		return var8;
-@@ -78,9 +79,11 @@
+@@ -50,6 +52,10 @@
+ 		return 5.0F;
+ 	}
+ 
++	public float getEntityReachDistance() {
++		return 3.0F;
++	}
++
+ 	public boolean sendUseItem(PlayerEntity var1, World var2, ItemStack var3) {
+ 		int var4 = var3.count;
+ 		ItemStack var5 = var3.useItemRightClick(var2, var1);
+@@ -69,6 +75,16 @@
+ 	}
+ 
+ 	public void updateController() {
++		this.mc.sndManager.playRandomMusicIfReady(this.getMusicType());
++	}
++
++	protected SoundManager.MusicType getMusicType() {
++		double y = this.mc.thePlayer.posY;
++		SoundManager.MusicType musicType = SoundManager.MusicType.GAME;
++		if (y < 224) {
++			musicType = SoundManager.MusicType.CAVE;
++		}
++		return musicType;
+ 	}
+ 
+ 	public boolean shouldDrawHUD() {
+@@ -78,9 +94,11 @@
  	public void func_6473_b(PlayerEntity var1) {
  	}
  
 -	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7) {
-+	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vec3D hit) {
++	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vector3D hit) {
  		int var8 = var2.getBlockId(var4, var5, var6);
 -		return var8 > 0 && Block.blocksList[var8].blockActivated(var2, var4, var5, var6, var1) ? true : (var3 == null ? false : var3.useItem(var1, var2, var4, var5, var6, var7));
 +		return var8 > 0 && !var1.isSneaking() && Block.blocksList[var8].blockActivated(var2, var4, var5, var6, var1) ? true
@@ -47876,7 +49247,7 @@
  	}
  
  	public PlayerEntity createPlayer(World var1) {
-@@ -102,5 +105,9 @@
+@@ -102,5 +120,9 @@
  	public void func_20086_a(int var1, PlayerEntity var2) {
  		var2.craftingInventory.onCraftGuiClosed(var2);
  		var2.craftingInventory = var2.inventorySlots;
@@ -48977,6 +50348,30 @@
 -		waterBuffer = var0;
 -	}
  }
+--- net/minecraft/game/world/path/PathEntity.java
++++ net/minecraft/game/world/path/PathEntity.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.game.world.path;
+ 
+ import net.minecraft.game.entity.Entity;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ 
+ public class PathEntity {
+ 	private final PathPoint[] points;
+@@ -25,10 +25,10 @@
+ 		return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
+ 	}
+ 
+-	public Vec3D getPosition(Entity var1) {
++	public Vector3D getPosition(Entity var1) {
+ 		double var2 = (double)this.points[this.pathIndex].xCoord + (double)((int)(var1.width + 1.0F)) * 0.5D;
+ 		double var4 = (double)this.points[this.pathIndex].yCoord;
+ 		double var6 = (double)this.points[this.pathIndex].zCoord + (double)((int)(var1.width + 1.0F)) * 0.5D;
+-		return Vec3D.createVector(var2, var4, var6);
++		return Vector3D.createVector(var2, var4, var6);
+ 	}
+ }
 --- net/minecraft/game/world/block/ObsidianBlock.java
 +++ net/minecraft/game/world/block/ObsidianBlock.java
 @@ -1,17 +1,9 @@
@@ -49330,6 +50725,64 @@
  	public static void clearBoundingBoxPool() {
  		boundingBoxes.clear();
  		numBoundingBoxesInUse = 0;
+@@ -197,7 +201,7 @@
+ 		return this;
+ 	}
+ 
+-	public boolean isVecInside(Vec3D var1) {
++	public boolean isVecInside(Vector3D var1) {
+ 		return var1.xCoord > this.minX && var1.xCoord < this.maxX ? (var1.yCoord > this.minY && var1.yCoord < this.maxY ? var1.zCoord > this.minZ && var1.zCoord < this.maxZ : false) : false;
+ 	}
+ 
+@@ -222,13 +226,13 @@
+ 		return getBoundingBoxFromPool(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
+ 	}
+ 
+-	public MovingObjectPosition getRaycast(Vec3D var1, Vec3D var2) {
+-		Vec3D var3 = var1.getIntermediateWithXValue(var2, this.minX);
+-		Vec3D var4 = var1.getIntermediateWithXValue(var2, this.maxX);
+-		Vec3D var5 = var1.getIntermediateWithYValue(var2, this.minY);
+-		Vec3D var6 = var1.getIntermediateWithYValue(var2, this.maxY);
+-		Vec3D var7 = var1.getIntermediateWithZValue(var2, this.minZ);
+-		Vec3D var8 = var1.getIntermediateWithZValue(var2, this.maxZ);
++	public MovingObjectPosition getRaycast(Vector3D var1, Vector3D var2) {
++		Vector3D var3 = var1.getIntermediateWithXValue(var2, this.minX);
++		Vector3D var4 = var1.getIntermediateWithXValue(var2, this.maxX);
++		Vector3D var5 = var1.getIntermediateWithYValue(var2, this.minY);
++		Vector3D var6 = var1.getIntermediateWithYValue(var2, this.maxY);
++		Vector3D var7 = var1.getIntermediateWithZValue(var2, this.minZ);
++		Vector3D var8 = var1.getIntermediateWithZValue(var2, this.maxZ);
+ 		if(!this.isVecInYZ(var3)) {
+ 			var3 = null;
+ 		}
+@@ -253,7 +257,7 @@
+ 			var8 = null;
+ 		}
+ 
+-		Vec3D var9 = null;
++		Vector3D var9 = null;
+ 		if(var3 != null && (var9 == null || var1.squareDistanceTo(var3) < var1.squareDistanceTo(var9))) {
+ 			var9 = var3;
+ 		}
+@@ -310,15 +314,15 @@
+ 		}
+ 	}
+ 
+-	private boolean isVecInYZ(Vec3D var1) {
++	private boolean isVecInYZ(Vector3D var1) {
+ 		return var1 == null ? false : var1.yCoord >= this.minY && var1.yCoord <= this.maxY && var1.zCoord >= this.minZ && var1.zCoord <= this.maxZ;
+ 	}
+ 
+-	private boolean isVecInXZ(Vec3D var1) {
++	private boolean isVecInXZ(Vector3D var1) {
+ 		return var1 == null ? false : var1.xCoord >= this.minX && var1.xCoord <= this.maxX && var1.zCoord >= this.minZ && var1.zCoord <= this.maxZ;
+ 	}
+ 
+-	private boolean isVecInXY(Vec3D var1) {
++	private boolean isVecInXY(Vector3D var1) {
+ 		return var1 == null ? false : var1.xCoord >= this.minX && var1.xCoord <= this.maxX && var1.yCoord >= this.minY && var1.yCoord <= this.maxY;
+ 	}
+ 
 --- net/minecraft/game/world/block/TNTBlock.java
 +++ net/minecraft/game/world/block/TNTBlock.java
 @@ -9,12 +9,16 @@
@@ -50071,12 +51524,13 @@
  	private static RenderItem itemRenderer = new RenderItem();
  	private List chatMessageList = new ArrayList();
  	private Random rand = new Random();
-@@ -29,24 +41,27 @@
+@@ -29,24 +41,28 @@
  	private boolean field_22065_l = false;
  	public float damageGuiPartialTime;
  	float prevVignetteBrightness = 1.0F;
 +	private float debugLinesLeft = 0.0F;
 +	private float debugLinesRight = 0.0F;
++	private int prevCrosshairCoord;
  
  	public IngameHud(Minecraft var1) {
  		this.mc = var1;
@@ -50102,7 +51556,27 @@
  			this.renderPumpkinBlur(var6, var7);
  		}
  
-@@ -71,75 +86,118 @@
+@@ -64,82 +80,137 @@
+ 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/gui/icons.png"));
+ 		GL11.glEnable(GL11.GL_BLEND);
+ 		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
+-		this.drawTexturedRect(var6 / 2 - 7, var7 / 2 - 7, 0, 0, 16, 16);
++		int crosshairCoord = 0;
++		if (this.mc.objectMouseOver != null && this.mc.objectMouseOver.typeOfHit == MovingObjectType.ENTITY) {
++			crosshairCoord = 16;
++		}
++
++		if (crosshairCoord == 16 && this.prevCrosshairCoord == 0) {
++			this.mc.sndManager.playSoundFX("note.snare", 1.0F / 3.0F, 2.0F);
++		} else if (crosshairCoord == 0 && this.prevCrosshairCoord == 16) {
++			this.mc.sndManager.playSoundFX("note.snare", 1.0F / 3.0F, 1.5F);
++		}
++
++		this.drawTexturedRect(var6 / 2 - 7, var7 / 2 - 7, 0, crosshairCoord, 16, 16);
++		this.prevCrosshairCoord = crosshairCoord;
+ 		GL11.glDisable(GL11.GL_BLEND);
+ 		boolean var12 = this.mc.thePlayer.heartsLife / 3 % 2 == 1;
+ 		if(this.mc.thePlayer.heartsLife < 10) {
  			var12 = false;
  		}
  
@@ -50284,7 +51758,7 @@
  		}
  
  		GL11.glDisable(GL11.GL_BLEND);
-@@ -173,29 +231,94 @@
+@@ -173,29 +244,94 @@
  		}
  
  		String var23;
@@ -50393,7 +51867,7 @@
  			GL11.glPopMatrix();
  		}
  
-@@ -224,7 +347,7 @@
+@@ -224,7 +360,7 @@
  
  		byte var26 = 10;
  		boolean var31 = false;
@@ -50402,7 +51876,7 @@
  			var26 = 20;
  			var31 = true;
  		}
-@@ -270,6 +393,40 @@
+@@ -270,6 +406,40 @@
  		GL11.glDisable(GL11.GL_BLEND);
  	}
  
@@ -50443,7 +51917,7 @@
  	private void renderPumpkinBlur(int var1, int var2) {
  		GL11.glDisable(GL11.GL_DEPTH_TEST);
  		GL11.glDepthMask(false);
-@@ -332,10 +489,10 @@
+@@ -332,10 +502,10 @@
  		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
  		GL11.glColor4f(1.0F, 1.0F, 1.0F, var1);
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/terrain.png"));
@@ -50458,7 +51932,7 @@
  		Tessellator var8 = Tessellator.instance;
  		var8.startDrawingQuads();
  		var8.addVertexWithUV(0.0D, (double)var3, -90.0D, (double)var4, (double)var7);
-@@ -361,12 +518,12 @@
+@@ -361,12 +531,12 @@
  				GL11.glTranslatef((float)(-(var2 + 8)), (float)(-(var3 + 12)), 0.0F);
  			}
  
@@ -50475,6 +51949,15 @@
  
 --- net/minecraft/game/entity/vehicle/MinecartEntity.java
 +++ net/minecraft/game/entity/vehicle/MinecartEntity.java
+@@ -11,7 +11,7 @@
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.block.Block;
+ import net.minecraft.game.world.block.RailBlock;
 @@ -85,7 +85,7 @@
  		return (double)this.height * 0.0D - (double)0.3F;
  	}
@@ -50502,6 +51985,24 @@
  					float var8 = 0.05F;
  					var7.motionX = (double)((float)this.rand.nextGaussian() * var8);
  					var7.motionY = (double)((float)this.rand.nextGaussian() * var8 + 0.2F);
+@@ -226,7 +226,7 @@
+ 			var7 = 1.0D / 128.0D;
+ 			int var9 = this.worldObj.getBlockId(var1, var2, var3);
+ 			if(RailBlock.isRailBlock(var9)) {
+-				Vec3D var10 = this.getRailDirection(this.posX, this.posY, this.posZ);
++				Vector3D var10 = this.getRailDirection(this.posX, this.posY, this.posZ);
+ 				int var11 = this.worldObj.getBlockMetadata(var1, var2, var3);
+ 				this.posY = (double)var2;
+ 				boolean var12 = false;
+@@ -372,7 +372,7 @@
+ 					this.motionZ *= (double)0.96F;
+ 				}
+ 
+-				Vec3D var52 = this.getRailDirection(this.posX, this.posY, this.posZ);
++				Vector3D var52 = this.getRailDirection(this.posX, this.posY, this.posZ);
+ 				if(var52 != null && var10 != null) {
+ 					double var40 = (var10.yCoord - var52.yCoord) * 0.05D;
+ 					var23 = Math.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
 @@ -415,15 +415,15 @@
  						this.motionX += this.motionX / var42 * var44;
  						this.motionZ += this.motionZ / var42 * var44;
@@ -50522,6 +52023,33 @@
  							this.motionZ = -0.02D;
  						}
  					}
+@@ -509,7 +509,7 @@
+ 		}
+ 	}
+ 
+-	public Vec3D getBlockDirection(double var1, double var3, double var5, double var7) {
++	public Vector3D getBlockDirection(double var1, double var3, double var5, double var7) {
+ 		int var9 = MathHelper.floor(var1);
+ 		int var10 = MathHelper.floor(var3);
+ 		int var11 = MathHelper.floor(var5);
+@@ -549,7 +549,7 @@
+ 		}
+ 	}
+ 
+-	public Vec3D getRailDirection(double var1, double var3, double var5) {
++	public Vector3D getRailDirection(double var1, double var3, double var5) {
+ 		int var7 = MathHelper.floor(var1);
+ 		int var8 = MathHelper.floor(var3);
+ 		int var9 = MathHelper.floor(var5);
+@@ -604,7 +604,7 @@
+ 				var3 += 0.5D;
+ 			}
+ 
+-			return Vec3D.createVector(var1, var3, var5);
++			return Vector3D.createVector(var1, var3, var5);
+ 		} else {
+ 			return null;
+ 		}
 @@ -766,10 +766,6 @@
  
  	public String getName() {
@@ -50705,7 +52233,7 @@
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.item.Inventory;
  import net.minecraft.game.item.ItemStack;
-+import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.BlockAccess;
 +import net.minecraft.game.world.MovingObjectPosition;
  import net.minecraft.game.world.World;
@@ -51032,7 +52560,7 @@
 +		double var7 = entity.prevPosX + (entity.posX - entity.prevPosX) * (double)var4;
 +		double var9 = entity.prevPosY + (entity.posY - entity.prevPosY) * (double)var4 + 1.62D - (double)entity.yOffset;
 +		double var11 = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double)var4;
-+		Vec3D var13 = Vec3D.createVector(var7, var9, var11);
++		Vector3D var13 = Vector3D.createVector(var7, var9, var11);
 +		float var14 = MathHelper.cos(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
 +		float var15 = MathHelper.sin(-var6 * ((float)Math.PI / 180.0F) - (float)Math.PI);
 +		float var16 = -MathHelper.cos(-var5 * ((float)Math.PI / 180.0F));
@@ -51040,7 +52568,7 @@
 +		float var18 = var15 * var16;
 +		float var20 = var14 * var16;
 +		double var21 = 5.0D;
-+		Vec3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
++		Vector3D var23 = var13.addVector((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
 +		MovingObjectPosition var24 = world.rayTraceBlocks_do(var13, var23, false);
 +
 +		int side = var24.sideHit;
@@ -51674,7 +53202,7 @@
 +}
 --- net/minecraft/game/entity/Entity.java
 +++ net/minecraft/game/entity/Entity.java
-@@ -6,6 +6,8 @@
+@@ -6,12 +6,14 @@
  import com.mojang.nbt.ListTag;
  import java.util.List;
  import java.util.Random;
@@ -51683,6 +53211,13 @@
  import net.minecraft.game.entity.misc.ItemEntity;
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.entity.weather.LightningBoltEntity;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.physics.AxisAlignedBB;
+-import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
+ import net.minecraft.game.world.World;
+ import net.minecraft.game.world.block.Block;
+ import net.minecraft.game.world.block.LiquidBlock;
 @@ -43,6 +45,8 @@
  	public final AxisAlignedBB boundingBox = AxisAlignedBB.getBoundingBox(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
  	public boolean onGround = false;
@@ -51831,6 +53366,15 @@
  		this.setBeenAttacked();
  		return false;
  	}
+@@ -734,7 +764,7 @@
+ 	public void addToPlayerScore(Entity var1, int var2) {
+ 	}
+ 
+-	public boolean isInRangeToRenderVec3D(Vec3D var1) {
++	public boolean isInRangeToRenderVec3D(Vector3D var1) {
+ 		double var2 = this.posX - var1.xCoord;
+ 		double var4 = this.posY - var1.yCoord;
+ 		double var6 = this.posZ - var1.zCoord;
 @@ -744,7 +774,7 @@
  
  	public boolean isInRangeToRenderDist(double var1) {
@@ -51893,6 +53437,15 @@
  				return true;
  			}
  		}
+@@ -1006,7 +1046,7 @@
+ 		return 0.1F;
+ 	}
+ 
+-	public Vec3D getLookVec() {
++	public Vector3D getLookVec() {
+ 		return null;
+ 	}
+ 
 @@ -1032,7 +1072,7 @@
  	public void updateCloak() {
  	}
@@ -51968,7 +53521,7 @@
 +import net.minecraft.client.sound.SoundManager;
  import net.minecraft.game.entity.player.PlayerEntity;
  import net.minecraft.game.item.ItemStack;
-+import net.minecraft.game.physics.Vec3D;
++import net.minecraft.game.physics.Vector3D;
  import net.minecraft.game.world.World;
  import net.minecraft.game.world.block.Block;
 +import net.minecraft.game.world.block.StructureVoidBlock;
@@ -51999,7 +53552,7 @@
 -
 +	}
 +
-+	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vec3D hit) {
++	public boolean sendPlaceBlock(PlayerEntity var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, Vector3D hit) {
 +		int var8 = var2.getBlockId(var4, var5, var6);
 +		if(var8 > 0 && !var1.isSneaking() && Block.blocksList[var8].blockActivated(var2, var4, var5, var6, var1)) {
 +			return true;
@@ -52021,19 +53574,23 @@
  	}
  
  	public boolean shouldDrawHUD() {
-@@ -32,6 +57,14 @@
+@@ -32,6 +57,17 @@
  		super.func_717_a(var1);
  	}
  
+-	public void updateController() {
 +	public PlayerEntity createPlayer(World var1) {
 +		PlayerEntity player = super.createPlayer(var1);
 +		player.creative = true;
 +		return player;
 +	}
 +
- 	public void updateController() {
-+		super.updateController();
-+		this.mc.sndManager.playRandomMusicIfReady(SoundManager.MusicType.CREATIVE);
++	protected SoundManager.MusicType getMusicType() {
++		if (this.mc.gameSettings.creativeMusic) {
++			return SoundManager.MusicType.CREATIVE;
++		}
++
++		return super.getMusicType();
  	}
  }
 --- net/minecraft/game/world/terrain/feature/FlowersFeature.java
