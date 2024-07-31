@@ -6349,6 +6349,15 @@
 +		}
 +	}
 +}
+--- /dev/null
++++ net/minecraft/client/GameProvider.java
+@@ -1,0 +1,6 @@
++package net.minecraft.client;
++
++public interface GameProvider {
++    boolean isClient();
++    void sendMessage(String message);
++}
 --- net/minecraft/game/item/ToolItem.java
 +++ net/minecraft/game/item/ToolItem.java
 @@ -3,31 +3,34 @@
@@ -8898,7 +8907,7 @@
  		int var18 = this.blockAccess.getBlockMetadata(var2, var3, var4);
  		float var19 = 0.0F;
  		float var20 = 0.05F;
-@@ -1308,7 +1320,45 @@
+@@ -1308,7 +1320,46 @@
  	}
  
  	public boolean renderBlockReed(Block var1, int var2, int var3, int var4) {
@@ -8936,6 +8945,7 @@
 +			((MultiPartBlock) var1).setPart(part);
 +			draw |= this.renderStandardBlock(var1, var2, var3, var4);
 +		}
++		var1.setBlockBoundsForItemRender();
 +
 +		return draw;
 +	}
@@ -8945,7 +8955,7 @@
  		float var6 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		int var7 = var1.getColorMultiplier(this.blockAccess, var2, var3, var4);
  		float var8 = (float)(var7 >> 16 & 255) / 255.0F;
-@@ -1324,23 +1374,15 @@
+@@ -1324,23 +1375,15 @@
  		}
  
  		var5.setColorOpaque_F(var6 * var8, var6 * var9, var6 * var10);
@@ -8974,7 +8984,7 @@
  		float var6 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var6, var6, var6);
  		this.func_1245_b(var1, this.blockAccess.getBlockMetadata(var2, var3, var4), (double)var2, (double)((float)var3 - 1.0F / 16.0F), (double)var4);
-@@ -1348,22 +1390,22 @@
+@@ -1348,22 +1391,22 @@
  	}
  
  	public void renderTorchAtAngle(Block var1, double var2, double var4, double var6, double var8, double var10) {
@@ -9008,7 +9018,7 @@
  		var2 += 0.5D;
  		var6 += 0.5D;
  		double var28 = var2 - 0.5D;
-@@ -1395,18 +1437,20 @@
+@@ -1395,18 +1438,20 @@
  	}
  
  	public void renderCrossedSquares(Block var1, int var2, double var3, double var5, double var7) {
@@ -9037,7 +9047,7 @@
  		double var21 = var3 + 0.5D - (double)0.45F;
  		double var23 = var3 + 0.5D + (double)0.45F;
  		double var25 = var7 + 0.5D - (double)0.45F;
-@@ -1430,18 +1474,18 @@
+@@ -1430,18 +1475,18 @@
  	}
  
  	public void func_1245_b(Block var1, int var2, double var3, double var5, double var7) {
@@ -9063,7 +9073,7 @@
  		double var21 = var3 + 0.5D - 0.25D;
  		double var23 = var3 + 0.5D + 0.25D;
  		double var25 = var7 + 0.5D - 0.5D;
-@@ -1485,7 +1529,7 @@
+@@ -1485,7 +1530,7 @@
  	}
  
  	public boolean renderBlockFluids(Block var1, int var2, int var3, int var4) {
@@ -9072,7 +9082,7 @@
  		int var6 = var1.getColorMultiplier(this.blockAccess, var2, var3, var4);
  		float var7 = (float)(var6 >> 16 & 255) / 255.0F;
  		float var8 = (float)(var6 >> 8 & 255) / 255.0F;
-@@ -1493,8 +1537,17 @@
+@@ -1493,8 +1538,17 @@
  		boolean var10 = var1.shouldSideBeRendered(this.blockAccess, var2, var3 + 1, var4, 1);
  		boolean var11 = var1.shouldSideBeRendered(this.blockAccess, var2, var3 - 1, var4, 0);
  		boolean[] var12 = new boolean[]{var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2), var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3), var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4), var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)};
@@ -9091,7 +9101,7 @@
  		} else {
  			boolean var13 = false;
  			float var14 = 0.5F;
-@@ -1522,19 +1575,19 @@
+@@ -1522,19 +1576,19 @@
  					var28 = var1.getBlockTextureFromSideAndMetadata(2, var23);
  				}
  
@@ -9119,7 +9129,7 @@
  				var38 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  				var5.setColorOpaque_F(var15 * var38 * var7, var15 * var38 * var8, var15 * var38 * var9);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var24), (double)(var4 + 0), var32 - (double)var37 - (double)var36, var34 - (double)var37 + (double)var36);
-@@ -1570,8 +1623,8 @@
+@@ -1570,8 +1624,8 @@
  				}
  
  				int var54 = var1.getBlockTextureFromSideAndMetadata(var28 + 2, var23);
@@ -9130,7 +9140,7 @@
  				if(this.renderAllFaces || var12[var28]) {
  					float var35;
  					float var39;
-@@ -1607,11 +1660,11 @@
+@@ -1607,11 +1661,11 @@
  					}
  
  					var13 = true;
@@ -9147,7 +9157,7 @@
  					float var51 = var1.getBlockBrightness(this.blockAccess, var53, var3, var31);
  					if(var28 < 2) {
  						var51 *= var16;
-@@ -1629,7 +1682,7 @@
+@@ -1629,7 +1683,7 @@
  
  			var1.minY = var18;
  			var1.maxY = var20;
@@ -9156,7 +9166,7 @@
  		}
  	}
  
-@@ -1670,7 +1723,7 @@
+@@ -1670,7 +1724,7 @@
  		float var7 = 1.0F;
  		float var8 = 0.8F;
  		float var9 = 0.6F;
@@ -9165,7 +9175,7 @@
  		var10.startDrawingQuads();
  		float var11 = var1.getBlockBrightness(var2, var3, var4, var5);
  		float var12 = var1.getBlockBrightness(var2, var3, var4 - 1, var5);
-@@ -1749,25 +1802,25 @@
+@@ -1749,25 +1803,25 @@
  		boolean var17 = true;
  		boolean var18 = true;
  		this.lightValueOwn = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
@@ -9210,7 +9220,7 @@
  			var18 = false;
  			var17 = var18;
  			var16 = var18;
-@@ -1791,32 +1844,32 @@
+@@ -1791,32 +1845,32 @@
  				var9 = var12;
  			} else {
  				--var3;
@@ -9251,7 +9261,7 @@
  				}
  
  				++var3;
-@@ -1841,7 +1894,23 @@
+@@ -1841,7 +1895,23 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9276,7 +9286,7 @@
  			var8 = true;
  		}
  
-@@ -1853,32 +1922,32 @@
+@@ -1853,32 +1923,32 @@
  				var9 = var12;
  			} else {
  				++var3;
@@ -9317,7 +9327,7 @@
  				}
  
  				--var3;
-@@ -1903,7 +1972,23 @@
+@@ -1903,7 +1973,23 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9342,7 +9352,7 @@
  			var8 = true;
  		}
  
-@@ -1916,32 +2001,32 @@
+@@ -1916,32 +2002,32 @@
  				var9 = var12;
  			} else {
  				--var4;
@@ -9383,7 +9393,7 @@
  				}
  
  				++var4;
-@@ -1966,9 +2051,24 @@
+@@ -1966,9 +2052,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9411,7 +9421,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -1981,7 +2081,7 @@
+@@ -1981,7 +2082,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9420,7 +9430,7 @@
  			}
  
  			var8 = true;
-@@ -1995,32 +2095,32 @@
+@@ -1995,32 +2096,32 @@
  				var9 = var12;
  			} else {
  				++var4;
@@ -9461,7 +9471,7 @@
  				}
  
  				--var4;
-@@ -2045,9 +2145,24 @@
+@@ -2045,9 +2146,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9489,7 +9499,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2060,7 +2175,7 @@
+@@ -2060,7 +2176,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9498,7 +9508,7 @@
  			}
  
  			var8 = true;
-@@ -2074,32 +2189,32 @@
+@@ -2074,32 +2190,32 @@
  				var9 = var12;
  			} else {
  				--var2;
@@ -9539,7 +9549,7 @@
  				}
  
  				++var2;
-@@ -2124,9 +2239,24 @@
+@@ -2124,9 +2240,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9567,7 +9577,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2139,7 +2269,7 @@
+@@ -2139,7 +2270,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9576,7 +9586,7 @@
  			}
  
  			var8 = true;
-@@ -2153,32 +2283,32 @@
+@@ -2153,32 +2284,32 @@
  				var9 = var12;
  			} else {
  				++var2;
@@ -9617,7 +9627,7 @@
  				}
  
  				--var2;
-@@ -2203,9 +2333,24 @@
+@@ -2203,9 +2334,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9645,7 +9655,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2218,7 +2363,7 @@
+@@ -2218,7 +2364,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9654,7 +9664,7 @@
  			}
  
  			var8 = true;
-@@ -2230,7 +2375,7 @@
+@@ -2230,7 +2376,7 @@
  
  	public boolean renderStandardBlockWithColorMultiplier(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
  		this.enableAO = false;
@@ -9663,7 +9673,7 @@
  		boolean var9 = false;
  		float var10 = 0.5F;
  		float var11 = 1.0F;
-@@ -2265,7 +2410,18 @@
+@@ -2265,7 +2411,18 @@
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3 - 1, var4, 0)) {
  			var27 = var1.getBlockBrightness(this.blockAccess, var2, var3 - 1, var4);
  			var8.setColorOpaque_F(var17 * var27, var20 * var27, var23 * var27);
@@ -9683,7 +9693,7 @@
  			var9 = true;
  		}
  
-@@ -2276,7 +2432,18 @@
+@@ -2276,7 +2433,18 @@
  			}
  
  			var8.setColorOpaque_F(var14 * var27, var15 * var27, var16 * var27);
@@ -9703,7 +9713,7 @@
  			var9 = true;
  		}
  
-@@ -2288,11 +2455,22 @@
+@@ -2288,11 +2456,22 @@
  			}
  
  			var8.setColorOpaque_F(var18 * var27, var21 * var27, var24 * var27);
@@ -9730,7 +9740,7 @@
  			}
  
  			var9 = true;
-@@ -2305,11 +2483,22 @@
+@@ -2305,11 +2484,22 @@
  			}
  
  			var8.setColorOpaque_F(var18 * var27, var21 * var27, var24 * var27);
@@ -9757,7 +9767,7 @@
  			}
  
  			var9 = true;
-@@ -2322,11 +2511,22 @@
+@@ -2322,11 +2512,22 @@
  			}
  
  			var8.setColorOpaque_F(var19 * var27, var22 * var27, var25 * var27);
@@ -9784,7 +9794,7 @@
  			}
  
  			var9 = true;
-@@ -2339,11 +2539,22 @@
+@@ -2339,11 +2540,22 @@
  			}
  
  			var8.setColorOpaque_F(var19 * var27, var22 * var27, var25 * var27);
@@ -9811,7 +9821,7 @@
  			}
  
  			var9 = true;
-@@ -2370,7 +2581,7 @@
+@@ -2370,7 +2582,7 @@
  	}
  
  	public boolean func_1230_b(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
@@ -9820,7 +9830,7 @@
  		boolean var9 = false;
  		float var10 = 0.5F;
  		float var11 = 1.0F;
-@@ -2473,18 +2684,18 @@
+@@ -2473,18 +2685,18 @@
  		var5 = true;
  		boolean var8 = false;
  		boolean var9 = false;
@@ -9845,7 +9855,7 @@
  		if(!var8 && !var9) {
  			var8 = true;
  		}
-@@ -2528,170 +2739,65 @@
+@@ -2528,170 +2740,65 @@
  	}
  
  	public boolean renderBlockStairs(Block var1, int var2, int var3, int var4) {
@@ -10060,7 +10070,7 @@
  		}
  
  		double var20 = var14;
-@@ -2699,10 +2805,10 @@
+@@ -2699,10 +2806,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31082_l == 2) {
@@ -10075,7 +10085,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2710,10 +2816,10 @@
+@@ -2710,10 +2817,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31082_l == 1) {
@@ -10090,7 +10100,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2721,10 +2827,10 @@
+@@ -2721,10 +2828,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31082_l == 3) {
@@ -10105,7 +10115,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2737,43 +2843,74 @@
+@@ -2737,43 +2844,74 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10203,7 +10213,7 @@
  		}
  
  		double var20 = var14;
-@@ -2781,10 +2918,10 @@
+@@ -2781,10 +2919,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31083_k == 1) {
@@ -10218,7 +10228,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2792,10 +2929,10 @@
+@@ -2792,10 +2930,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31083_k == 2) {
@@ -10233,7 +10243,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2803,10 +2940,10 @@
+@@ -2803,10 +2941,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31083_k == 3) {
@@ -10248,7 +10258,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2819,35 +2956,54 @@
+@@ -2819,35 +2957,54 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10322,7 +10332,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -2856,13 +3012,25 @@
+@@ -2856,13 +3013,25 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -10352,7 +10362,7 @@
  		}
  
  		var20 = var14;
-@@ -2870,10 +3038,10 @@
+@@ -2870,10 +3039,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31087_g == 2) {
@@ -10367,7 +10377,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2881,10 +3049,10 @@
+@@ -2881,10 +3050,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31087_g == 1) {
@@ -10382,7 +10392,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2892,10 +3060,10 @@
+@@ -2892,10 +3061,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31087_g == 3) {
@@ -10397,7 +10407,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2908,35 +3076,54 @@
+@@ -2908,35 +3077,54 @@
  		double var34 = var4 + var1.maxY;
  		double var36 = var6 + var1.minZ;
  		if(this.enableAO) {
@@ -10471,7 +10481,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -2945,13 +3132,25 @@
+@@ -2945,13 +3133,25 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -10501,7 +10511,7 @@
  		}
  
  		var20 = var14;
-@@ -2959,10 +3158,10 @@
+@@ -2959,10 +3159,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31086_h == 1) {
@@ -10516,7 +10526,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2970,10 +3169,10 @@
+@@ -2970,10 +3170,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31086_h == 2) {
@@ -10531,7 +10541,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2981,10 +3180,10 @@
+@@ -2981,10 +3181,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31086_h == 3) {
@@ -10546,7 +10556,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2997,35 +3196,54 @@
+@@ -2997,35 +3197,54 @@
  		double var34 = var4 + var1.maxY;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10620,7 +10630,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -3034,13 +3252,25 @@
+@@ -3034,13 +3253,25 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -10650,7 +10660,7 @@
  		}
  
  		var20 = var14;
-@@ -3048,10 +3278,10 @@
+@@ -3048,10 +3279,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31084_j == 1) {
@@ -10665,7 +10675,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -3059,10 +3289,10 @@
+@@ -3059,10 +3290,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31084_j == 2) {
@@ -10680,7 +10690,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -3070,10 +3300,10 @@
+@@ -3070,10 +3301,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31084_j == 3) {
@@ -10695,7 +10705,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -3086,35 +3316,54 @@
+@@ -3086,35 +3317,54 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10769,7 +10779,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -3123,13 +3372,25 @@
+@@ -3123,13 +3373,25 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -10799,7 +10809,7 @@
  		}
  
  		var20 = var14;
-@@ -3137,10 +3398,10 @@
+@@ -3137,10 +3399,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31085_i == 2) {
@@ -10814,7 +10824,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -3148,10 +3409,10 @@
+@@ -3148,10 +3410,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31085_i == 1) {
@@ -10829,7 +10839,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -3159,10 +3420,10 @@
+@@ -3159,10 +3421,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31085_i == 3) {
@@ -10844,7 +10854,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -3175,77 +3436,110 @@
+@@ -3175,77 +3437,110 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10979,7 +10989,7 @@
  				var4.setTranslationF(var6, 0.0F, 0.0F);
  				var4.draw();
  				GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-@@ -3259,133 +3553,272 @@
+@@ -3259,133 +3554,272 @@
  				var4.setNormal(0.0F, -1.0F, 0.0F);
  				this.renderTorchAtAngle(var1, -0.5D, -0.5D, -0.5D, 0.0D, 0.0D);
  				var4.draw();
@@ -13978,7 +13988,7 @@
 +	public static final Block crops = (new CropsBlock(59, "wheat")).setHardness(0.0F).setStepSound(soundGrassFootstep).setName("crops").disableStats().setRequiresSelfNotify();
  	public static final Block farmland = (new FarmlandBlock(60)).setHardness(0.6F).setStepSound(soundGravelFootstep).setName("farmland");
 -	public static final Block furnace = (new FurnaceBlock(61, false)).setHardness(3.5F).setStepSound(soundStoneFootstep).setName("furnace").setRequiresSelfNotify();
-+	public static final Block furnace = (new FurnaceBlock(61, true)).setHardness(3.5F).setStepSound(soundStoneFootstep).setName("furnace").setRequiresSelfNotify();
++	public static final Block furnace = (new FurnaceBlock(61, true)).setHardness(3.5F).setStepSound(soundStoneFootstep).setLightValue(14.0F / 16.0F).setName("furnace").setRequiresSelfNotify();
  	public static final Block activeFurnace = (new FurnaceBlock(62, true)).setHardness(3.5F).setStepSound(soundStoneFootstep).setLightValue(14.0F / 16.0F).setName("furnace").setRequiresSelfNotify();
  	public static final Block standingSign = (new SignBlock(63, SignTileEntity.class, true)).setHardness(1.0F).setStepSound(soundWoodFootstep).setName("sign").disableStats().setRequiresSelfNotify();
 -	public static final Block door = (new DoorBlock(64, Material.wood)).setHardness(3.0F).setStepSound(soundWoodFootstep).setName("doorWood").disableStats().setRequiresSelfNotify();
@@ -15576,7 +15586,7 @@
  			return var4.getEnableSnow() ? false : var4.canSpawnLightningBolt();
  		}
  	}
-@@ -2602,5 +2544,204 @@
+@@ -2602,5 +2544,208 @@
  			((WorldAccess)this.worldAccesses.get(var7)).playAuxEffect(var1, var2, var3, var4, var5, var6);
  		}
  
@@ -15779,6 +15789,10 @@
 +			}
 +		}
 +		return map;
++	}
++
++	public void sendMessage(String message) {
++		SharedConstants.getGameProvider().sendMessage(message);
  	}
  }
 --- net/minecraft/game/world/save/SaveHandler.java
@@ -16957,6 +16971,38 @@
  		if(var3.getBlockId(var4, var5, var6) != Block.snowLayer.blockID) {
  			if(var7 == 0) {
  				--var5;
+--- argo/jdom/JsonNode.java
++++ argo/jdom/JsonNode.java
+@@ -8,23 +8,24 @@
+ 
+ 	public abstract String getText();
+ 
+-	public abstract Map getFields();
++	public abstract Map<JsonStringNode, JsonNode> getFields();
+ 
+-	public abstract List getElements();
++	public abstract List<JsonNode> getElements();
+ 
+ 	public final String getStringValue(Object... var1) {
+ 		return (String)this.wrapExceptionsFor(JsonNodeSelectors.func_27349_a(var1), this, var1);
+ 	}
+ 
+-	public final List getArrayNode(Object... var1) {
+-		return (List)this.wrapExceptionsFor(JsonNodeSelectors.func_27346_b(var1), this, var1);
++	@SuppressWarnings("unchecked")
++	public final List<JsonNode> getArrayNode(Object... var1) {
++		return (List<JsonNode>)this.wrapExceptionsFor(JsonNodeSelectors.func_27346_b(var1), this, var1);
+ 	}
+ 
+ 	private Object wrapExceptionsFor(JsonNodeSelector var1, JsonNode var2, Object[] var3) {
+ 		try {
+ 			return var1.getValue(var2);
+ 		} catch (JsonNodeDoesNotMatchChainedJsonNodeSelectorException var5) {
+-			throw JsonNodeDoesNotMatchPathElementsException.func_27319_a(var5, var3, JsonNodeFactories.aJsonArray(new JsonNode[]{var2}));
++			throw JsonNodeDoesNotMatchPathElementsException.func_27319_a(var5, var3, JsonNodeFactories.aJsonArray(var2));
+ 		}
+ 	}
+ }
 --- net/minecraft/game/entity/player/PlayerEntity.java
 +++ net/minecraft/game/entity/player/PlayerEntity.java
 @@ -2,8 +2,12 @@
@@ -17546,38 +17592,6 @@
 +			this.onItemUseFinish();
 +		} else {
 +			super.handleHealthUpdate(var1);
- 		}
- 	}
- }
---- argo/jdom/JsonNode.java
-+++ argo/jdom/JsonNode.java
-@@ -8,23 +8,24 @@
- 
- 	public abstract String getText();
- 
--	public abstract Map getFields();
-+	public abstract Map<JsonStringNode, JsonNode> getFields();
- 
--	public abstract List getElements();
-+	public abstract List<JsonNode> getElements();
- 
- 	public final String getStringValue(Object... var1) {
- 		return (String)this.wrapExceptionsFor(JsonNodeSelectors.func_27349_a(var1), this, var1);
- 	}
- 
--	public final List getArrayNode(Object... var1) {
--		return (List)this.wrapExceptionsFor(JsonNodeSelectors.func_27346_b(var1), this, var1);
-+	@SuppressWarnings("unchecked")
-+	public final List<JsonNode> getArrayNode(Object... var1) {
-+		return (List<JsonNode>)this.wrapExceptionsFor(JsonNodeSelectors.func_27346_b(var1), this, var1);
- 	}
- 
- 	private Object wrapExceptionsFor(JsonNodeSelector var1, JsonNode var2, Object[] var3) {
- 		try {
- 			return var1.getValue(var2);
- 		} catch (JsonNodeDoesNotMatchChainedJsonNodeSelectorException var5) {
--			throw JsonNodeDoesNotMatchPathElementsException.func_27319_a(var5, var3, JsonNodeFactories.aJsonArray(new JsonNode[]{var2}));
-+			throw JsonNodeDoesNotMatchPathElementsException.func_27319_a(var5, var3, JsonNodeFactories.aJsonArray(var2));
  		}
  	}
  }
@@ -22054,7 +22068,7 @@
 -			return var4 <= this.rand.nextInt(8) && super.getCanSpawnHere();
 +			var4s -= var5;
 +
-+			int maxBlockLight = (int)MathHelper.clampedLerp(var2, 128.0F, 256.0F, 0.0F, 12.0F);
++			int maxBlockLight = (int)MathHelper.clampedLerp(var2, 128.0F, 256.0F, 12.0F, 0.0F);
 +
 +			return (var4s <= this.rand.nextInt(8) && var4b <= maxBlockLight) && super.getCanSpawnHere();
  		}
@@ -23938,7 +23952,7 @@
  					if(var27 > -1) {
  						var3.setNormal(0.0F, 0.0F, -1.0F);
  
-@@ -951,12 +1003,54 @@
+@@ -951,12 +1003,52 @@
  		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
  		GL11.glDisable(GL11.GL_BLEND);
  		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -23970,14 +23984,12 @@
 +
 +			for (int i = this.worldRenderersToUpdate.size() - 1; i >= 0; i--) {
 +				ChunkRenderer chunk = (ChunkRenderer)this.worldRenderersToUpdate.get(i);
-+				if (chunk.isInFrustum) {
-+					chunk.updateRenderer();
-+					this.worldRenderersToUpdate.remove(chunk);
-+					chunk.needsUpdate = false;
++				chunk.updateRenderer();
++				this.worldRenderersToUpdate.remove(chunk);
++				chunk.needsUpdate = false;
 +
-+					if (i != this.worldRenderersToUpdate.size() - 1) {
-+						this.updateQueueNeedsSorting = true;
-+					}
++				if (i != this.worldRenderersToUpdate.size() - 1) {
++					this.updateQueueNeedsSorting = true;
 +				}
 +
 +				if (!var2 && var1a - System.nanoTime() < 0L)
@@ -23997,7 +24009,7 @@
  			int var17 = this.worldRenderersToUpdate.size() - 1;
  			int var18 = this.worldRenderersToUpdate.size();
  
-@@ -979,6 +1073,7 @@
+@@ -979,6 +1071,7 @@
  				var20.updateRenderer();
  				this.worldRenderersToUpdate.remove(var20);
  				var20.needsUpdate = false;
@@ -24005,7 +24017,7 @@
  			}
  
  			return this.worldRenderersToUpdate.size() == 0;
-@@ -994,6 +1089,8 @@
+@@ -994,6 +1087,8 @@
  			ChunkRenderer var11;
  			int var12;
  			int var13;
@@ -24014,7 +24026,7 @@
  			label169:
  			for(var10 = 0; var10 < var8; ++var10) {
  				var11 = (ChunkRenderer)this.worldRenderersToUpdate.get(var10);
-@@ -1011,9 +1108,15 @@
+@@ -1011,9 +1106,15 @@
  
  						while(true) {
  							--var13;
@@ -24031,7 +24043,7 @@
  							}
  
  							var6[var13 - 1] = var6[var13];
-@@ -1030,6 +1133,7 @@
+@@ -1030,6 +1131,7 @@
  				++var9;
  				var7.add(var11);
  				this.worldRenderersToUpdate.set(var10, (Object)null);
@@ -24039,7 +24051,7 @@
  			}
  
  			if(var7 != null) {
-@@ -1071,14 +1175,16 @@
+@@ -1071,14 +1173,16 @@
  					boolean var15 = false;
  
  					for(int var16 = 0; var16 < var4 && !var15; ++var16) {
@@ -24057,7 +24069,7 @@
  						}
  
  						++var12;
-@@ -1093,6 +1199,7 @@
+@@ -1093,6 +1197,7 @@
  				}
  
  				this.worldRenderersToUpdate.remove(var21);
@@ -24065,7 +24077,7 @@
  			}
  		}
  	}
-@@ -1127,7 +1234,7 @@
+@@ -1127,7 +1232,7 @@
  				var6.startDrawingQuads();
  				var6.setTranslationD(-var10, -var12, -var14);
  				var6.disableColor();
@@ -24074,7 +24086,7 @@
  				var6.draw();
  				var6.setTranslationD(0.0D, 0.0D, 0.0D);
  				GL11.glDisable(GL11.GL_ALPHA_TEST);
-@@ -1176,7 +1283,7 @@
+@@ -1176,7 +1281,7 @@
  	}
  
  	public void drawSelectionBox(PlayerEntity var1, MovingObjectPosition var2, int var3, ItemStack var4, float var5) {
@@ -24083,7 +24095,7 @@
  			GL11.glEnable(GL11.GL_BLEND);
  			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
  			GL11.glColor4f(0.0F, 0.0F, 0.0F, 0.4F);
-@@ -1258,6 +1365,7 @@
+@@ -1258,6 +1363,7 @@
  					ChunkRenderer var20 = this.worldRenderers[var19];
  					if(!var20.needsUpdate) {
  						this.worldRenderersToUpdate.add(var20);
@@ -24091,7 +24103,7 @@
  						var20.markDirty();
  					}
  				}
-@@ -1275,9 +1383,48 @@
+@@ -1275,9 +1381,48 @@
  	}
  
  	public void clipRenderersByFrustrum(ICamera var1, float var2) {
@@ -24142,7 +24154,7 @@
  			}
  		}
  
-@@ -1341,6 +1488,9 @@
+@@ -1341,6 +1486,9 @@
  					this.mc.effectRenderer.addEffect(new EntitySlimeFX(this.worldObj, var2, var4, var6, Item.slimeBall));
  				} else if(var1.equals("heart")) {
  					this.mc.effectRenderer.addEffect(new EntityHeartFX(this.worldObj, var2, var4, var6, var8, var10, var12));
@@ -24152,7 +24164,7 @@
  				}
  
  			}
-@@ -1348,7 +1498,6 @@
+@@ -1348,7 +1496,6 @@
  	}
  
  	public void obtainEntitySkin(Entity var1) {
@@ -24160,7 +24172,7 @@
  		if(var1.skinUrl != null) {
  			this.textureRegistry.obtainImageData(var1.skinUrl, new ImageBufferDownload());
  		}
-@@ -1374,6 +1523,7 @@
+@@ -1374,6 +1521,7 @@
  		for(int var1 = 0; var1 < this.worldRenderers.length; ++var1) {
  			if(this.worldRenderers[var1].isChunkLit && !this.worldRenderers[var1].needsUpdate) {
  				this.worldRenderersToUpdate.add(this.worldRenderers[var1]);
@@ -24168,7 +24180,7 @@
  				this.worldRenderers[var1].markDirty();
  			}
  		}
-@@ -1411,12 +1561,15 @@
+@@ -1411,12 +1559,15 @@
  			this.worldObj.playSoundEffect((double)((float)var3 + 0.5F), (double)((float)var4 + 0.5F), (double)((float)var5 + 0.5F), "random.fizz", 0.5F, 2.6F + (var7.nextFloat() - var7.nextFloat()) * 0.8F);
  			break;
  		case 1005:
@@ -24186,7 +24198,7 @@
  		case 2000:
  			int var8 = var6 % 3 - 1;
  			int var9 = var6 / 3 % 3 - 1;
-@@ -1437,14 +1590,19 @@
+@@ -1437,14 +1588,19 @@
  
  			return;
  		case 2001:
@@ -25197,7 +25209,7 @@
 +	}
 +
 +	protected Item registerItem() {
-+		if (!SharedConstants.isClient()) {
++		if (!SharedConstants.getGameProvider().isClient()) {
 +			return new Item(this.blockID, true);
 +		}
 +
@@ -25428,6 +25440,22 @@
 +		return Math.max(treeBonus + treeNoise, 0) + 7;
 +	}
 +}
+--- argo/jdom/JsonConstants.java
++++ argo/jdom/JsonConstants.java
+@@ -21,11 +21,11 @@
+ 		throw new IllegalStateException("Attempt to get text on a JsonNode without text.");
+ 	}
+ 
+-	public Map getFields() {
++	public Map<JsonStringNode, JsonNode> getFields() {
+ 		throw new IllegalStateException("Attempt to get fields on a JsonNode without fields.");
+ 	}
+ 
+-	public List getElements() {
++	public List<JsonNode> getElements() {
+ 		throw new IllegalStateException("Attempt to get elements on a JsonNode without elements.");
+ 	}
+ }
 --- net/minecraft/game/world/block/MineralBlock.java
 +++ net/minecraft/game/world/block/MineralBlock.java
 @@ -3,12 +3,18 @@
@@ -25450,22 +25478,6 @@
  	public int getBlockTextureFromSide(int var1) {
 -		return this.textureIndex;
 +		return var1 == 0 ? TEX_BOTTOM : var1 == 1 ? TEX_TOP : TEX_SIDE;
- 	}
- }
---- argo/jdom/JsonConstants.java
-+++ argo/jdom/JsonConstants.java
-@@ -21,11 +21,11 @@
- 		throw new IllegalStateException("Attempt to get text on a JsonNode without text.");
- 	}
- 
--	public Map getFields() {
-+	public Map<JsonStringNode, JsonNode> getFields() {
- 		throw new IllegalStateException("Attempt to get fields on a JsonNode without fields.");
- 	}
- 
--	public List getElements() {
-+	public List<JsonNode> getElements() {
- 		throw new IllegalStateException("Attempt to get elements on a JsonNode without elements.");
  	}
  }
 --- /dev/null
@@ -28191,7 +28203,7 @@
 +}
 --- net/minecraft/server/MinecraftServer.java
 +++ net/minecraft/server/MinecraftServer.java
-@@ -1,22 +1,13 @@
+@@ -1,26 +1,19 @@
  package net.minecraft.server;
  
 -import java.awt.GraphicsEnvironment;
@@ -28210,6 +28222,7 @@
 +import it.unimi.dsi.fastutil.objects.Object2IntMap;
 +import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 +import net.minecraft.SharedConstants;
++import net.minecraft.client.GameProvider;
  import net.minecraft.game.physics.AxisAlignedBB;
 -import net.minecraft.game.physics.Vec3D;
 +import net.minecraft.game.physics.Vector3D;
@@ -28219,10 +28232,16 @@
  import net.minecraft.game.world.save.SaveConverterMcRegion;
  import net.minecraft.game.world.save.SaveFormat;
  import net.minecraft.game.world.save.SaveOldDir;
-@@ -32,9 +23,20 @@
+ import net.minecraft.network.NetworkListenThread;
++import net.minecraft.network.packet.Packet3Chat;
+ import net.minecraft.network.packet.Packet4UpdateTime;
+ import net.minecraft.server.cli.ConsoleLogManager;
+ import net.minecraft.server.command.ConsoleCommandHandler;
+@@ -32,9 +25,20 @@
  import net.minecraft.server.world.WorldServerMulti;
  import net.minecraft.util.ProgressUpdate;
  
+-public class MinecraftServer implements Runnable, ICommandListener {
 +import java.awt.*;
 +import java.io.File;
 +import java.io.IOException;
@@ -28233,7 +28252,7 @@
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
 +
- public class MinecraftServer implements Runnable, ICommandListener {
++public class MinecraftServer implements Runnable, ICommandListener, GameProvider {
  	public static Logger logger = Logger.getLogger("Minecraft");
 -	public static HashMap field_6037_b = new HashMap();
 +	public static Object2IntMap<String> field_6037_b = new Object2IntOpenHashMap<>();
@@ -28241,7 +28260,7 @@
  	public NetworkListenThread networkServer;
  	public PropertyManager propertyManagerObj;
  	public WorldServer[] worldMngr;
-@@ -52,8 +54,10 @@
+@@ -52,18 +56,26 @@
  	public boolean spawnPeacefulMobs;
  	public boolean pvpOn;
  	public boolean allowFlight;
@@ -28249,10 +28268,18 @@
  
  	public MinecraftServer() {
 +		instance = this;
++		SharedConstants.setGameProvider(this);
++		StatList.initialize();
  		new ThreadSleepForever(this);
  	}
  
-@@ -63,7 +67,7 @@
++	public boolean isClient() {
++		return false;
++	}
++
+ 	private boolean startServer() throws UnknownHostException {
+ 		this.commandHandler = new ConsoleCommandHandler(this);
+ 		ThreadCommandReader var1 = new ThreadCommandReader(this);
  		var1.setDaemon(true);
  		var1.start();
  		ConsoleLogManager.init();
@@ -28261,7 +28288,7 @@
  		if(Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
  			logger.warning("**** NOT ENOUGH RAM!");
  			logger.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -76,6 +80,7 @@
+@@ -76,6 +88,7 @@
  		this.spawnPeacefulMobs = this.propertyManagerObj.getBooleanProperty("spawn-animals", true);
  		this.pvpOn = this.propertyManagerObj.getBooleanProperty("pvp", true);
  		this.allowFlight = this.propertyManagerObj.getBooleanProperty("allow-flight", false);
@@ -28269,7 +28296,7 @@
  		InetAddress var3 = null;
  		if(var2.length() > 0) {
  			var3 = InetAddress.getByName(var2);
-@@ -114,27 +119,28 @@
+@@ -114,27 +127,28 @@
  				var9 = (long)var8.hashCode();
  			}
  		}
@@ -28305,7 +28332,7 @@
  			}
  
  			this.worldMngr[var6].addWorldAccess(new WorldManager(this, this.worldMngr[var6]));
-@@ -288,14 +294,14 @@
+@@ -288,14 +302,14 @@
  	}
  
  	private void doTick() {
@@ -28325,7 +28352,7 @@
  			} else {
  				var1.add(var3);
  			}
-@@ -303,11 +309,11 @@
+@@ -303,11 +317,11 @@
  
  		int var6;
  		for(var6 = 0; var6 < var1.size(); ++var6) {
@@ -28339,8 +28366,23 @@
  		++this.deathTime;
  
  		for(var6 = 0; var6 < this.worldMngr.length; ++var6) {
-@@ -403,5 +409,9 @@
+@@ -362,8 +376,6 @@
+ 	}
  
+ 	public static void main(String[] var0) {
+-		StatList.initialize();
+-
+ 		try {
+ 			MinecraftServer var1 = new MinecraftServer();
+ 			if(!GraphicsEnvironment.isHeadless() && (var0.length <= 0 || !var0[0].equals("nogui"))) {
+@@ -401,7 +413,15 @@
+ 		return var1 == -1 ? this.entityTracker[1] : this.entityTracker[0];
+ 	}
+ 
++	public void sendMessage(String message) {
++		this.configManager.sendPacketToAllPlayers(new Packet3Chat(message));
++	}
++
  	public static boolean isServerRunning(MinecraftServer var0) {
  		return var0.serverRunning;
 +	}
@@ -36537,9 +36579,9 @@
 +	public static Item disc13 = (new MusicDiscItem(2000, "13")).setTextureCoord(0, 31).setName("record");
 +	public static Item discCat = (new MusicDiscItem(2001, "cat")).setTextureCoord(1, 31).setName("record");
 +
-+	public static Item structurePlacerWand = (SharedConstants.isClient() ? new StructurePlacerWandItem(30000) : new Item(30000)).setTextureCoord(30, 31).setName("structurePlacerWand");
-+	public static Item structureMakerWand = (SharedConstants.isClient() ? new StructureMakerWandItem(30001) : new Item(30001)).setTextureCoord(30, 30).setName("structureMakerWand");
-+	public static Item structureDrawerWand = (SharedConstants.isClient() ? new StructureDrawerWandItem(30002) : new Item(30002)).setTextureCoord(30, 29).setName("structureDrawerWand");
++	public static Item structurePlacerWand = (SharedConstants.getGameProvider().isClient() ? new StructurePlacerWandItem(30000) : new Item(30000)).setTextureCoord(30, 31).setName("structurePlacerWand");
++	public static Item structureMakerWand = (SharedConstants.getGameProvider().isClient() ? new StructureMakerWandItem(30001) : new Item(30001)).setTextureCoord(30, 30).setName("structureMakerWand");
++	public static Item structureDrawerWand = (SharedConstants.getGameProvider().isClient() ? new StructureDrawerWandItem(30002) : new Item(30002)).setTextureCoord(30, 29).setName("structureDrawerWand");
 +
  	public final int itemID;
 -	protected int maxStackSize = 64;
@@ -37826,7 +37868,7 @@
  import net.minecraft.game.world.dimension.Dimension;
  import net.minecraft.game.world.save.SaveConverterMcRegion;
  import net.minecraft.game.world.save.SaveFormat;
-@@ -76,17 +31,28 @@
+@@ -76,17 +31,24 @@
  import net.minecraft.network.NetClientHandler;
  import net.minecraft.network.stats.StatFileWriter;
  import net.minecraft.util.MathHelper;
@@ -37841,6 +37883,8 @@
 -import org.lwjgl.opengl.GL11;
  import org.lwjgl.util.glu.GLU;
  
+-public abstract class Minecraft implements Runnable {
+-	public static byte[] field_28006_b = new byte[10485760];
 +import java.awt.*;
 +import java.io.File;
 +import java.io.FileOutputStream;
@@ -37848,17 +37892,12 @@
 +import java.nio.channels.Channels;
 +import java.nio.channels.WritableByteChannel;
 +
- public abstract class Minecraft implements Runnable {
--	public static byte[] field_28006_b = new byte[10485760];
-+	static {
-+		SharedConstants.setClient(true);
-+	}
-+
++public abstract class Minecraft implements Runnable, GameProvider {
 +	public static byte[] field_28006_b = null;
  	private static Minecraft theMinecraft;
  	public PlayerController playerController;
  	private boolean fullscreen = false;
-@@ -107,6 +73,7 @@
+@@ -107,6 +69,7 @@
  	public volatile boolean isGamePaused = false;
  	public TextureRegistry textureRegistry;
  	public FontRenderer fontRenderer;
@@ -37866,13 +37905,12 @@
  	public GuiScreen currentScreen = null;
  	public LoadingScreenRenderer loadingScreen = new LoadingScreenRenderer(this);
  	public EntityRenderer entityRenderer;
-@@ -134,11 +101,12 @@
+@@ -134,11 +97,10 @@
  	public StatFileWriter statFileWriter;
  	private String serverName;
  	private int serverPort;
 -	private TextureWaterFX textureWaterFX = new TextureWaterFX();
-+	private TextureWaterFX textureWaterFX = new TextureWaterFX(false);
- 	private TextureLavaFX textureLavaFX = new TextureLavaFX();
+-	private TextureLavaFX textureLavaFX = new TextureLavaFX();
  	private static File minecraftDir = null;
  	public volatile boolean running = true;
  	public String debug = "";
@@ -37880,13 +37918,15 @@
  	boolean isTakingScreenshot = false;
  	long prevFrameTime = -1L;
  	public boolean inGameHasFocus = false;
-@@ -146,8 +114,14 @@
+@@ -146,8 +108,16 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
 +	private ScaledResolution scaledResolution;
  
  	public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
++		SharedConstants.setGameProvider(this);
++
 +		if ("betacraft.uk".equals(System.getProperty("http.proxyHost"))) {
 +			System.setProperty("http.proxyHost", "");
 +			System.setProperty("http.proxyPort", "");
@@ -37895,10 +37935,14 @@
  		StatList.initialize();
  		this.tempDisplayHeight = var5;
  		this.fullscreen = var6;
-@@ -164,6 +138,10 @@
+@@ -164,6 +134,14 @@
  		theMinecraft = this;
  	}
  
++	public boolean isClient() {
++		return true;
++	}
++
 +	public static Minecraft getInstance() {
 +		return theMinecraft;
 +	}
@@ -37936,10 +37980,14 @@
  		this.entityRenderer = new EntityRenderer(this);
  		RenderManager.instance.itemRenderer = new ItemRenderer(this);
  		this.statFileWriter = new StatFileWriter(this.session, this.mcDataDir);
-@@ -257,6 +234,7 @@
+@@ -255,8 +232,9 @@
+ 		this.checkGLError("Startup");
+ 		this.glCapabilities = new OpenGlCapsChecker();
  		this.sndManager.loadSoundSettings(this.gameSettings);
- 		this.textureRegistry.registerTextureFX(this.textureLavaFX);
- 		this.textureRegistry.registerTextureFX(this.textureWaterFX);
+-		this.textureRegistry.registerTextureFX(this.textureLavaFX);
+-		this.textureRegistry.registerTextureFX(this.textureWaterFX);
++		this.textureRegistry.registerTextureFX(new TextureWaterFX(false));
++		this.textureRegistry.registerTextureFX(new TextureLavaFX());
 +		this.textureRegistry.registerTextureFX(new TextureWaterFX(true));
  		this.textureRegistry.registerTextureFX(new TexturePortalFX());
  		this.textureRegistry.registerTextureFX(new TextureCompassFX(this));
@@ -38698,7 +38746,7 @@
  		Thread var8 = new Thread(var7, "Minecraft main thread");
  		var8.setPriority(10);
  		var7.minecraftUri = "www.minecraft.net";
-@@ -1482,6 +1631,17 @@
+@@ -1482,6 +1631,21 @@
  		return this.thePlayer instanceof ClientNetPlayerEntity ? ((ClientNetPlayerEntity)this.thePlayer).sendQueue : null;
  	}
  
@@ -38713,10 +38761,14 @@
 +		return attackSpeed;
 +	}
 +
++	public void sendMessage(String message) {
++		this.ingameGUI.addChatMessage(message);
++	}
++
  	public static void main(String[] var0) {
  		String var1 = null;
  		String var2 = null;
-@@ -1495,6 +1655,12 @@
+@@ -1495,6 +1659,12 @@
  			var2 = var0[1];
  		}
  
@@ -38729,7 +38781,7 @@
  		func_6269_a(var1, var2);
  	}
  
-@@ -1502,16 +1668,16 @@
+@@ -1502,16 +1672,16 @@
  		return theMinecraft == null || !theMinecraft.gameSettings.hideGUI;
  	}
  
@@ -39612,7 +39664,25 @@
  import net.minecraft.game.physics.AxisAlignedBB;
  import net.minecraft.game.world.BlockAccess;
  import net.minecraft.game.world.World;
-@@ -136,7 +137,7 @@
+@@ -78,11 +79,14 @@
+ 
+ 			var1.editingBlocks = true;
+ 
+-			for(var7 = 0; var7 < 2; ++var7) {
+-				for(var8 = 0; var8 < 3; ++var8) {
+-					var1.setBlockWithNotify(var2 + var5 * var7, var3 + var8, var4 + var6 * var7, Block.portal.blockID);
++			for(var7 = 0; var7 < 4; ++var7) {
++				for(var8 = 0; var8 < 6; ++var8) {
++					var1.createExplosion((Entity)var1.loadedEntityList.get(0), var2 + var5 * var7 + 0.5D, var3 + var8 + 0.5D, var4 + var6 * var7 + 0.5D, 5.0F);
++					var1.setBlockWithNotify(var2 + var5 * (var7 - 1), var3 + (var8 - 1), var4 + var6 * (var7 - 1), 0);
+ 				}
+ 			}
++
++			var1.sendMessage("GET INTENTIONAL GAME DESIGNED!");
+ 
+ 			var1.editingBlocks = false;
+ 			return true;
+@@ -136,7 +140,7 @@
  		}
  	}
  
@@ -47612,8 +47682,14 @@
  	}
  
  	public void updateRenderer() {
-@@ -104,78 +134,76 @@
- 			}
+@@ -99,83 +129,77 @@
+ 			int var5 = this.posY + this.sizeHeight;
+ 			int var6 = this.posZ + this.sizeDepth;
+ 
+-			for(int var7 = 0; var7 < 2; ++var7) {
+-				this.skipRenderPass[var7] = true;
+-			}
++			Arrays.fill(this.skipRenderPass, true);
  
  			Chunk.isLit = false;
 -			HashSet var21 = new HashSet();
@@ -47629,9 +47705,7 @@
 -				boolean var12 = false;
 -				boolean var13 = false;
 -				boolean var14 = false;
-+			if (this.isEmpty()) {
-+				Arrays.fill(this.skipRenderPass, true);
-+			} else {
++			if (!this.isEmpty()) {
 +				boolean[] hasRenderedBlocks = { false, false };
 +				boolean[] startedRendering = { false, false };
  
@@ -48324,11 +48398,13 @@
  			}
 --- /dev/null
 +++ net/minecraft/SharedConstants.java
-@@ -1,0 +1,22 @@
+@@ -1,0 +1,29 @@
 +package net.minecraft;
 +
++import net.minecraft.client.GameProvider;
++
 +public class SharedConstants {
-+    public static final String SHORT_VERSION = "1.0-a9.1";
++    public static final String SHORT_VERSION = "1.0-a9.2";
 +    public static final String VERSION = "Minecraft Diverge " + SHORT_VERSION;
 +    public static final int PROTOCOL_VERSION = 810300005;
 +    public static final boolean DEBUG_MODE = true;
@@ -48337,14 +48413,19 @@
 +    public static final boolean FLIGHT_MODE = false;
 +    public static final int MAX_THREADS = Runtime.getRuntime().availableProcessors();
 +
-+    private static boolean isClient;
++    private static GameProvider gameProvider;
 +
-+    public static void setClient(boolean isClient) {
-+        SharedConstants.isClient = isClient;
++    public static void setGameProvider(GameProvider gameProvider) {
++        if (SharedConstants.gameProvider != null) return;
++        SharedConstants.gameProvider = gameProvider;
++    }
++
++    public static GameProvider getGameProvider() {
++        return gameProvider;
 +    }
 +
 +    public static boolean isClient() {
-+        return isClient;
++        return gameProvider.isClient();
 +    }
 +}
 --- net/minecraft/game/entity/monster/SpiderEntity.java
