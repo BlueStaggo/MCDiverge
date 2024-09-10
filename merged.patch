@@ -2138,7 +2138,7 @@
  		}
 --- /dev/null
 +++ net/minecraft/game/world/biome/layers/GenLayerPreviewer.java
-@@ -1,0 +1,568 @@
+@@ -1,0 +1,577 @@
 +package net.minecraft.game.world.biome.layers;
 +
 +import net.minecraft.client.Minecraft;
@@ -2297,7 +2297,16 @@
 +	}
 +
 +	private static void copyImage(BufferedImage image) {
-+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new ImageTransferable(image), null);
++		try {
++			File imgFile = new File(imageSequenceLocation, "genLayer.png");
++			imgFile.mkdirs();
++			imgFile.delete();
++			ImageIO.write(image, "png", imgFile);
++		} catch (IOException e) {
++			System.out.println("Failed to save image!");
++			e.printStackTrace();
++		}
++//		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new ImageTransferable(image), null);
 +	}
 +
 +	private static void printMarkdown(IntArray2D array, int width, int height) {
@@ -3356,7 +3365,7 @@
 +}
 --- net/minecraft/game/world/chunk/ChunkProviderImpl.java
 +++ net/minecraft/game/world/chunk/ChunkProviderImpl.java
-@@ -2,40 +2,69 @@
+@@ -2,40 +2,70 @@
  
  import java.io.IOException;
  import java.util.ArrayList;
@@ -3373,7 +3382,8 @@
 +import net.minecraft.game.entity.player.PlayerEntity;
 +import net.minecraft.game.world.BlockPos;
  import net.minecraft.game.world.World;
-+import net.minecraft.game.world.block.SandBlock;
++import net.minecraft.game.world.block.Block;
++import net.minecraft.game.world.block.tileentity.SignTileEntity;
  import net.minecraft.game.world.chunk.loader.ChunkLoader;
  import net.minecraft.util.ProgressUpdate;
  
@@ -3435,7 +3445,7 @@
  			var4 = this.loadChunkFromFile(var1, var2);
  			if(var4 == null) {
  				if(this.chunkProvider == null) {
-@@ -44,16 +73,20 @@
+@@ -44,16 +74,17 @@
  					var4 = this.chunkProvider.provideChunk(var1, var2);
  				}
  			}
@@ -3450,20 +3460,27 @@
  			}
  
 -			if(!var4.isTerrainPopulated && this.chunkExists(var1 + 1, var2 + 1) && this.chunkExists(var1, var2 + 1) && this.chunkExists(var1 + 1, var2)) {
-+			boolean populated = false;
-+
+-				this.populate(this, var1, var2);
 +			if(var4 != null && !var4.isTerrainPopulated && this.chunkExists(var1 + 1, var2 + 1) && this.chunkExists(var1, var2 + 1) && this.chunkExists(var1 + 1, var2)) {
- 				this.populate(this, var1, var2);
-+				populated = true;
++				this.populate(this, var1, var2, false);
  			}
  
  			if(this.chunkExists(var1 - 1, var2) && !this.provideChunk(var1 - 1, var2).isTerrainPopulated && this.chunkExists(var1 - 1, var2 + 1) && this.chunkExists(var1, var2 + 1) && this.chunkExists(var1 - 1, var2)) {
-@@ -67,13 +100,17 @@
+@@ -67,13 +98,26 @@
  			if(this.chunkExists(var1 - 1, var2 - 1) && !this.provideChunk(var1 - 1, var2 - 1).isTerrainPopulated && this.chunkExists(var1 - 1, var2 - 1) && this.chunkExists(var1, var2 - 1) && this.chunkExists(var1 - 1, var2)) {
  				this.populate(this, var1 - 1, var2 - 1);
  			}
 +
-+			if (var4 != null && !populated) {
++			this.worldObj.setBlock(var1 * 16 + 8, 256 + 64, var2 * 16 + 8, Block.platinumBlock.blockID);
++			this.worldObj.setBlock(var1 * 16 + 8, 256 + 65, var2 * 16 + 8, Block.standingSign.blockID);
++			((SignTileEntity)this.worldObj.getBlockTileEntity(var1 * 16 + 8, 256 + 65, var2 * 16 + 8)).signText = new String[] {
++					"BORN TO DIE",
++					"CHEST BUG IS A TURD",
++					"I am trash sign",
++					var1 + ", " + var2 + " CHUNK COORDS"
++			};
++
++			if (var4 != null) {
 +				var4.initLightingForRealNotJustHeightmap();
 +			}
  		}
@@ -3477,28 +3494,57 @@
  		return var3 == null ? this.prepareChunk(var1, var2) : var3;
  	}
  
-@@ -125,6 +162,7 @@
+@@ -119,12 +163,19 @@
+ 	}
+ 
+ 	public void populate(ChunkProvider var1, int var2, int var3) {
++		this.populate(var1, var2, var3, true);
++	}
++
++	public void populate(ChunkProvider var1, int var2, int var3, boolean resetLighting) {
+ 		Chunk var4 = this.provideChunk(var2, var3);
+ 		if(!var4.isTerrainPopulated) {
+ 			var4.isTerrainPopulated = true;
  			if(this.chunkProvider != null) {
  				this.chunkProvider.populate(var1, var2, var3);
  				var4.setChunkModified();
-+				var4.initLightingForRealNotJustHeightmap();
++				if (resetLighting) {
++					var4.initLightingForRealNotJustHeightmap();
++				}
  			}
  		}
  
-@@ -163,14 +201,29 @@
+@@ -160,17 +211,41 @@
+ 		return true;
+ 	}
+ 
++	private void unloadChunkAt(long coord) {
++		Chunk chunk = (Chunk)this.chunkMap.get(coord);
++		if (chunk != null) {
++			this.saveChunk(chunk);
++			this.saveExtraChunkData(chunk);
++			chunk.onChunkUnload();
++			this.droppedChunksSet.remove(coord);
++			this.chunkMap.remove(coord);
++			this.chunkList.remove(chunk);
++		}
++	}
++
  	public boolean unload100OldestChunks() {
++		if (true) return false;
++
  		for(int var1 = 0; var1 < 100; ++var1) {
  			if(!this.droppedChunksSet.isEmpty()) {
 -				Integer var2 = (Integer)this.droppedChunksSet.iterator().next();
-+				long var2 = this.droppedChunksSet.iterator().nextLong();
- 				Chunk var3 = (Chunk)this.chunkMap.get(var2);
+-				Chunk var3 = (Chunk)this.chunkMap.get(var2);
 -				var3.onChunkUnload();
- 				this.saveChunk(var3);
- 				this.saveExtraChunkData(var3);
-+				var3.onChunkUnload();
- 				this.droppedChunksSet.remove(var2);
- 				this.chunkMap.remove(var2);
- 				this.chunkList.remove(var3);
+-				this.saveChunk(var3);
+-				this.saveExtraChunkData(var3);
+-				this.droppedChunksSet.remove(var2);
+-				this.chunkMap.remove(var2);
+-				this.chunkList.remove(var3);
++				long var2 = this.droppedChunksSet.iterator().nextLong();
++				this.unloadChunkAt(var2);
 +			}
 +		}
 +
@@ -3514,6 +3560,7 @@
 +
 +			if(player == null) {
 +				this.addChunkToDroppedChunksSet(chunk4.xPosition, chunk4.zPosition);
++				this.chunkListIndex--;
  			}
  		}
  
@@ -5060,7 +5107,7 @@
  	public void func_20086_a(int var1, PlayerEntity var2) {
 --- /dev/null
 +++ net/minecraft/game/world/biome/layers/LayerClimate.java
-@@ -1,0 +1,43 @@
+@@ -1,0 +1,44 @@
 +package net.minecraft.game.world.biome.layers;
 +
 +import net.minecraft.game.world.terrain.noise.SimplexNoiseOctaves;
@@ -5099,6 +5146,7 @@
 +	}
 +
 +	private double remapTemperature(double t) {
++		t = Math.pow(Math.abs(t), 1.4D) * Math.signum(t);
 +		t *= 2.5D;
 +		t += 2.0D;
 +		return t;
@@ -6058,13 +6106,16 @@
 +}
 --- /dev/null
 +++ net/minecraft/game/item/LandMapItem.java
-@@ -1,0 +1,68 @@
+@@ -1,0 +1,96 @@
 +package net.minecraft.game.item;
 +
 +import net.minecraft.game.entity.Entity;
 +import net.minecraft.game.entity.player.PlayerEntity;
 +import net.minecraft.game.world.World;
 +import net.minecraft.game.world.biome.Biome;
++import net.minecraft.game.world.biome.BiomeSource;
++import net.minecraft.game.world.biome.LayeredBiomeSource;
++import net.minecraft.game.world.biome.layers.LayerPerlinNoise;
 +import net.minecraft.game.world.map.MapColor;
 +import net.minecraft.game.world.map.MapData;
 +import net.minecraft.util.MathHelper;
@@ -6076,24 +6127,49 @@
 +
 +	public void updateMap(World var1, Entity var2, MapData var3) {
 +		if (var1.dimension.worldType == var3.dimension && var3.ticks % 20 == 0) {
-+			int updates = 127;
-+			for (int z = 0; z < 128; z++) {
++			int updates = 255;
++			boolean refresh = false;
++			updateLoop: for (int z = 0; z < 128; z++) {
 +				for (int x = 0; x < 128; x++) {
 +					int wx = var3.xCenter + (x - 64 << var3.scale);
 +					int wz = var3.zCenter + (z - 64 << var3.scale);
 +
 +					if (var3.colors[x + z * 128] == 0) {
-+						Biome biome = var1.getBiomeSource().getBiomeGenAt(wx, wz);
-+						var3.colors[x + z * 128] = (byte)((
-+								biome == Biome.ocean ? MapColor.waterColor
-+										: biome == Biome.beach ? MapColor.sandColor
-+										: MapColor.grassColor
-+								).colorIndex * 4);
-+						var3.setColors(127, 127, 127);
++						refresh = true;
 +
-+						if (updates-- <= 0) return;
++						BiomeSource biomeSource = var1.getBiomeSource();
++
++						MapColor mapColor;
++						int depth = 2;
++						if (!(biomeSource instanceof LayeredBiomeSource)) {
++							Biome biome = biomeSource.getBiomeGenAt(wx, wz);
++							mapColor = (
++									biome == Biome.ocean ? MapColor.waterColor
++											: biome == Biome.beach ? MapColor.sandColor
++											: MapColor.grassColor
++							);
++						} else {
++							LayeredBiomeSource layers = (LayeredBiomeSource)biomeSource;
++							float land = layers.oceanLayer.getCachedData(wx, wz) / (float)LayerPerlinNoise.RESOLUTION;
++
++							int climate = layers.climateLayer.getCachedData(wx, wz);
++							if (land < 0.0F) {
++								mapColor = MapColor.climateWaterColorArray[climate];
++								depth = 2 + Math.max((int)(land * 3.0F), -2);
++							} else {
++								mapColor = MapColor.climateGrassColorArray[climate];
++								depth = Math.min((int)(land * 3.0F), 2);
++							}
++						}
++
++						var3.colors[x + z * 128] = (byte)(mapColor.colorIndex * 4 + depth);
++						if (updates-- <= 0) break updateLoop;
 +					}
 +				}
++			}
++
++			if (refresh) {
++				var3.setColors(127, 127, 127);
 +			}
 +		}
 +	}
@@ -6808,7 +6884,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/game/world/biome/layers/Layer.java
-@@ -1,0 +1,216 @@
+@@ -1,0 +1,221 @@
 +package net.minecraft.game.world.biome.layers;
 +
 +import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
@@ -6838,7 +6914,7 @@
 +
 +	private static Layer[] getLayerArray(World world, long seed) {
 +		final int biomeZoom = 3;
-+		final int colorSpread = 4;
++		final int edgeSpread = 4;
 +		final int edgeDistance = 5;
 +
 +		Layer land = new LayerLand(100, 16);
@@ -6846,22 +6922,25 @@
 +		Layer boost = new LayerPerlinNoise(101, 4, 0.05D, d -> MathHelper.clamp(d / 2.0D + 0.5D, 0.0D, 1.0D));
 +
 +		Layer river = new LayerInitRiver(150);
-+		river = stack(river, LayerZoom::new, 160, 6);
++		river = stack(river, LayerZoom::new, 160, 5);
 +		river = new LayerComputeRiver(river);
-+		river = stack(river, LayerZoom::new, 170, 4);
++		river = stack(river, LayerZoom::new, 170, 5);
 +
-+		Layer biomes = new LayerClimate(200);
++		Layer climate = new LayerClimate(200);
 +		Layer biomeSeeds = new LayerRandom(250);
 +		biomeSeeds = new LayerZoom(280, biomeSeeds);
-+		biomes = new LayerApplyClimateZones(300, biomes, biomeSeeds);
++		Layer biomes = new LayerApplyClimateZones(300, climate, biomeSeeds);
 +		biomes = new LayerApplyBiomeZones(400, biomes);
 +		biomes = new LayerZoomPerlin(500, biomes, 4.0D, 0.8D, 1.2D);
++		climate = new LayerZoomPerlin(500, climate, 4.0D, 0.8D, 1.2D);
 +		biomes = new LayerApplyVariants(3000, biomes, 0, true);
 +		biomes = new LayerApplyVariants(3001, biomes, 1, false);
 +
 +		for (int i = 0; i < biomeZoom; i++) {
 +			biomes = new LayerZoom(1000 + i, biomes);
 +			biomes = new LayerSmooth(2000 + i, biomes);
++			climate = new LayerZoom(1000 + i, climate);
++			climate = new LayerSmooth(2000 + i, climate);
 +			if (i == 0) biomes = new LayerApplyVariants(3002 + i, biomes, i + 2);
 +		}
 +
@@ -6869,15 +6948,17 @@
 +		edge = stack(edge, LayerEdge::new, edgeDistance - 1);
 +		edge = new LayerFillEdge(edge, edgeDistance);
 +
-+		for (int i = 0; i < colorSpread; i++) {
++		for (int i = 0; i < edgeSpread; i++) {
 +			biomes = new LayerZoom(1100 + i, biomes);
 +			biomes = new LayerSmooth(2100 + i, biomes);
++			climate = new LayerZoom(1100 + i, climate);
++			climate = new LayerSmooth(2100 + i, climate);
 +			edge = new LayerSmoothZoom(3100 + i, edge);
 +		}
 +
 +		biomes = new LayerApplyBiomesToLand(biomes, land);
 +
-+		Layer[] layers = new Layer[] { biomes, land, edge, boost, river };
++		Layer[] layers = new Layer[] { biomes, land, edge, boost, river, climate };
 +		for (Layer layer : layers) {
 +			layer.setWorldSeed(seed);
 +		}
@@ -7799,12 +7880,12 @@
  	public static boolean fancyGrass = true;
  	public boolean field_31088_b = true;
  	private int field_31087_g = 0;
-@@ -85,6 +81,20 @@
+@@ -85,6 +81,21 @@
  	private boolean field_22357_ad;
  	private boolean field_22355_ae;
  
 +	private static final PerlinNoise[] perlinNoise = new PerlinNoise[4];
-+	private static final byte[] rotations = new byte[64 * 64 * 16];
++	private static final byte[] rotations = new byte[16 * 16 * 16];
 +
 +	static {
 +		Random random = new Random("renderBlockies".hashCode());
@@ -7812,15 +7893,16 @@
 +			perlinNoise[i] = new PerlinNoise(random);
 +		}
 +
-+		for (int i = 0; i < rotations.length; i++) {
-+			rotations[i] = (byte)random.nextInt();
-+		}
++//		for (int i = 0; i < rotations.length; i++) {
++//			rotations[i] = (byte)random.nextInt();
++//		}
++		random.nextBytes(rotations);
 +	}
 +
  	public RenderBlocks(BlockAccess var1) {
  		this.blockAccess = var1;
  	}
-@@ -94,27 +104,49 @@
+@@ -94,27 +105,49 @@
  
  	public void renderBlockUsingTexture(Block var1, int var2, int var3, int var4, int var5) {
  		this.overrideBlockTexture = var5;
@@ -7877,7 +7959,7 @@
  		float var9 = 0.5F;
  		float var10 = 1.0F;
  		float var11 = 0.8F;
-@@ -122,12 +154,12 @@
+@@ -122,12 +155,12 @@
  		float var25 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var9 * var25, var9 * var25, var9 * var25);
  		int var26 = var1.getBlockTexture(this.blockAccess, var2, var3, var4, 0);
@@ -7896,7 +7978,7 @@
  		double var37 = (double)var2 + var1.minX;
  		double var39 = (double)var2 + var1.maxX;
  		double var41 = (double)var3 + var1.minY + 0.1875D;
-@@ -140,12 +172,12 @@
+@@ -140,12 +173,12 @@
  		float var64 = var1.getBlockBrightness(this.blockAccess, var2, var3 + 1, var4);
  		var5.setColorOpaque_F(var10 * var64, var10 * var64, var10 * var64);
  		var27 = var1.getBlockTexture(this.blockAccess, var2, var3, var4, 1);
@@ -7915,7 +7997,7 @@
  		double var38 = var30;
  		double var40 = var32;
  		double var42 = var34;
-@@ -191,16 +223,16 @@
+@@ -191,16 +224,16 @@
  
  		byte var65 = 4;
  		switch(var7) {
@@ -7942,7 +8024,7 @@
  		}
  
  		float var66;
-@@ -254,7 +286,7 @@
+@@ -254,7 +287,7 @@
  
  	public boolean renderBlockTorch(Block var1, int var2, int var3, int var4) {
  		int var5 = this.blockAccess.getBlockMetadata(var2, var3, var4);
@@ -7951,7 +8033,7 @@
  		float var7 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		if(Block.lightValue[var1.blockID] > 0) {
  			var7 = 1.0F;
-@@ -284,7 +316,7 @@
+@@ -284,7 +317,7 @@
  		int var6 = var5 & 3;
  		int var7 = (var5 & 12) >> 2;
  		this.renderStandardBlock(var1, var2, var3, var4);
@@ -7960,7 +8042,7 @@
  		float var9 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		if(Block.lightValue[var1.blockID] > 0) {
  			var9 = (var9 + 1.0F) * 0.5F;
-@@ -297,32 +329,32 @@
+@@ -297,32 +330,32 @@
  		double var16 = 0.0D;
  		double var18 = 0.0D;
  		switch(var6) {
@@ -8014,7 +8096,7 @@
  		float var31 = 2.0F / 16.0F;
  		float var32 = (float)(var2 + 1);
  		float var33 = (float)(var2 + 1);
-@@ -378,44 +410,44 @@
+@@ -378,44 +411,44 @@
  	private boolean func_31074_b(Block var1, int var2, int var3, int var4, boolean var5) {
  		int var6 = this.blockAccess.getBlockMetadata(var2, var3, var4);
  		boolean var7 = var5 || (var6 & 8) != 0;
@@ -8095,7 +8177,7 @@
  			}
  
  			this.renderStandardBlock(var1, var2, var3, var4);
-@@ -428,35 +460,35 @@
+@@ -428,35 +461,35 @@
  			var1.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
  		} else {
  			switch(var8) {
@@ -8160,7 +8242,7 @@
  			}
  
  			this.renderStandardBlock(var1, var2, var3, var4);
-@@ -472,18 +504,18 @@
+@@ -472,18 +505,18 @@
  	}
  
  	private void func_31076_a(double var1, double var3, double var5, double var7, double var9, double var11, float var13, double var14) {
@@ -8187,7 +8269,7 @@
  		var19.setColorOpaque_F(var13, var13, var13);
  		var19.addVertexWithUV(var1, var7, var9, var24, var22);
  		var19.addVertexWithUV(var1, var5, var9, var20, var22);
-@@ -492,18 +524,18 @@
+@@ -492,18 +525,18 @@
  	}
  
  	private void func_31081_b(double var1, double var3, double var5, double var7, double var9, double var11, float var13, double var14) {
@@ -8214,7 +8296,7 @@
  		var19.setColorOpaque_F(var13, var13, var13);
  		var19.addVertexWithUV(var1, var5, var11, var24, var22);
  		var19.addVertexWithUV(var1, var5, var9, var20, var22);
-@@ -512,18 +544,18 @@
+@@ -512,18 +545,18 @@
  	}
  
  	private void func_31077_c(double var1, double var3, double var5, double var7, double var9, double var11, float var13, double var14) {
@@ -8241,7 +8323,7 @@
  		var19.setColorOpaque_F(var13, var13, var13);
  		var19.addVertexWithUV(var3, var5, var9, var24, var22);
  		var19.addVertexWithUV(var1, var5, var9, var20, var22);
-@@ -544,71 +576,71 @@
+@@ -544,71 +577,71 @@
  		float var12 = var5 ? 1.0F : 0.5F;
  		double var13 = var5 ? 16.0D : 8.0D;
  		switch(var7) {
@@ -8378,7 +8460,7 @@
  		}
  
  		this.field_31087_g = 0;
-@@ -625,7 +657,7 @@
+@@ -625,7 +658,7 @@
  		int var5 = this.blockAccess.getBlockMetadata(var2, var3, var4);
  		int var6 = var5 & 7;
  		boolean var7 = (var5 & 8) > 0;
@@ -8387,7 +8469,7 @@
  		boolean var9 = this.overrideBlockTexture >= 0;
  		if(!var9) {
  			this.overrideBlockTexture = Block.cobblestone.textureIndex;
-@@ -664,31 +696,31 @@
+@@ -664,31 +697,31 @@
  			var14 = this.overrideBlockTexture;
  		}
  
@@ -8436,7 +8518,7 @@
  				var21[var25].rotateAroundX(-((float)Math.PI * 2.0F / 9.0F));
  			}
  
-@@ -725,22 +757,22 @@
+@@ -725,22 +758,22 @@
  			}
  		}
  
@@ -8471,7 +8553,7 @@
  			}
  
  			if(var29 == 0) {
-@@ -785,7 +817,7 @@
+@@ -785,7 +818,7 @@
  	}
  
  	public boolean renderBlockFire(Block var1, int var2, int var3, int var4) {
@@ -8480,7 +8562,7 @@
  		int var6 = var1.getBlockTextureFromSide(0);
  		if(this.overrideBlockTexture >= 0) {
  			var6 = this.overrideBlockTexture;
-@@ -793,12 +825,12 @@
+@@ -793,12 +826,12 @@
  
  		float var7 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var7, var7, var7);
@@ -8499,7 +8581,7 @@
  		float var18 = 1.4F;
  		double var21;
  		double var23;
-@@ -807,14 +839,14 @@
+@@ -807,14 +840,14 @@
  		double var29;
  		double var31;
  		double var33;
@@ -8519,7 +8601,7 @@
  			}
  
  			if((var2 / 2 + var3 / 2 + var4 / 2 & 1) == 1) {
-@@ -876,10 +908,10 @@
+@@ -876,10 +909,10 @@
  				var31 = (double)var2 + 0.5D + 0.5D;
  				var33 = (double)var4 + 0.5D - 0.5D;
  				double var35 = (double)var4 + 0.5D + 0.5D;
@@ -8534,7 +8616,7 @@
  				++var3;
  				var18 = -0.2F;
  				if((var2 + var3 + var4 & 1) == 0) {
-@@ -887,10 +919,10 @@
+@@ -887,10 +920,10 @@
  					var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 0), var12, var16);
  					var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 1), var10, var16);
  					var5.addVertexWithUV(var29, (double)((float)var3 + var18), (double)(var4 + 1), var10, var14);
@@ -8549,7 +8631,7 @@
  					var5.addVertexWithUV(var31, (double)((float)var3 + var18), (double)(var4 + 1), var12, var14);
  					var5.addVertexWithUV(var23, (double)(var3 + 0), (double)(var4 + 1), var12, var16);
  					var5.addVertexWithUV(var23, (double)(var3 + 0), (double)(var4 + 0), var10, var16);
-@@ -900,10 +932,10 @@
+@@ -900,10 +933,10 @@
  					var5.addVertexWithUV((double)(var2 + 0), (double)(var3 + 0), var27, var12, var16);
  					var5.addVertexWithUV((double)(var2 + 1), (double)(var3 + 0), var27, var10, var16);
  					var5.addVertexWithUV((double)(var2 + 1), (double)((float)var3 + var18), var35, var10, var14);
@@ -8564,7 +8646,7 @@
  					var5.addVertexWithUV((double)(var2 + 1), (double)((float)var3 + var18), var33, var12, var14);
  					var5.addVertexWithUV((double)(var2 + 1), (double)(var3 + 0), var25, var12, var16);
  					var5.addVertexWithUV((double)(var2 + 0), (double)(var3 + 0), var25, var10, var16);
-@@ -927,10 +959,10 @@
+@@ -927,10 +960,10 @@
  			var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 0), var12, var16);
  			var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 1), var10, var16);
  			var5.addVertexWithUV(var29, (double)((float)var3 + var18), (double)(var4 + 1), var10, var14);
@@ -8579,7 +8661,7 @@
  			var5.addVertexWithUV((double)(var2 + 1), (double)((float)var3 + var18), var33, var12, var14);
  			var5.addVertexWithUV((double)(var2 + 1), (double)(var3 + 0), var25, var12, var16);
  			var5.addVertexWithUV((double)(var2 + 0), (double)(var3 + 0), var25, var10, var16);
-@@ -955,10 +987,10 @@
+@@ -955,10 +988,10 @@
  			var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 1), var10, var16);
  			var5.addVertexWithUV(var21, (double)(var3 + 0), (double)(var4 + 0), var12, var16);
  			var5.addVertexWithUV(var29, (double)((float)var3 + var18), (double)(var4 + 0), var12, var14);
@@ -8594,7 +8676,7 @@
  			var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var18), var33, var10, var14);
  			var5.addVertexWithUV((double)(var2 + 0), (double)(var3 + 0), var25, var10, var16);
  			var5.addVertexWithUV((double)(var2 + 1), (double)(var3 + 0), var25, var12, var16);
-@@ -973,9 +1005,9 @@
+@@ -973,9 +1006,9 @@
  	}
  
  	public boolean renderBlockRedstoneWire(Block var1, int var2, int var3, int var4) {
@@ -8606,7 +8688,7 @@
  		if(this.overrideBlockTexture >= 0) {
  			var7 = this.overrideBlockTexture;
  		}
-@@ -998,30 +1030,30 @@
+@@ -998,30 +1031,30 @@
  		}
  
  		var5.setColorOpaque_F(var8 * var10, var8 * var11, var8 * var12);
@@ -8652,7 +8734,7 @@
  				var29 = true;
  			}
  		}
-@@ -1040,10 +1072,14 @@
+@@ -1040,10 +1073,14 @@
  		}
  
  		if(var35 != 0) {
@@ -8671,7 +8753,7 @@
  		}
  
  		if(var35 == 0) {
-@@ -1053,7 +1089,7 @@
+@@ -1053,7 +1090,7 @@
  				}
  
  				if(!var26) {
@@ -8680,7 +8762,7 @@
  				}
  
  				if(!var27) {
-@@ -1061,7 +1097,7 @@
+@@ -1061,7 +1098,7 @@
  				}
  
  				if(!var27) {
@@ -8689,7 +8771,7 @@
  				}
  
  				if(!var28) {
-@@ -1069,7 +1105,7 @@
+@@ -1069,7 +1106,7 @@
  				}
  
  				if(!var28) {
@@ -8698,7 +8780,7 @@
  				}
  
  				if(!var29) {
-@@ -1077,96 +1113,72 @@
+@@ -1077,96 +1114,72 @@
  				}
  
  				if(!var29) {
@@ -8851,7 +8933,7 @@
  			}
  		}
  
-@@ -1174,7 +1186,7 @@
+@@ -1174,7 +1187,7 @@
  	}
  
  	public boolean renderBlockMinecartTrack(RailBlock var1, int var2, int var3, int var4) {
@@ -8860,7 +8942,7 @@
  		int var6 = this.blockAccess.getBlockMetadata(var2, var3, var4);
  		int var7 = var1.getBlockTextureFromSideAndMetadata(0, var6);
  		if(this.overrideBlockTexture >= 0) {
-@@ -1187,12 +1199,12 @@
+@@ -1187,12 +1200,12 @@
  
  		float var8 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var8, var8, var8);
@@ -8879,7 +8961,7 @@
  		float var19 = 1.0F / 16.0F;
  		float var20 = (float)(var2 + 1);
  		float var21 = (float)(var2 + 1);
-@@ -1259,7 +1271,7 @@
+@@ -1259,7 +1272,7 @@
  	}
  
  	public boolean renderBlockLadder(Block var1, int var2, int var3, int var4) {
@@ -8888,7 +8970,7 @@
  		int var6 = var1.getBlockTextureFromSide(0);
  		if(this.overrideBlockTexture >= 0) {
  			var6 = this.overrideBlockTexture;
-@@ -1267,12 +1279,12 @@
+@@ -1267,12 +1280,12 @@
  
  		float var7 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var7, var7, var7);
@@ -8907,7 +8989,7 @@
  		int var18 = this.blockAccess.getBlockMetadata(var2, var3, var4);
  		float var19 = 0.0F;
  		float var20 = 0.05F;
-@@ -1308,7 +1320,46 @@
+@@ -1308,7 +1321,46 @@
  	}
  
  	public boolean renderBlockReed(Block var1, int var2, int var3, int var4) {
@@ -8955,7 +9037,7 @@
  		float var6 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		int var7 = var1.getColorMultiplier(this.blockAccess, var2, var3, var4);
  		float var8 = (float)(var7 >> 16 & 255) / 255.0F;
-@@ -1324,23 +1375,15 @@
+@@ -1324,23 +1376,15 @@
  		}
  
  		var5.setColorOpaque_F(var6 * var8, var6 * var9, var6 * var10);
@@ -8984,7 +9066,7 @@
  		float var6 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  		var5.setColorOpaque_F(var6, var6, var6);
  		this.func_1245_b(var1, this.blockAccess.getBlockMetadata(var2, var3, var4), (double)var2, (double)((float)var3 - 1.0F / 16.0F), (double)var4);
-@@ -1348,22 +1391,22 @@
+@@ -1348,22 +1392,22 @@
  	}
  
  	public void renderTorchAtAngle(Block var1, double var2, double var4, double var6, double var8, double var10) {
@@ -9018,7 +9100,7 @@
  		var2 += 0.5D;
  		var6 += 0.5D;
  		double var28 = var2 - 0.5D;
-@@ -1395,18 +1438,20 @@
+@@ -1395,18 +1439,20 @@
  	}
  
  	public void renderCrossedSquares(Block var1, int var2, double var3, double var5, double var7) {
@@ -9047,7 +9129,7 @@
  		double var21 = var3 + 0.5D - (double)0.45F;
  		double var23 = var3 + 0.5D + (double)0.45F;
  		double var25 = var7 + 0.5D - (double)0.45F;
-@@ -1430,18 +1475,18 @@
+@@ -1430,18 +1476,18 @@
  	}
  
  	public void func_1245_b(Block var1, int var2, double var3, double var5, double var7) {
@@ -9073,7 +9155,7 @@
  		double var21 = var3 + 0.5D - 0.25D;
  		double var23 = var3 + 0.5D + 0.25D;
  		double var25 = var7 + 0.5D - 0.5D;
-@@ -1485,7 +1530,7 @@
+@@ -1485,7 +1531,7 @@
  	}
  
  	public boolean renderBlockFluids(Block var1, int var2, int var3, int var4) {
@@ -9082,7 +9164,7 @@
  		int var6 = var1.getColorMultiplier(this.blockAccess, var2, var3, var4);
  		float var7 = (float)(var6 >> 16 & 255) / 255.0F;
  		float var8 = (float)(var6 >> 8 & 255) / 255.0F;
-@@ -1493,8 +1538,17 @@
+@@ -1493,8 +1539,17 @@
  		boolean var10 = var1.shouldSideBeRendered(this.blockAccess, var2, var3 + 1, var4, 1);
  		boolean var11 = var1.shouldSideBeRendered(this.blockAccess, var2, var3 - 1, var4, 0);
  		boolean[] var12 = new boolean[]{var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 - 1, 2), var1.shouldSideBeRendered(this.blockAccess, var2, var3, var4 + 1, 3), var1.shouldSideBeRendered(this.blockAccess, var2 - 1, var3, var4, 4), var1.shouldSideBeRendered(this.blockAccess, var2 + 1, var3, var4, 5)};
@@ -9101,7 +9183,7 @@
  		} else {
  			boolean var13 = false;
  			float var14 = 0.5F;
-@@ -1522,19 +1576,19 @@
+@@ -1522,19 +1577,19 @@
  					var28 = var1.getBlockTextureFromSideAndMetadata(2, var23);
  				}
  
@@ -9129,7 +9211,7 @@
  				var38 = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
  				var5.setColorOpaque_F(var15 * var38 * var7, var15 * var38 * var8, var15 * var38 * var9);
  				var5.addVertexWithUV((double)(var2 + 0), (double)((float)var3 + var24), (double)(var4 + 0), var32 - (double)var37 - (double)var36, var34 - (double)var37 + (double)var36);
-@@ -1570,8 +1624,8 @@
+@@ -1570,8 +1625,8 @@
  				}
  
  				int var54 = var1.getBlockTextureFromSideAndMetadata(var28 + 2, var23);
@@ -9140,7 +9222,7 @@
  				if(this.renderAllFaces || var12[var28]) {
  					float var35;
  					float var39;
-@@ -1607,11 +1661,11 @@
+@@ -1607,11 +1662,11 @@
  					}
  
  					var13 = true;
@@ -9157,7 +9239,7 @@
  					float var51 = var1.getBlockBrightness(this.blockAccess, var53, var3, var31);
  					if(var28 < 2) {
  						var51 *= var16;
-@@ -1629,7 +1683,7 @@
+@@ -1629,7 +1684,7 @@
  
  			var1.minY = var18;
  			var1.maxY = var20;
@@ -9166,7 +9248,7 @@
  		}
  	}
  
-@@ -1670,7 +1724,7 @@
+@@ -1670,7 +1725,7 @@
  		float var7 = 1.0F;
  		float var8 = 0.8F;
  		float var9 = 0.6F;
@@ -9175,7 +9257,7 @@
  		var10.startDrawingQuads();
  		float var11 = var1.getBlockBrightness(var2, var3, var4, var5);
  		float var12 = var1.getBlockBrightness(var2, var3, var4 - 1, var5);
-@@ -1749,25 +1803,25 @@
+@@ -1749,25 +1804,25 @@
  		boolean var17 = true;
  		boolean var18 = true;
  		this.lightValueOwn = var1.getBlockBrightness(this.blockAccess, var2, var3, var4);
@@ -9220,7 +9302,7 @@
  			var18 = false;
  			var17 = var18;
  			var16 = var18;
-@@ -1791,32 +1845,32 @@
+@@ -1791,32 +1846,32 @@
  				var9 = var12;
  			} else {
  				--var3;
@@ -9261,7 +9343,7 @@
  				}
  
  				++var3;
-@@ -1841,7 +1895,23 @@
+@@ -1841,7 +1896,23 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9286,7 +9368,7 @@
  			var8 = true;
  		}
  
-@@ -1853,32 +1923,32 @@
+@@ -1853,32 +1924,32 @@
  				var9 = var12;
  			} else {
  				++var3;
@@ -9327,7 +9409,7 @@
  				}
  
  				--var3;
-@@ -1903,7 +1973,23 @@
+@@ -1903,7 +1974,23 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9352,7 +9434,7 @@
  			var8 = true;
  		}
  
-@@ -1916,32 +2002,32 @@
+@@ -1916,32 +2003,32 @@
  				var9 = var12;
  			} else {
  				--var4;
@@ -9393,7 +9475,7 @@
  				}
  
  				++var4;
-@@ -1966,9 +2052,24 @@
+@@ -1966,9 +2053,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9421,7 +9503,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -1981,7 +2082,7 @@
+@@ -1981,7 +2083,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9430,7 +9512,7 @@
  			}
  
  			var8 = true;
-@@ -1995,32 +2096,32 @@
+@@ -1995,32 +2097,32 @@
  				var9 = var12;
  			} else {
  				++var4;
@@ -9471,7 +9553,7 @@
  				}
  
  				--var4;
-@@ -2045,9 +2146,24 @@
+@@ -2045,9 +2147,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9499,7 +9581,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2060,7 +2176,7 @@
+@@ -2060,7 +2177,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9508,7 +9590,7 @@
  			}
  
  			var8 = true;
-@@ -2074,32 +2190,32 @@
+@@ -2074,32 +2191,32 @@
  				var9 = var12;
  			} else {
  				--var2;
@@ -9549,7 +9631,7 @@
  				}
  
  				++var2;
-@@ -2124,9 +2240,24 @@
+@@ -2124,9 +2241,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9577,7 +9659,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2139,7 +2270,7 @@
+@@ -2139,7 +2271,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9586,7 +9668,7 @@
  			}
  
  			var8 = true;
-@@ -2153,32 +2284,32 @@
+@@ -2153,32 +2285,32 @@
  				var9 = var12;
  			} else {
  				++var2;
@@ -9627,7 +9709,7 @@
  				}
  
  				--var2;
-@@ -2203,9 +2334,24 @@
+@@ -2203,9 +2335,24 @@
  			this.colorRedTopRight *= var12;
  			this.colorGreenTopRight *= var12;
  			this.colorBlueTopRight *= var12;
@@ -9655,7 +9737,7 @@
  				this.colorRedTopLeft *= var5;
  				this.colorRedBottomLeft *= var5;
  				this.colorRedBottomRight *= var5;
-@@ -2218,7 +2364,7 @@
+@@ -2218,7 +2365,7 @@
  				this.colorBlueBottomLeft *= var7;
  				this.colorBlueBottomRight *= var7;
  				this.colorBlueTopRight *= var7;
@@ -9664,7 +9746,7 @@
  			}
  
  			var8 = true;
-@@ -2230,7 +2376,7 @@
+@@ -2230,7 +2377,7 @@
  
  	public boolean renderStandardBlockWithColorMultiplier(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
  		this.enableAO = false;
@@ -9673,7 +9755,7 @@
  		boolean var9 = false;
  		float var10 = 0.5F;
  		float var11 = 1.0F;
-@@ -2265,7 +2411,18 @@
+@@ -2265,7 +2412,18 @@
  		if(this.renderAllFaces || var1.shouldSideBeRendered(this.blockAccess, var2, var3 - 1, var4, 0)) {
  			var27 = var1.getBlockBrightness(this.blockAccess, var2, var3 - 1, var4);
  			var8.setColorOpaque_F(var17 * var27, var20 * var27, var23 * var27);
@@ -9693,7 +9775,7 @@
  			var9 = true;
  		}
  
-@@ -2276,7 +2433,18 @@
+@@ -2276,7 +2434,18 @@
  			}
  
  			var8.setColorOpaque_F(var14 * var27, var15 * var27, var16 * var27);
@@ -9713,7 +9795,7 @@
  			var9 = true;
  		}
  
-@@ -2288,11 +2456,22 @@
+@@ -2288,11 +2457,22 @@
  			}
  
  			var8.setColorOpaque_F(var18 * var27, var21 * var27, var24 * var27);
@@ -9740,7 +9822,7 @@
  			}
  
  			var9 = true;
-@@ -2305,11 +2484,22 @@
+@@ -2305,11 +2485,22 @@
  			}
  
  			var8.setColorOpaque_F(var18 * var27, var21 * var27, var24 * var27);
@@ -9767,7 +9849,7 @@
  			}
  
  			var9 = true;
-@@ -2322,11 +2512,22 @@
+@@ -2322,11 +2513,22 @@
  			}
  
  			var8.setColorOpaque_F(var19 * var27, var22 * var27, var25 * var27);
@@ -9794,7 +9876,7 @@
  			}
  
  			var9 = true;
-@@ -2339,11 +2540,22 @@
+@@ -2339,11 +2541,22 @@
  			}
  
  			var8.setColorOpaque_F(var19 * var27, var22 * var27, var25 * var27);
@@ -9821,7 +9903,7 @@
  			}
  
  			var9 = true;
-@@ -2370,7 +2582,7 @@
+@@ -2370,7 +2583,7 @@
  	}
  
  	public boolean func_1230_b(Block var1, int var2, int var3, int var4, float var5, float var6, float var7) {
@@ -9830,7 +9912,7 @@
  		boolean var9 = false;
  		float var10 = 0.5F;
  		float var11 = 1.0F;
-@@ -2473,18 +2685,18 @@
+@@ -2473,18 +2686,18 @@
  		var5 = true;
  		boolean var8 = false;
  		boolean var9 = false;
@@ -9855,7 +9937,7 @@
  		if(!var8 && !var9) {
  			var8 = true;
  		}
-@@ -2528,170 +2740,65 @@
+@@ -2528,170 +2741,70 @@
  	}
  
  	public boolean renderBlockStairs(Block var1, int var2, int var3, int var4) {
@@ -10026,11 +10108,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 1) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10070,7 +10157,7 @@
  		}
  
  		double var20 = var14;
-@@ -2699,10 +2806,10 @@
+@@ -2699,10 +2812,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31082_l == 2) {
@@ -10085,7 +10172,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2710,10 +2817,10 @@
+@@ -2710,10 +2823,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31082_l == 1) {
@@ -10100,7 +10187,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2721,10 +2828,10 @@
+@@ -2721,10 +2834,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31082_l == 3) {
@@ -10115,7 +10202,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2737,43 +2844,74 @@
+@@ -2737,43 +2850,79 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10169,11 +10256,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 2) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10213,7 +10305,7 @@
  		}
  
  		double var20 = var14;
-@@ -2781,10 +2919,10 @@
+@@ -2781,10 +2930,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31083_k == 1) {
@@ -10228,7 +10320,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2792,10 +2930,10 @@
+@@ -2792,10 +2941,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31083_k == 2) {
@@ -10243,7 +10335,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2803,10 +2941,10 @@
+@@ -2803,10 +2952,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31083_k == 3) {
@@ -10258,7 +10350,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2819,35 +2957,54 @@
+@@ -2819,35 +2968,59 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10312,11 +10404,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 32) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10332,7 +10429,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -2856,13 +3013,25 @@
+@@ -2856,13 +3029,25 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -10362,7 +10459,7 @@
  		}
  
  		var20 = var14;
-@@ -2870,10 +3039,10 @@
+@@ -2870,10 +3055,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31087_g == 2) {
@@ -10377,7 +10474,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2881,10 +3050,10 @@
+@@ -2881,10 +3066,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31087_g == 1) {
@@ -10392,7 +10489,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2892,10 +3061,10 @@
+@@ -2892,10 +3077,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31087_g == 3) {
@@ -10407,7 +10504,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2908,35 +3077,54 @@
+@@ -2908,35 +3093,59 @@
  		double var34 = var4 + var1.maxY;
  		double var36 = var6 + var1.minZ;
  		if(this.enableAO) {
@@ -10461,11 +10558,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 16) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10481,7 +10583,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -2945,13 +3133,25 @@
+@@ -2945,13 +3154,25 @@
  		}
  
  		if(var1.minX < 0.0D || var1.maxX > 1.0D) {
@@ -10511,7 +10613,7 @@
  		}
  
  		var20 = var14;
-@@ -2959,10 +3159,10 @@
+@@ -2959,10 +3180,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31086_h == 1) {
@@ -10526,7 +10628,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -2970,10 +3170,10 @@
+@@ -2970,10 +3191,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31086_h == 2) {
@@ -10541,7 +10643,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -2981,10 +3181,10 @@
+@@ -2981,10 +3202,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31086_h == 3) {
@@ -10556,7 +10658,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -2997,35 +3197,54 @@
+@@ -2997,35 +3218,59 @@
  		double var34 = var4 + var1.maxY;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10610,11 +10712,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 4) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10630,7 +10737,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -3034,13 +3253,25 @@
+@@ -3034,13 +3279,25 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -10660,7 +10767,7 @@
  		}
  
  		var20 = var14;
-@@ -3048,10 +3279,10 @@
+@@ -3048,10 +3305,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31084_j == 1) {
@@ -10675,7 +10782,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -3059,10 +3290,10 @@
+@@ -3059,10 +3316,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31084_j == 2) {
@@ -10690,7 +10797,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -3070,10 +3301,10 @@
+@@ -3070,10 +3327,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31084_j == 3) {
@@ -10705,7 +10812,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -3086,35 +3317,54 @@
+@@ -3086,35 +3343,59 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10759,11 +10866,16 @@
 +
 +		int rotation = 0;
 +		if (this.field_31083_k == 0 && this.textureRotation && (var1.getRotationFlags() & 8) != 0) {
-+			int ix = MathHelper.floor(var2) & 63;
-+			int iy = MathHelper.floor(var4) & 63;
-+			int iz = MathHelper.floor(var6) & 63;
-+			int i = (ix * 64 + iz) * 64 + iy;
-+			rotation = rotations[i >>> 2] >>> ((i & 3) << 1);
++			int ix = MathHelper.floor(var2);
++			int iy = MathHelper.floor(var4);
++			int iz = MathHelper.floor(var6);
++			for (int pass = 0; pass < 8; pass += 2) {
++				int px = (ix >> pass) & 15;
++				int py = (iy >> pass) & 15;
++				int pz = (iz >> pass) & 15;
++				int i = (px * 16 + pz) * 16 + py;
++				rotation += (rotations[i] >>> pass) & 3;
++			}
 +			rotation &= 3;
 +			if ((var1.getRotationFlags() & 64) != 0) rotation |= 4;
 +		}
@@ -10779,7 +10891,7 @@
  		double var20;
  		if(this.flipTexture) {
  			var20 = var12;
-@@ -3123,13 +3373,25 @@
+@@ -3123,13 +3404,25 @@
  		}
  
  		if(var1.minZ < 0.0D || var1.maxZ > 1.0D) {
@@ -10809,7 +10921,7 @@
  		}
  
  		var20 = var14;
-@@ -3137,10 +3399,10 @@
+@@ -3137,10 +3430,10 @@
  		double var24 = var16;
  		double var26 = var18;
  		if(this.field_31085_i == 2) {
@@ -10824,7 +10936,7 @@
  			var24 = var16;
  			var26 = var18;
  			var20 = var12;
-@@ -3148,10 +3410,10 @@
+@@ -3148,10 +3441,10 @@
  			var16 = var18;
  			var18 = var24;
  		} else if(this.field_31085_i == 1) {
@@ -10839,7 +10951,7 @@
  			var20 = var14;
  			var22 = var12;
  			var12 = var14;
-@@ -3159,10 +3421,10 @@
+@@ -3159,10 +3452,10 @@
  			var24 = var18;
  			var26 = var16;
  		} else if(this.field_31085_i == 3) {
@@ -10854,7 +10966,7 @@
  			var20 = var14;
  			var22 = var12;
  			var24 = var16;
-@@ -3175,77 +3437,110 @@
+@@ -3175,77 +3468,110 @@
  		double var34 = var6 + var1.minZ;
  		double var36 = var6 + var1.maxZ;
  		if(this.enableAO) {
@@ -10989,7 +11101,7 @@
  				var4.setTranslationF(var6, 0.0F, 0.0F);
  				var4.draw();
  				GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-@@ -3259,133 +3554,272 @@
+@@ -3259,133 +3585,272 @@
  				var4.setNormal(0.0F, -1.0F, 0.0F);
  				this.renderTorchAtAngle(var1, -0.5D, -0.5D, -0.5D, 0.0D, 0.0D);
  				var4.draw();
@@ -15866,12 +15978,13 @@
 +}
 --- net/minecraft/network/packet/Packet8UpdateHealth.java
 +++ net/minecraft/network/packet/Packet8UpdateHealth.java
-@@ -6,17 +6,17 @@
+@@ -6,17 +6,20 @@
  import net.minecraft.network.NetHandler;
  
  public class Packet8UpdateHealth extends Packet {
 -	public int healthMP;
 +	public float healthMP;
++	public float manaMP;
  
  	public Packet8UpdateHealth() {
  	}
@@ -15879,25 +15992,28 @@
  	public void readPacketData(DataInputStream var1) throws IOException {
 -		this.healthMP = var1.readShort();
 +		this.healthMP = var1.readFloat();
++		this.manaMP = var1.readFloat();
  	}
  
  	public void writePacketData(DataOutputStream var1) throws IOException {
 -		var1.writeShort(this.healthMP);
 +		var1.writeFloat(this.healthMP);
++		var1.writeFloat(this.manaMP);
  	}
  
  	public void processPacket(NetHandler var1) {
-@@ -24,10 +24,10 @@
+@@ -24,10 +27,11 @@
  	}
  
  	public int getPacketSize() {
 -		return 2;
-+		return 4;
++		return 8;
  	}
  
 -	public Packet8UpdateHealth(int var1) {
-+	public Packet8UpdateHealth(float var1) {
++	public Packet8UpdateHealth(float var1, float var2) {
  		this.healthMP = var1;
++		this.manaMP = var2;
  	}
  }
 --- /dev/null
@@ -17062,7 +17178,7 @@
 +	public boolean isSkinFound = false;
 +	private ItemStack itemInUse;
 +	private int itemUseTime;
-+	public float mana = 20.0F;
++	public float mana = 0.0F;
 +	public float sprintCharge = 1.0F;
 +	public float sprintRechargeRate;
 +	public float sprintBoostRate;
@@ -19001,7 +19117,7 @@
  }
 --- /dev/null
 +++ net/minecraft/game/world/biome/LayeredBiomeSource.java
-@@ -1,0 +1,77 @@
+@@ -1,0 +1,79 @@
 +package net.minecraft.game.world.biome;
 +
 +import net.minecraft.game.world.World;
@@ -19019,6 +19135,7 @@
 +	public final Layer edgeLayer;
 +	public final Layer boostLayer;
 +	public final Layer riverLayer;
++	public final Layer climateLayer;
 +	private Biome[] noiseBiomeData = null;
 +
 +	public LayeredBiomeSource(World world) {
@@ -19028,6 +19145,7 @@
 +		this.edgeLayer = layers[2];
 +		this.boostLayer = layers[3];
 +		this.riverLayer = layers[4];
++		this.climateLayer = layers[5];
 +	}
 +
 +	public NoiseSettings[] loadNoiseSettingsData(NoiseSettings[] noiseSettings, int x, int z, int width, int length) {
@@ -21460,7 +21578,7 @@
 -	protected List spawnableCreatureList = new ArrayList();
 -	protected List spawnableWaterCreatureList = new ArrayList();
 +	private int grassColor = 0x9dff5c;
-+	private int foliageColor = 0x55ff3f;
++	private int foliageColor = 0x55ff00;
 +	private int skyColor = 0x88bbff;
 +	protected List<SpawnListEntry> spawnableMonsterList = new ArrayList();
 +	protected List<SpawnListEntry> spawnableCreatureList = new ArrayList();
@@ -21528,7 +21646,7 @@
 +
 +	protected NoiseSettings.Builder buildRiverNoiseSettings() {
 +		return new NoiseSettings.Builder()
-+				.noiseStretch(1.0D)
++				.noiseStretch(5.0D)
 +				.heightOffset(-8.0D)
 +				.chasmThresholdHigh(0.0D);
 +	}
@@ -21993,6 +22111,49 @@
  			if(var3 != null) {
  				this.motionX = var3.xCoord;
  				this.motionY = var3.yCoord;
+--- net/minecraft/game/world/map/MapColor.java
++++ net/minecraft/game/world/map/MapColor.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.game.world.map;
+ 
+ public class MapColor {
+-	public static final MapColor[] mapColorArray = new MapColor[16];
++	public static final MapColor[] mapColorArray = new MapColor[64];
+ 	public static final MapColor airColor = new MapColor(0, 0);
+ 	public static final MapColor grassColor = new MapColor(1, 8368696);
+ 	public static final MapColor sandColor = new MapColor(2, 16247203);
+@@ -16,8 +16,31 @@
+ 	public static final MapColor stoneColor = new MapColor(11, 7368816);
+ 	public static final MapColor waterColor = new MapColor(12, 4210943);
+ 	public static final MapColor woodColor = new MapColor(13, 6837042);
++	public static final MapColor coldGrassColor = new MapColor(14, 0x449671);
++	public static final MapColor coolGrassColor = new MapColor(15, 0x53b04c);
++	public static final MapColor warmGrassColor = new MapColor(17, 0x9abe2c);
++	public static final MapColor hotGrassColor = new MapColor(18, 0xc8cc11);
++	public static final MapColor coldWaterColor = new MapColor(19, 0x4a0ee8);
++	public static final MapColor coolWaterColor = new MapColor(20, 0x4a2af5);
++	public static final MapColor warmWaterColor = new MapColor(21, 0x4052ff);
++	public static final MapColor hotWaterColor = new MapColor(22, 0x4068ff);
+ 	public final int colorValue;
+ 	public final int colorIndex;
++
++	public static final MapColor[] climateGrassColorArray = {
++			coldGrassColor,
++			coolGrassColor,
++			grassColor,
++			warmGrassColor,
++			hotGrassColor
++	};
++	public static final MapColor[] climateWaterColorArray = {
++			coldWaterColor,
++			coolWaterColor,
++			waterColor,
++			warmWaterColor,
++			hotWaterColor
++	};
+ 
+ 	private MapColor(int var1, int var2) {
+ 		this.colorIndex = var1;
 --- net/minecraft/client/PanelCrashReport.java
 +++ net/minecraft/client/PanelCrashReport.java
 @@ -9,6 +9,8 @@
@@ -22220,7 +22381,7 @@
  }
 --- net/minecraft/game/item/recipe/CraftingManager.java
 +++ net/minecraft/game/item/recipe/CraftingManager.java
-@@ -1,178 +1,417 @@
+@@ -1,178 +1,418 @@
  package net.minecraft.game.item.recipe;
  
 -import java.util.ArrayList;
@@ -22585,6 +22746,7 @@
 +		r(o(clock), i(goldIngot, 4), i(redstone));
 +		r(o(compass), i(ironIngot, 4), i(redstone));
 +		r(o(emptyMap), i(paper, 8), i(compass));
++		r(o(landMap), i(emptyMap), i(redstone, 8));
 +		r(o(landMap), i(map), i(redstone, 8));
 +
 +		// FOOD
@@ -25041,7 +25203,7 @@
  	public static int func_31073_c() {
 -		return 4764952;
 +		if (Block.leaves.hasAlphaEnvironment()) return 0xFFFFFF;
-+		return 0x55ff3f;
++		return 0x55ff00;
  	}
  }
 --- net/minecraft/game/world/WorldAccess.java
@@ -30445,6 +30607,15 @@
  import org.lwjgl.opengl.GL11;
  
  public class MapItemRender {
+@@ -30,7 +31,7 @@
+ 
+ 	public void func_28157_a(PlayerEntity var1, TextureRegistry var2, MapData var3) {
+ 		for(int var4 = 0; var4 < 16384; ++var4) {
+-			byte var5 = var3.colors[var4];
++			int var5 = var3.colors[var4] & 0xFF;
+ 			if(var5 / 4 == 0) {
+ 				this.field_28159_a[var4] = (var4 + var4 / 128 & 1) * 8 + 16 << 24;
+ 			} else {
 @@ -75,11 +76,11 @@
  		var17.addVertexWithUV((double)((float)(var15 + 128) - var18), (double)((float)(var16 + 0) + var18), (double)-0.01F, 1.0D, 0.0D);
  		var17.addVertexWithUV((double)((float)(var15 + 0) + var18), (double)((float)(var16 + 0) + var18), (double)-0.01F, 0.0D, 0.0D);
@@ -33203,15 +33374,15 @@
 +	}
 +
 +	public NoiseSettings getNoiseSettings(NoiseSettingsModifiers modifiers) {
-+		modifiers.ocean = Math.max(modifiers.ocean, -1.0D);
-+		double height = modifiers.ocean * 25.0D - 5.0D;
++		double ocean = Math.max(modifiers.ocean, -1.0D);
++		double height = ocean * 25.0D - 5.0D;
 +		if (modifiers.river) {
 +			height = Math.min(height, this.riverNoiseSettings.heightOffsetMin());
 +		}
 +
 +		return new NoiseSettings.Builder(super.getNoiseSettings(modifiers))
 +				.heightOffset(height)
-+				.noiseStretch(35.0D * -modifiers.ocean + 5.0D)
++				.noiseStretch(35.0D * -ocean + 5.0D)
 +				.chasmThresholdHigh(0.0D)
 +				.caveThresholdHigh(1.0D)
 +				.build();
@@ -37897,15 +38068,16 @@
  	private static Minecraft theMinecraft;
  	public PlayerController playerController;
  	private boolean fullscreen = false;
-@@ -107,6 +69,7 @@
+@@ -107,6 +69,8 @@
  	public volatile boolean isGamePaused = false;
  	public TextureRegistry textureRegistry;
  	public FontRenderer fontRenderer;
 +	public FontRenderer smallFontRenderer;
++	public FontRenderer smallOutlineFontRenderer;
  	public GuiScreen currentScreen = null;
  	public LoadingScreenRenderer loadingScreen = new LoadingScreenRenderer(this);
  	public EntityRenderer entityRenderer;
-@@ -134,11 +97,10 @@
+@@ -134,11 +98,10 @@
  	public StatFileWriter statFileWriter;
  	private String serverName;
  	private int serverPort;
@@ -37918,7 +38090,7 @@
  	boolean isTakingScreenshot = false;
  	long prevFrameTime = -1L;
  	public boolean inGameHasFocus = false;
-@@ -146,8 +108,16 @@
+@@ -146,8 +109,16 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
@@ -37935,7 +38107,7 @@
  		StatList.initialize();
  		this.tempDisplayHeight = var5;
  		this.fullscreen = var6;
-@@ -164,6 +134,14 @@
+@@ -164,6 +135,14 @@
  		theMinecraft = this;
  	}
  
@@ -37950,7 +38122,7 @@
  	public void onMinecraftCrash(UnexpectedThrowable var1) {
  		this.hasCrashed = true;
  		this.displayUnexpectedThrowable(var1);
-@@ -201,10 +179,10 @@
+@@ -201,10 +180,10 @@
  			Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
  		}
  
@@ -37963,7 +38135,7 @@
  		} catch (LWJGLException var6) {
  			var6.printStackTrace();
  
-@@ -218,13 +196,12 @@
+@@ -218,13 +197,13 @@
  
  		this.mcDataDir = getMinecraftDir();
  		this.saveLoader = new SaveConverterMcRegion(new File(this.mcDataDir, "saves"));
@@ -37976,11 +38148,12 @@
 -		ColorizerWater.func_28182_a(this.textureRegistry.func_28149_a("/misc/watercolor.png"));
 -		ColorizerGrass.func_28181_a(this.textureRegistry.func_28149_a("/misc/grasscolor.png"));
 -		ColorizerFoliage.func_28152_a(this.textureRegistry.func_28149_a("/misc/foliagecolor.png"));
-+		this.smallFontRenderer = new FontRenderer(this.gameSettings, "/font/small-outline.png", this.textureRegistry, -2);
++		this.smallFontRenderer = new FontRenderer(this.gameSettings, "/font/small.png", this.textureRegistry);
++		this.smallOutlineFontRenderer = new FontRenderer(this.gameSettings, "/font/small-outline.png", this.textureRegistry, -2);
  		this.entityRenderer = new EntityRenderer(this);
  		RenderManager.instance.itemRenderer = new ItemRenderer(this);
  		this.statFileWriter = new StatFileWriter(this.session, this.mcDataDir);
-@@ -255,8 +232,9 @@
+@@ -255,8 +234,9 @@
  		this.checkGLError("Startup");
  		this.glCapabilities = new OpenGlCapsChecker();
  		this.sndManager.loadSoundSettings(this.gameSettings);
@@ -37992,7 +38165,7 @@
  		this.textureRegistry.registerTextureFX(new TexturePortalFX());
  		this.textureRegistry.registerTextureFX(new TextureCompassFX(this));
  		this.textureRegistry.registerTextureFX(new TextureWatchFX(this));
-@@ -277,9 +255,13 @@
+@@ -277,9 +257,13 @@
  		this.checkGLError("Post startup");
  		this.ingameGUI = new IngameHud(this);
  		if(this.serverName != null) {
@@ -38008,7 +38181,7 @@
  		}
  
  	}
-@@ -302,8 +284,8 @@
+@@ -302,8 +286,8 @@
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureRegistry.getTexture("/title/mojang.png"));
  		var2.startDrawingQuads();
  		var2.setColorOpaque_I(16777215);
@@ -38019,7 +38192,7 @@
  		var2.addVertexWithUV((double)this.displayWidth, 0.0D, 0.0D, 0.0D, 0.0D);
  		var2.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
  		var2.draw();
-@@ -342,24 +324,24 @@
+@@ -342,24 +326,24 @@
  	public static File getAppDir(String var0) {
  		String var1 = System.getProperty("user.home", ".");
  		File var2;
@@ -38061,7 +38234,7 @@
  		}
  
  		if(!var2.exists() && !var2.mkdirs()) {
-@@ -371,7 +353,13 @@
+@@ -371,7 +355,13 @@
  
  	private static OperatingSystem getOs() {
  		String var0 = System.getProperty("os.name").toLowerCase();
@@ -38076,7 +38249,7 @@
  	}
  
  	public SaveFormat getSaveLoader() {
-@@ -414,7 +402,7 @@
+@@ -414,7 +404,7 @@
  		}
  	}
  
@@ -38085,7 +38258,7 @@
  		int var2 = GL11.glGetError();
  		if(var2 != 0) {
  			String var3 = GLU.gluErrorString(var2);
-@@ -466,6 +454,108 @@
+@@ -466,6 +456,108 @@
  		System.gc();
  	}
  
@@ -38194,7 +38367,7 @@
  	public void run() {
  		this.running = true;
  
-@@ -483,12 +573,15 @@
+@@ -483,12 +575,15 @@
  
  			while(this.running) {
  				try {
@@ -38211,7 +38384,7 @@
  					if(this.mcCanvas == null && Display.isCloseRequested()) {
  						this.shutdown();
  					}
-@@ -517,7 +610,7 @@
+@@ -517,7 +612,7 @@
  
  					long var24 = System.nanoTime() - var23;
  					this.checkGLError("Pre render");
@@ -38220,7 +38393,7 @@
  					this.sndManager.func_338_a(this.thePlayer, this.timer.renderPartialTicks);
  					GL11.glEnable(GL11.GL_TEXTURE_2D);
  					if(this.theWorld != null) {
-@@ -529,7 +622,7 @@
+@@ -529,7 +624,7 @@
  					}
  
  					if(this.thePlayer != null && this.thePlayer.isEntityInsideOpaqueBlock()) {
@@ -38229,7 +38402,7 @@
  					}
  
  					if(!this.skipRenderWorld) {
-@@ -537,15 +630,17 @@
+@@ -537,15 +632,17 @@
  							this.playerController.setPartialTime(this.timer.renderPartialTicks);
  						}
  
@@ -38249,7 +38422,7 @@
  					}
  
  					if(this.gameSettings.showDebugInfo) {
-@@ -579,7 +674,8 @@
+@@ -579,7 +676,8 @@
  					++var3;
  
  					for(this.isGamePaused = !this.isMultiplayerWorld() && this.currentScreen != null && this.currentScreen.doesGuiPauseGame(); System.currentTimeMillis() >= var1 + 1000L; var3 = 0) {
@@ -38259,7 +38432,7 @@
  						ChunkRenderer.chunksUpdated = 0;
  						var1 += 1000L;
  					}
-@@ -606,7 +702,6 @@
+@@ -606,7 +704,6 @@
  
  	public void func_28002_e() {
  		try {
@@ -38267,7 +38440,7 @@
  			this.worldRenderer.func_28137_f();
  		} catch (Throwable var4) {
  		}
-@@ -614,7 +709,7 @@
+@@ -614,7 +711,7 @@
  		try {
  			System.gc();
  			AxisAlignedBB.clearBoundingBoxPool();
@@ -38276,7 +38449,7 @@
  		} catch (Throwable var3) {
  		}
  
-@@ -712,6 +807,26 @@
+@@ -712,6 +809,26 @@
  
  		var7.draw();
  		GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -38303,7 +38476,7 @@
  	}
  
  	public void shutdown() {
-@@ -748,28 +863,32 @@
+@@ -748,28 +865,32 @@
  	}
  
  	private void func_6254_a(int var1, boolean var2) {
@@ -38353,7 +38526,7 @@
  			if(var1 == 0) {
  				this.thePlayer.swingItem();
  			}
-@@ -777,7 +896,7 @@
+@@ -777,7 +898,7 @@
  			boolean var2 = true;
  			if(this.objectMouseOver == null) {
  				if(var1 == 0 && !(this.playerController instanceof CreativePlayerController)) {
@@ -38362,7 +38535,7 @@
  				}
  			} else if(this.objectMouseOver.typeOfHit == MovingObjectType.ENTITY) {
  				if(var1 == 0) {
-@@ -797,7 +916,7 @@
+@@ -797,7 +918,7 @@
  				} else {
  					ItemStack var7 = this.thePlayer.inventory.getCurrentItem();
  					int var8 = var7 != null ? var7.count : 0;
@@ -38371,7 +38544,7 @@
  						var2 = false;
  						this.thePlayer.swingItem();
  					}
-@@ -868,6 +987,15 @@
+@@ -868,6 +989,15 @@
  
  	}
  
@@ -38387,7 +38560,7 @@
  	private void resize(int var1, int var2) {
  		if(var1 <= 0) {
  			var1 = 1;
-@@ -879,61 +1007,36 @@
+@@ -879,61 +1009,36 @@
  
  		this.displayWidth = var1;
  		this.displayHeight = var2;
@@ -38458,7 +38631,7 @@
  
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureRegistry.getTexture("/terrain.png"));
  		if(!this.isGamePaused) {
-@@ -958,11 +1061,13 @@
+@@ -958,11 +1063,13 @@
  		if(this.currentScreen != null) {
  			this.currentScreen.handleInput();
  			if(this.currentScreen != null) {
@@ -38472,7 +38645,7 @@
  		if(this.currentScreen == null || this.currentScreen.field_948_f) {
  			label301:
  			while(true) {
-@@ -980,12 +1085,12 @@
+@@ -980,12 +1087,12 @@
  										do {
  											if(!Keyboard.next()) {
  												if(this.currentScreen == null) {
@@ -38487,7 +38660,7 @@
  														this.clickMouse(1);
  														this.mouseTicksRan = this.ticksRan;
  													}
-@@ -1012,6 +1117,10 @@
+@@ -1012,6 +1119,10 @@
  													this.forceReload();
  												}
  
@@ -38498,7 +38671,7 @@
  												if(Keyboard.getEventKey() == Keyboard.KEY_F1) {
  													this.gameSettings.hideGUI = !this.gameSettings.hideGUI;
  												}
-@@ -1021,7 +1130,7 @@
+@@ -1021,7 +1132,7 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F5) {
@@ -38507,7 +38680,7 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F8) {
-@@ -1032,18 +1141,49 @@
+@@ -1032,18 +1143,49 @@
  													this.displayGuiScreen(new InventoryScreen(this.thePlayer));
  												}
  
@@ -38559,7 +38732,7 @@
  												}
  											}
  
-@@ -1107,6 +1247,10 @@
+@@ -1107,6 +1249,10 @@
  					this.joinPlayerCounter = 0;
  					this.theWorld.joinEntityInSurroundings(this.thePlayer);
  				}
@@ -38570,7 +38743,7 @@
  			}
  
  			this.theWorld.difficultySetting = this.gameSettings.difficulty;
-@@ -1158,15 +1302,15 @@
+@@ -1158,15 +1304,15 @@
  		return this.theWorld != null && this.theWorld.remoteWorld;
  	}
  
@@ -38589,7 +38762,7 @@
  			if(var6.isNewWorld) {
  				this.statFileWriter.readStat(StatList.createWorldStat, 1);
  				this.statFileWriter.readStat(StatList.startGameStat, 1);
-@@ -1271,6 +1415,7 @@
+@@ -1271,6 +1417,7 @@
  			}
  
  			this.thePlayer.movementInput = new MovementInputFromOptions(this.gameSettings);
@@ -38597,7 +38770,7 @@
  			if(this.worldRenderer != null) {
  				this.worldRenderer.changeWorld(var1);
  			}
-@@ -1284,20 +1429,18 @@
+@@ -1284,20 +1431,18 @@
  				var1.emptyMethod1();
  			}
  
@@ -38624,7 +38797,7 @@
  		} else {
  			this.thePlayer = null;
  		}
-@@ -1310,7 +1453,7 @@
+@@ -1310,7 +1455,7 @@
  		this.loadingScreen.printText("Converting World to " + this.saveLoader.getFormatName());
  		this.loadingScreen.displayLoadingString("This may take a while :)");
  		this.saveLoader.convertMapFormat(var1, this.loadingScreen);
@@ -38633,7 +38806,7 @@
  	}
  
  	private void func_6255_d(String var1) {
-@@ -1320,18 +1463,12 @@
+@@ -1320,18 +1465,12 @@
  		int var3 = 0;
  		int var4 = var2 * 2 / 16 + 1;
  		var4 *= var4;
@@ -38652,7 +38825,7 @@
  		for(int var10 = -var2; var10 <= var2; var10 += 16) {
  			for(int var8 = -var2; var8 <= var2; var8 += 16) {
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
-@@ -1349,18 +1486,34 @@
+@@ -1349,18 +1488,34 @@
  
  	public void installResource(String var1, File var2) {
  		int var3 = var1.indexOf("/");
@@ -38689,7 +38862,7 @@
  		}
  
  	}
-@@ -1369,19 +1522,19 @@
+@@ -1369,19 +1524,19 @@
  		return this.glCapabilities;
  	}
  
@@ -38713,7 +38886,7 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getEntityDebugInfo();
  	}
  
-@@ -1408,12 +1561,6 @@
+@@ -1408,12 +1563,6 @@
  			var5 = false;
  		}
  
@@ -38726,7 +38899,7 @@
  		this.theWorld.setSpawnLocation();
  		this.theWorld.updateEntityList();
  		int var8 = 0;
-@@ -1450,15 +1597,17 @@
+@@ -1450,15 +1599,17 @@
  	}
  
  	public static void startMainThread(String var0, String var1, String var2) {
@@ -38746,7 +38919,7 @@
  		Thread var8 = new Thread(var7, "Minecraft main thread");
  		var8.setPriority(10);
  		var7.minecraftUri = "www.minecraft.net";
-@@ -1482,6 +1631,21 @@
+@@ -1482,6 +1633,21 @@
  		return this.thePlayer instanceof ClientNetPlayerEntity ? ((ClientNetPlayerEntity)this.thePlayer).sendQueue : null;
  	}
  
@@ -38768,7 +38941,7 @@
  	public static void main(String[] var0) {
  		String var1 = null;
  		String var2 = null;
-@@ -1495,6 +1659,12 @@
+@@ -1495,6 +1661,12 @@
  			var2 = var0[1];
  		}
  
@@ -38781,7 +38954,7 @@
  		func_6269_a(var1, var2);
  	}
  
-@@ -1502,16 +1672,16 @@
+@@ -1502,16 +1674,16 @@
  		return theMinecraft == null || !theMinecraft.gameSettings.hideGUI;
  	}
  
@@ -43256,8 +43429,8 @@
  			GL11.glTranslatef(0.0F, 0.0F, 32.0F);
 -			itemRenderer.renderItemIntoGUI(this.fontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
 -			itemRenderer.renderItemOverlayIntoGUI(this.fontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
-+			itemRenderer.renderItemIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
-+			itemRenderer.renderItemOverlayIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
++			itemRenderer.renderItemIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
++			itemRenderer.renderItemOverlayIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var12.getItemStack(), var1 - var4 - 8, var2 - var5 - 8);
  		}
  
  		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
@@ -43323,8 +43496,8 @@
  
 -		itemRenderer.renderItemIntoGUI(this.fontRenderer, this.mc.textureRegistry, var4, var2, var3);
 -		itemRenderer.renderItemOverlayIntoGUI(this.fontRenderer, this.mc.textureRegistry, var4, var2, var3);
-+		itemRenderer.renderItemIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var4, var2, var3);
-+		itemRenderer.renderItemOverlayIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var4, var2, var3);
++		itemRenderer.renderItemIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var4, var2, var3);
++		itemRenderer.renderItemOverlayIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var4, var2, var3);
  	}
  
 -	private Slot getSlotAtPosition(int var1, int var2) {
@@ -44915,7 +45088,7 @@
  import net.minecraft.server.EntityTracker;
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.world.WorldServer;
-@@ -54,9 +37,9 @@
+@@ -54,9 +37,10 @@
  	public ItemInWorldManager itemInWorldManager;
  	public double field_9155_d;
  	public double field_9154_e;
@@ -44925,10 +45098,11 @@
 +	public LongList loadedChunks = new LongArrayList(); //BOXING??? WHERE IS MY VALUE TYPES
 +	public LongSet field_420_ah = new LongOpenHashSet();
 +	private float lastHealth = -Float.MAX_VALUE;
++	private float lastMana = -Float.MAX_VALUE;
  	private int ticksOfInvuln = 60;
  	private ItemStack[] playerInventory = new ItemStack[]{null, null, null, null, null};
  	private int currentWindowId = 0;
-@@ -128,7 +111,7 @@
+@@ -128,7 +112,7 @@
  		this.inventory.dropAllItems();
  	}
  
@@ -44937,7 +45111,7 @@
  		if(this.ticksOfInvuln > 0) {
  			return false;
  		} else {
-@@ -153,7 +136,7 @@
+@@ -153,7 +137,7 @@
  		return this.mcServer.pvpOn;
  	}
  
@@ -44946,7 +45120,7 @@
  		super.heal(var1);
  	}
  
-@@ -162,8 +145,8 @@
+@@ -162,8 +146,8 @@
  
  		for(int var2 = 0; var2 < this.inventory.getSize(); ++var2) {
  			ItemStack var3 = this.inventory.getStackInSlot(var2);
@@ -44957,7 +45131,7 @@
  				if(var4 != null) {
  					this.playerNetServerHandler.sendPacket(var4);
  				}
-@@ -171,22 +154,25 @@
+@@ -171,22 +155,25 @@
  		}
  
  		if(var1 && !this.loadedChunks.isEmpty()) {
@@ -44999,7 +45173,20 @@
  				}
  			}
  		}
-@@ -320,10 +306,20 @@
+@@ -224,9 +211,10 @@
+ 			--this.timeUntilPortal;
+ 		}
+ 
+-		if(this.health != this.lastHealth) {
+-			this.playerNetServerHandler.sendPacket(new Packet8UpdateHealth(this.health));
++		if(this.health != this.lastHealth || this.mana != this.lastMana) {
++			this.playerNetServerHandler.sendPacket(new Packet8UpdateHealth(this.health, this.mana));
+ 			this.lastHealth = this.health;
++			this.lastMana = this.mana;
+ 		}
+ 
+ 	}
+@@ -320,10 +308,20 @@
  		this.currentWindowId = this.currentWindowId % 100 + 1;
  	}
  
@@ -45022,7 +45209,7 @@
  		this.craftingInventory.windowId = this.currentWindowId;
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
-@@ -336,10 +332,10 @@
+@@ -336,10 +334,10 @@
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
  
@@ -45036,7 +45223,7 @@
  		this.craftingInventory.windowId = this.currentWindowId;
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
-@@ -352,7 +348,15 @@
+@@ -352,7 +350,15 @@
  		this.craftingInventory.onCraftGuiOpened(this);
  	}
  
@@ -45053,7 +45240,7 @@
  		if(!(var1.getSlot(var2) instanceof CraftingSlot)) {
  			if(!this.isChangingQuantityOnly) {
  				this.playerNetServerHandler.sendPacket(new Packet103SetSlot(var1.windowId, var2, var3));
-@@ -361,16 +365,16 @@
+@@ -361,16 +367,16 @@
  	}
  
  	public void func_28017_a(Container var1) {
@@ -45074,7 +45261,7 @@
  	}
  
  	public void onItemStackChanged(ItemStack var1) {
-@@ -438,5 +442,18 @@
+@@ -438,5 +444,18 @@
  		StringTranslate var2 = StringTranslate.getInstance();
  		String var3 = var2.translateKey(var1);
  		this.playerNetServerHandler.sendPacket(new Packet3Chat(var3));
@@ -46579,7 +46766,7 @@
 +		int biome = this.biomes != null ? this.biomes.getCachedData(x, z) : Biome.plains.id;
 +		int land = this.land.getCachedData(x, z);
 +		return land < 0 ? 0
-+				: land < 0.2D * LayerPerlinNoise.RESOLUTION && Biome.biomeIndex[biome].hasBeach() ? Biome.beach.id
++				: land < 0.2F * LayerPerlinNoise.RESOLUTION && Biome.biomeIndex[biome].hasBeach() ? Biome.beach.id
 +				: biome;
 +	}
 +}
@@ -48238,7 +48425,13 @@
  	}
  
  	public void handleMobSpawn(Packet24MobSpawn var1) {
-@@ -554,7 +609,7 @@
+@@ -549,12 +604,13 @@
+ 
+ 	public void handleHealth(Packet8UpdateHealth var1) {
+ 		this.mc.thePlayer.setHealth(var1.healthMP);
++		this.mc.thePlayer.mana = var1.manaMP;
+ 	}
+ 
  	public void handleRespawnPacket(Packet9Respawn var1) {
  		if(var1.dimension != this.mc.thePlayer.dimension) {
  			this.field_1210_g = false;
@@ -48247,7 +48440,7 @@
  			this.worldClient.remoteWorld = true;
  			this.mc.changeWorld1(this.worldClient);
  			this.mc.thePlayer.dimension = var1.dimension;
-@@ -575,20 +630,20 @@
+@@ -575,20 +631,20 @@
  			InventoryBasic var2 = new InventoryBasic(var1.windowTitle, var1.slotsCount);
  			this.mc.thePlayer.displayGUIChest(var2);
  			this.mc.thePlayer.craftingInventory.windowId = var1.windowId;
@@ -48275,7 +48468,7 @@
  	}
  
  	public void handleSetSlot(Packet103SetSlot var1) {
-@@ -641,9 +696,7 @@
+@@ -641,9 +697,7 @@
  			if(var2 instanceof SignTileEntity) {
  				SignTileEntity var3 = (SignTileEntity)var2;
  
@@ -48286,7 +48479,7 @@
  
  				var3.onChanged();
  			}
-@@ -651,7 +704,7 @@
+@@ -651,7 +705,7 @@
  
  	}
  
@@ -48295,7 +48488,7 @@
  		this.registerPacket(var1);
  		if(this.mc.thePlayer.craftingInventory != null && this.mc.thePlayer.craftingInventory.windowId == var1.windowId) {
  			this.mc.thePlayer.craftingInventory.setTime(var1.progressBar, var1.progressBarValue);
-@@ -662,7 +715,7 @@
+@@ -662,7 +716,7 @@
  	public void handlePlayerInventory(Packet5PlayerInventory var1) {
  		Entity var2 = this.getEntityByID(var1.entityID);
  		if(var2 != null) {
@@ -48304,7 +48497,7 @@
  		}
  
  	}
-@@ -692,7 +745,7 @@
+@@ -692,7 +746,7 @@
  	}
  
  	public void handleMapData(Packet131MapData var1) {
@@ -48398,13 +48591,13 @@
  			}
 --- /dev/null
 +++ net/minecraft/SharedConstants.java
-@@ -1,0 +1,29 @@
+@@ -1,0 +1,34 @@
 +package net.minecraft;
 +
 +import net.minecraft.client.GameProvider;
 +
 +public class SharedConstants {
-+    public static final String SHORT_VERSION = "1.0-a9.2";
++    public static final String SHORT_VERSION = "1.0-a9.3";
 +    public static final String VERSION = "Minecraft Diverge " + SHORT_VERSION;
 +    public static final int PROTOCOL_VERSION = 810300005;
 +    public static final boolean DEBUG_MODE = true;
@@ -48413,10 +48606,10 @@
 +    public static final boolean FLIGHT_MODE = false;
 +    public static final int MAX_THREADS = Runtime.getRuntime().availableProcessors();
 +
-+    private static GameProvider gameProvider;
++    private static GameProvider gameProvider = new DummyGameProvider();
 +
 +    public static void setGameProvider(GameProvider gameProvider) {
-+        if (SharedConstants.gameProvider != null) return;
++        if (SharedConstants.gameProvider != null && !(SharedConstants.gameProvider instanceof DummyGameProvider)) return;
 +        SharedConstants.gameProvider = gameProvider;
 +    }
 +
@@ -48424,8 +48617,13 @@
 +        return gameProvider;
 +    }
 +
-+    public static boolean isClient() {
-+        return gameProvider.isClient();
++    private static class DummyGameProvider implements GameProvider {
++        public boolean isClient() {
++            return false;
++        }
++
++        public void sendMessage(String message) {
++        }
 +    }
 +}
 --- net/minecraft/game/entity/monster/SpiderEntity.java
@@ -51637,7 +51835,7 @@
  			this.renderPumpkinBlur(var6, var7);
  		}
  
-@@ -64,82 +80,137 @@
+@@ -64,82 +80,140 @@
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/gui/icons.png"));
  		GL11.glEnable(GL11.GL_BLEND);
  		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
@@ -51645,12 +51843,6 @@
 +		int crosshairCoord = 0;
 +		if (this.mc.objectMouseOver != null && this.mc.objectMouseOver.typeOfHit == MovingObjectType.ENTITY) {
 +			crosshairCoord = 16;
-+		}
-+
-+		if (crosshairCoord == 16 && this.prevCrosshairCoord == 0) {
-+			this.mc.sndManager.playSoundFX("note.snare", 1.0F / 3.0F, 2.0F);
-+		} else if (crosshairCoord == 0 && this.prevCrosshairCoord == 16) {
-+			this.mc.sndManager.playSoundFX("note.snare", 1.0F / 3.0F, 1.5F);
 +		}
 +
 +		this.drawTexturedRect(var6 / 2 - 7, var7 / 2 - 7, 0, crosshairCoord, 16, 16);
@@ -51739,37 +51931,46 @@
 -					}
 -				}
 -			}
-+				this.drawTexturedRect(var6 / 2 - 91, var17, 0, 36, 81, 9);
-+				this.drawTexturedRect(var6 / 2 + 11, var17, 0, 36, 81, 9);
-+				if (armor) this.drawTexturedRect(var6 / 2 - 91, var17 - 10, 0, 36, 81, 9);
-+				if (air) this.drawTexturedRect(var6 / 2 + 11, var17 - 10, 0, 36, 81, 9);
++				this.drawTexturedRect(var6 / 2 - 91, var17, 9, 36, 90, 9);
++				this.drawTexturedRect(var6 / 2 + 1, var17, 99, 36, 90, 9);
++				if (armor) this.drawTexturedRect(var6 / 2 - 91, var17 - 10, 9, 36, 90, 9);
++				if (air) this.drawTexturedRect(var6 / 2 + 1, var17 - 10, 99, 36, 90, 9);
 +
-+				int barHealth = (int)Math.ceil(MathHelper.clamp(var13 / 20.0F * 81.0F, 0.0F, 81.0F));
-+				int barPrevHealth = (int)Math.ceil(MathHelper.clamp(var14 / 20.0F * 81.0F, 0.0F, 81.0F));
-+				int barMana = (int)Math.ceil(MathHelper.clamp(mana / 20.0F * 81.0F, 0.0F, 81.0F));
-+				int barArmor = (int)Math.ceil(MathHelper.clamp(var15 / 20.0F * 81.0F, 0.0F, 81.0F));
-+				int barAir = (int)Math.ceil(MathHelper.clamp(var14a / 300.0F * 81.0F, 0.0F, 81.0F));
++				int barHealth = (int)Math.ceil(MathHelper.clamp(var13 / 20.0F * 90.0F, 0.0F, 90.0F));
++				int barPrevHealth = (int)Math.ceil(MathHelper.clamp(var14 / 20.0F * 90.0F, 0.0F, 90.0F));
++				int barMana = (int)Math.ceil(MathHelper.clamp(mana / 20.0F * 90.0F, 0.0F, 90.0F));
++				int barArmor = (int)Math.ceil(MathHelper.clamp(var15 / 20.0F * 90.0F, 0.0F, 90.0F));
++				int barAir = (int)Math.ceil(MathHelper.clamp(var14a / 300.0F * 90.0F, 0.0F, 90.0F));
 +
 +				int bob = this.mc.thePlayer.ticksExisted / 2 % 2;
 +
 +				GL11.glColor4f(sprintFactor, sprintFactor, sprintFactor, 1.0F);
-+				if (var12) this.drawTexturedRect(var6 / 2 - 91, var17 - ((int)var13 <= 4 ? bob : 0), 81, 45, barPrevHealth, 9);
-+				this.drawTexturedRect(var6 / 2 - 91, var17 - ((int)var13 <= 4 ? bob : 0), 0, 45, barHealth, 9);
++					if (var12) this.drawTexturedRect(var6 / 2 - 91, var17 - ((int)var13 <= 4 ? bob : 0), 99, 45, barPrevHealth, 9);
++				this.drawTexturedRect(var6 / 2 - 91, var17 - ((int)var13 <= 4 ? bob : 0), 9, 45, barHealth, 9);
 +				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-+				this.drawTexturedRect(var6 / 2 + 11 - barMana + 81, var17, 81 - barMana, 54, barMana, 9);
++				this.drawTexturedRect(var6 / 2 + 1 - barMana + 90, var17, 99 - barMana, 54, barMana, 9);
 +
-+				if (armor) this.drawTexturedRect(var6 / 2 - 91, var17 - 10, 0, 63, barArmor, 9);
-+				if (air) this.drawTexturedRect(var6 / 2 + 11 - barAir + 81, var17 - 10, 81 - barAir, 72, barAir, 9);
++				if (armor) this.drawTexturedRect(var6 / 2 - 91, var17 - 10, 9, 63, barArmor, 9);
++				if (air) this.drawTexturedRect(var6 / 2 + 1 - barAir + 90, var17 - 10, 99 - barAir, 72, barAir, 9);
++
++				this.drawTexturedRect(var6 / 2 - 95, var17, 0, 45, 9, 9);
++				this.drawTexturedRect(var6 / 2 + 86, var17, 0, 54, 9, 9);
++				if (armor) this.drawTexturedRect(var6 / 2 - 95, var17 - 10, 0, 63, 9, 9);
++				if (air) this.drawTexturedRect(var6 / 2 + 86, var17 - 10, 0, 72, 9, 9);
 +
 +				String txtHealth = Math.round(Math.max(var13, 0)) + "/20";
 +				String txtMana = Math.round(Math.max(mana, 0)) + "/20";
 +				String txtArmor = var15 + "/20";
 +				String txtAir = Math.max(var14a, 0) / 3 + "%";
 +
-+				var8.drawStringWithShadow(txtHealth, var6 / 2 - 94 - var8.getStringWidth(txtHealth), var17 + 1, 0xFF5555);
-+				var8.drawStringWithShadow(txtMana, var6 / 2 + 94, var17 + 1, 0x55FFFF);
-+				if (armor) var8.drawStringWithShadow(txtArmor, var6 / 2 - 94 - var8.getStringWidth(txtArmor), var17 - 9, 0xAAAAAA);
-+				if (air) var8.drawStringWithShadow(txtAir, var6 / 2 + 94, var17 - 9, 0x55AAFF);
++				FontRenderer font = this.mc.smallOutlineFontRenderer;
++				GL11.glEnable(GL11.GL_BLEND);
++				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++				font.drawString(txtHealth, var6 / 2 - 97 - font.getStringWidth(txtHealth), var17 + 1, 0xFF5555);
++				font.drawString(txtMana, var6 / 2 + 96, var17 + 1, 0x55FFFF);
++				if (armor) font.drawString(txtArmor, var6 / 2 - 97 - font.getStringWidth(txtArmor), var17 - 9, 0xAAAAAA);
++				if (air) font.drawString(txtAir, var6 / 2 + 96, var17 - 9, 0x55AAFF);
++				GL11.glDisable(GL11.GL_BLEND);
 +			} else {
 +				int var18;
 +				for(var16 = 0; var16 < 10; ++var16) {
@@ -51839,7 +52040,7 @@
  		}
  
  		GL11.glDisable(GL11.GL_BLEND);
-@@ -173,29 +244,94 @@
+@@ -173,29 +247,94 @@
  		}
  
  		String var23;
@@ -51948,7 +52149,7 @@
  			GL11.glPopMatrix();
  		}
  
-@@ -224,7 +360,7 @@
+@@ -224,7 +363,7 @@
  
  		byte var26 = 10;
  		boolean var31 = false;
@@ -51957,7 +52158,7 @@
  			var26 = 20;
  			var31 = true;
  		}
-@@ -270,6 +406,40 @@
+@@ -270,6 +409,40 @@
  		GL11.glDisable(GL11.GL_BLEND);
  	}
  
@@ -51998,7 +52199,7 @@
  	private void renderPumpkinBlur(int var1, int var2) {
  		GL11.glDisable(GL11.GL_DEPTH_TEST);
  		GL11.glDepthMask(false);
-@@ -332,10 +502,10 @@
+@@ -332,10 +505,10 @@
  		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
  		GL11.glColor4f(1.0F, 1.0F, 1.0F, var1);
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/terrain.png"));
@@ -52013,18 +52214,18 @@
  		Tessellator var8 = Tessellator.instance;
  		var8.startDrawingQuads();
  		var8.addVertexWithUV(0.0D, (double)var3, -90.0D, (double)var4, (double)var7);
-@@ -361,12 +531,12 @@
+@@ -361,12 +534,12 @@
  				GL11.glTranslatef((float)(-(var2 + 8)), (float)(-(var3 + 12)), 0.0F);
  			}
  
 -			itemRenderer.renderItemIntoGUI(this.mc.fontRenderer, this.mc.textureRegistry, var5, var2, var3);
-+			itemRenderer.renderItemIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var5, var2, var3);
++			itemRenderer.renderItemIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var5, var2, var3);
  			if(var6 > 0.0F) {
  				GL11.glPopMatrix();
  			}
  
 -			itemRenderer.renderItemOverlayIntoGUI(this.mc.fontRenderer, this.mc.textureRegistry, var5, var2, var3);
-+			itemRenderer.renderItemOverlayIntoGUI(this.mc.smallFontRenderer, this.mc.textureRegistry, var5, var2, var3);
++			itemRenderer.renderItemOverlayIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, var5, var2, var3);
  		}
  	}
  

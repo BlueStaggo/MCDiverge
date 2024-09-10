@@ -17,6 +17,5 @@ For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION
 ## Trailer (Youtube)
 [![](https://img.youtube.com/vi/15yW-975SvE/0.jpg)](https://youtu.be/15yW-975SvE)
 
-## Known Major Bugs
-- Tile entities randomly get removed when chunks are unloaded.
+## Known Bugs
 - Some sort of memory leak leads to the game crashing on a light blue screen. A workaround for this is to allocate more RAM (at least 4GB should do the trick)
