@@ -3365,7 +3365,7 @@
 +}
 --- net/minecraft/game/world/chunk/ChunkProviderImpl.java
 +++ net/minecraft/game/world/chunk/ChunkProviderImpl.java
-@@ -2,40 +2,70 @@
+@@ -2,40 +2,68 @@
  
  import java.io.IOException;
  import java.util.ArrayList;
@@ -3382,8 +3382,6 @@
 +import net.minecraft.game.entity.player.PlayerEntity;
 +import net.minecraft.game.world.BlockPos;
  import net.minecraft.game.world.World;
-+import net.minecraft.game.world.block.Block;
-+import net.minecraft.game.world.block.tileentity.SignTileEntity;
  import net.minecraft.game.world.chunk.loader.ChunkLoader;
  import net.minecraft.util.ProgressUpdate;
  
@@ -3445,7 +3443,7 @@
  			var4 = this.loadChunkFromFile(var1, var2);
  			if(var4 == null) {
  				if(this.chunkProvider == null) {
-@@ -44,16 +74,17 @@
+@@ -44,16 +72,17 @@
  					var4 = this.chunkProvider.provideChunk(var1, var2);
  				}
  			}
@@ -3466,19 +3464,10 @@
  			}
  
  			if(this.chunkExists(var1 - 1, var2) && !this.provideChunk(var1 - 1, var2).isTerrainPopulated && this.chunkExists(var1 - 1, var2 + 1) && this.chunkExists(var1, var2 + 1) && this.chunkExists(var1 - 1, var2)) {
-@@ -67,13 +98,26 @@
+@@ -67,13 +96,17 @@
  			if(this.chunkExists(var1 - 1, var2 - 1) && !this.provideChunk(var1 - 1, var2 - 1).isTerrainPopulated && this.chunkExists(var1 - 1, var2 - 1) && this.chunkExists(var1, var2 - 1) && this.chunkExists(var1 - 1, var2)) {
  				this.populate(this, var1 - 1, var2 - 1);
  			}
-+
-+			this.worldObj.setBlock(var1 * 16 + 8, 256 + 64, var2 * 16 + 8, Block.platinumBlock.blockID);
-+			this.worldObj.setBlock(var1 * 16 + 8, 256 + 65, var2 * 16 + 8, Block.standingSign.blockID);
-+			((SignTileEntity)this.worldObj.getBlockTileEntity(var1 * 16 + 8, 256 + 65, var2 * 16 + 8)).signText = new String[] {
-+					"BORN TO DIE",
-+					"CHEST BUG IS A TURD",
-+					"I am trash sign",
-+					var1 + ", " + var2 + " CHUNK COORDS"
-+			};
 +
 +			if (var4 != null) {
 +				var4.initLightingForRealNotJustHeightmap();
@@ -3494,7 +3483,7 @@
  		return var3 == null ? this.prepareChunk(var1, var2) : var3;
  	}
  
-@@ -119,12 +163,19 @@
+@@ -119,12 +152,19 @@
  	}
  
  	public void populate(ChunkProvider var1, int var2, int var3) {
@@ -3514,7 +3503,7 @@
  			}
  		}
  
-@@ -160,17 +211,41 @@
+@@ -160,17 +200,41 @@
  		return true;
  	}
  
