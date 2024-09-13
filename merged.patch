@@ -251,7 +251,7 @@
  		}
 --- net/minecraft/client/render/entity/RenderPlayer.java
 +++ net/minecraft/client/render/entity/RenderPlayer.java
-@@ -3,31 +3,40 @@
+@@ -3,31 +3,41 @@
  import net.minecraft.client.Minecraft;
  import net.minecraft.client.gui.FontRenderer;
  import net.minecraft.client.model.BipedModel;
@@ -264,6 +264,7 @@
  import net.minecraft.game.entity.LivingEntity;
  import net.minecraft.game.entity.player.PlayerEntity;
 -import net.minecraft.game.item.ArmorItem;
++import net.minecraft.game.item.BowItem;
  import net.minecraft.game.item.Item;
  import net.minecraft.game.item.ItemStack;
 +import net.minecraft.game.item.equippable.ArmorItem;
@@ -298,7 +299,7 @@
  		if(var4 != null) {
  			Item var5 = var4.getItem();
  			if(var5 instanceof ArmorItem) {
-@@ -50,15 +59,23 @@
+@@ -50,17 +60,27 @@
  	}
  
  	public void renderPlayer(PlayerEntity var1, double var2, double var4, double var6, float var8, float var9) {
@@ -306,6 +307,7 @@
 +		this.modelBipedMain = var1.isSlim ? this.modelSlim : this.modelClassic;
 +
  		ItemStack var10 = var1.inventory.getCurrentItem();
++		this.modelArmorChestplate.leftHanded = this.modelArmor.leftHanded = this.modelBipedMain.leftHanded = var1.isLeftHanded();
  		this.modelArmorChestplate.field_1278_i = this.modelArmor.field_1278_i = this.modelBipedMain.field_1278_i = var10 != null;
  		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = var1.isSneaking();
  		double var11 = var4 - (double)var1.yOffset;
@@ -319,12 +321,16 @@
 +		GL11.glEnable(GL11.GL_BLEND);
 +		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
  		super.doRenderLiving(var1, var2, var11, var6, var8, var9);
+-		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = false;
 +		GL11.glDisable(GL11.GL_BLEND);
 +		GL11.glEnable(GL11.GL_CULL_FACE);
- 		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = false;
++		this.modelArmorChestplate.leftHanded = this.modelArmor.leftHanded = this.modelBipedMain.leftHanded = false;
  		this.modelArmorChestplate.field_1278_i = this.modelArmor.field_1278_i = this.modelBipedMain.field_1278_i = false;
++		this.modelArmorChestplate.isSneak = this.modelArmor.isSneak = this.modelBipedMain.isSneak = false;
  	}
-@@ -115,7 +132,7 @@
+ 
+ 	protected void renderName(PlayerEntity var1, double var2, double var4, double var6) {
+@@ -115,7 +135,7 @@
  
  	protected void renderSpecials(PlayerEntity var1, float var2) {
  		ItemStack var3 = var1.inventory.armorItemInSlot(3);
@@ -333,7 +339,7 @@
  			GL11.glPushMatrix();
  			this.modelBipedMain.bipedHead.postRender(1.0F / 16.0F);
  			if(RenderBlocks.renderItemIn3d(Block.blocksList[var3.id].getRenderType())) {
-@@ -148,7 +165,7 @@
+@@ -148,7 +168,7 @@
  			}
  		}
  
@@ -342,7 +348,18 @@
  			GL11.glPushMatrix();
  			GL11.glTranslatef(0.0F, 0.0F, 2.0F / 16.0F);
  			double var20 = var1.posX2 + (var1.posX1 - var1.posX2) * (double)var2 - (var1.prevPosX + (var1.posX - var1.prevPosX) * (double)var2);
-@@ -195,16 +212,16 @@
+@@ -188,35 +208,43 @@
+ 
+ 		ItemStack var21 = var1.inventory.getCurrentItem();
+ 		if(var21 != null) {
++			boolean leftHanded = var1.isLeftHanded();
++			float handDir = leftHanded ? -1.0F : 1.0F;
+ 			GL11.glPushMatrix();
+-			this.modelBipedMain.bipedRightArm.postRender(1.0F / 16.0F);
+-			GL11.glTranslatef(-(1.0F / 16.0F), 7.0F / 16.0F, 1.0F / 16.0F);
++			(leftHanded ? this.modelBipedMain.bipedLeftArm : this.modelBipedMain.bipedRightArm).postRender(1.0F / 16.0F);
++			GL11.glTranslatef(-1.0F / 16.0F * handDir, 7.0F / 16.0F, 1.0F / 16.0F);
+ 			if(var1.fishEntity != null) {
  				var21 = new ItemStack(Item.stick);
  			}
  
@@ -353,16 +370,39 @@
  				var5 *= 12.0F / 16.0F;
  				GL11.glRotatef(20.0F, 1.0F, 0.0F, 0.0F);
  				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
- 				GL11.glScalef(var5, -var5, var5);
+-				GL11.glScalef(var5, -var5, var5);
 -			} else if(Item.itemsList[var21.id].hasToolGrip()) {
-+			} else if(var21.getItem().hasToolGrip()) {
- 				var5 = 10.0F / 16.0F;
+-				var5 = 10.0F / 16.0F;
 -				if(Item.itemsList[var21.id].shouldRotateAroundWhenRendering()) {
++				GL11.glScalef(var5 * handDir, -var5, var5);
++			} else if(var21.getItem() instanceof BowItem) {
++				var5 = 10.0F / 16.0F;
++				GL11.glTranslatef(2.0F / 16.0F * handDir, 2.0F / 16.0F, 5.0F / 16.0F);
++				GL11.glScalef(var5 * handDir, -var5, var5);
++				GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
++				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
++			} else if(var21.getItem().hasToolGrip()) {
++				var5 = 10.0F / 16.0F;
 +				if(var21.getItem().shouldRotateAroundWhenRendering()) {
  					GL11.glRotatef(180.0F, 0.0F, 0.0F, 1.0F);
  					GL11.glTranslatef(0.0F, -(2.0F / 16.0F), 0.0F);
  				}
-@@ -233,10 +250,21 @@
+ 
+ 				GL11.glTranslatef(0.0F, 3.0F / 16.0F, 0.0F);
+-				GL11.glScalef(var5, -var5, var5);
++				GL11.glScalef(var5 * handDir, -var5, var5);
+ 				GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
+ 				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+ 			} else {
+ 				var5 = 6.0F / 16.0F;
+-				GL11.glTranslatef(0.25F, 3.0F / 16.0F, -(3.0F / 16.0F));
+-				GL11.glScalef(var5, var5, var5);
++				GL11.glTranslatef(0.25F * handDir, 3.0F / 16.0F, -(3.0F / 16.0F));
++				GL11.glScalef(var5 * handDir, var5, var5);
+ 				GL11.glRotatef(60.0F, 0.0F, 0.0F, 1.0F);
+ 				GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
+ 				GL11.glRotatef(20.0F, 0.0F, 0.0F, 1.0F);
+@@ -233,10 +261,31 @@
  		GL11.glScalef(var3, var3, var3);
  	}
  
@@ -373,13 +413,24 @@
 +
  		this.modelBipedMain.onGround = 0.0F;
  		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F / 16.0F);
+-		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
 +		this.modelBipedMain.isRiding = player.isRiding();
 +
 +		GL11.glDisable(GL11.GL_CULL_FACE);
 +		GL11.glEnable(GL11.GL_BLEND);
 +		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
- 		this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
-+		this.modelBipedMain.rightArmOverlay.render(1.0F / 16.0F);
++		if (player.isLeftHanded()) {
++			GL11.glPushMatrix();
++//			GL11.glTranslatef(-0.75F, -0.075F, 0.0F);
++//			GL11.glRotatef(10.0F, 0.0F, 0.0F, 1.0F);
++			GL11.glScalef(-1.0F, 1.0F, 1.0F);
++			this.modelBipedMain.bipedLeftArm.render(1.0F / 16.0F);
++			this.modelBipedMain.leftArmOverlay.render(1.0F / 16.0F);
++			GL11.glPopMatrix();
++		} else {
++			this.modelBipedMain.bipedRightArm.render(1.0F / 16.0F);
++			this.modelBipedMain.rightArmOverlay.render(1.0F / 16.0F);
++		}
 +		GL11.glDisable(GL11.GL_BLEND);
 +		GL11.glEnable(GL11.GL_CULL_FACE);
  	}
@@ -655,7 +706,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/game/item/CreativeInventoryBuilder.java
-@@ -1,0 +1,43 @@
+@@ -1,0 +1,47 @@
 +package net.minecraft.game.item;
 +
 +import java.util.ArrayList;
@@ -665,12 +716,12 @@
 +
 +public class CreativeInventoryBuilder {
 +	private final List<ItemStack> items = new ArrayList<>();
-+	private final Map<Integer, String> labels = new HashMap<>();
++	private final List<InventoryReadonly.Label> labels = new ArrayList<>();
 +
-+	public void addLabel(String label) {
++	public void addLabel(String name, ItemStack icon) {
 +		this.lineBreak();
 +		this.newLine();
-+		this.labels.put(this.items.size() / 8, label);
++		this.labels.add(new InventoryReadonly.Label(name, icon, this.items.size() / 8));
 +	}
 +
 +	public void lineBreak() {
@@ -693,6 +744,10 @@
 +
 +		ItemStack item = new ItemStack(id, 1, meta, isBlock);
 +		this.items.add(item);
++	}
++
++	public void addItem(ItemStack itemStack) {
++		this.items.add(itemStack);
 +	}
 +
 +	public InventoryReadonly toInventory() {
@@ -1548,6 +1603,18 @@
  	}
  
  	protected void attackBlockedEntity(Entity var1, float var2) {
+@@ -104,9 +104,9 @@
+ 				++this.timeSinceIgnited;
+ 				if(this.timeSinceIgnited >= 30) {
+ 					if(this.getPowered()) {
+-						this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 6.0F);
++						this.worldObj.newExplosion(this, this.posX, this.posY, this.posZ, 6.0F, false, false);
+ 					} else {
+-						this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 3.0F);
++						this.worldObj.newExplosion(this, this.posX, this.posY, this.posZ, 3.0F, false, false);
+ 					}
+ 
+ 					this.setEntityDead();
 @@ -132,20 +132,16 @@
  		return ((float)this.lastActiveTime + (float)(this.timeSinceIgnited - this.lastActiveTime) * var1) / 28.0F;
  	}
@@ -2778,7 +2845,15 @@
  	public NetClientHandler sendQueue;
  	private int field_9380_bx = 0;
  	private boolean field_21093_bH = false;
-@@ -39,11 +34,11 @@
+@@ -32,6 +27,7 @@
+ 	private float oldRotationPitch;
+ 	private boolean field_9382_bF = false;
+ 	private boolean wasSneaking = false;
++	private boolean wasLeftHanded = false;
+ 	private int field_12242_bI = 0;
+ 
+ 	public ClientNetPlayerEntity(Minecraft var1, World var2, Session var3, NetClientHandler var4) {
+@@ -39,11 +35,11 @@
  		this.sendQueue = var4;
  	}
  
@@ -2792,7 +2867,25 @@
  	}
  
  	public void onUpdate() {
-@@ -143,7 +138,7 @@
+@@ -70,6 +66,17 @@
+ 			this.wasSneaking = var1;
+ 		}
+ 
++		var1 = this.isLeftHanded();
++		if (var1 != this.wasLeftHanded) {
++			if(var1) {
++				this.sendQueue.addToSendQueue(new Packet19EntityAction(this, 4));
++			} else {
++				this.sendQueue.addToSendQueue(new Packet19EntityAction(this, 5));
++			}
++
++			this.wasLeftHanded = var1;
++		}
++
+ 		double var2 = this.posX - this.oldPosX;
+ 		double var4 = this.boundingBox.minY - this.field_9378_bz;
+ 		double var6 = this.posY - this.oldPosY;
+@@ -143,7 +150,7 @@
  		this.sendQueue.addToSendQueue(new Packet9Respawn((byte)this.dimension));
  	}
  
@@ -2801,7 +2894,7 @@
  		this.health -= var1;
  	}
  
-@@ -153,7 +148,11 @@
+@@ -153,7 +160,11 @@
  		super.closeScreen();
  	}
  
@@ -2814,7 +2907,7 @@
  		if(this.field_21093_bH) {
  			super.setHealth(var1);
  		} else {
-@@ -179,5 +178,15 @@
+@@ -179,5 +190,15 @@
  			}
  
  		}
@@ -2906,7 +2999,30 @@
  				var17 = var9 * var15;
  				var3.addVertexWithUV((double)var9, (double)var17, 0.0D, (double)var5, (double)var16);
  				var3.addVertexWithUV(0.0D, (double)var17, 0.0D, (double)var6, (double)var16);
-@@ -149,11 +150,12 @@
+@@ -139,21 +140,35 @@
+ 	}
+ 
+ 	public void renderItemInFirstPerson(float var1) {
++		boolean leftHanded = this.mc.gameSettings.leftHanded && (this.itemToRender == null || this.itemToRender.id != Item.map.itemID && this.itemToRender.id != Item.landMap.itemID);
++		float handDir = leftHanded ? -1.0F : 1.0F;
++		if (leftHanded) {
++			GL11.glPushMatrix();
++			GL11.glScalef(-1.0F, 1.0F, 1.0F);
++			GL11.glCullFace(GL11.GL_FRONT);
++		}
++
+ 		float var2 = this.prevEquippedProgress + (this.equippedProgress - this.prevEquippedProgress) * var1;
+ 		ClientPlayerEntity var3 = this.mc.thePlayer;
+ 		float var4 = var3.prevRotationPitch + (var3.rotationPitch - var3.prevRotationPitch) * var1;
+ 		GL11.glPushMatrix();
++//		if (leftHanded) {
++//			GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
++//			GL11.glRotatef(180.0F, 1.0F, 0.0F, 0.0F);
++//			GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
++//		}
+ 		GL11.glRotatef(var4, 1.0F, 0.0F, 0.0F);
+ 		GL11.glRotatef(var3.prevRotationYaw + (var3.rotationYaw - var3.prevRotationYaw) * var1, 0.0F, 1.0F, 0.0F);
+ 		RenderHelper.enableStandardItemLighting();
  		GL11.glPopMatrix();
  		ItemStack var5 = this.itemToRender;
  		float var6 = this.mc.theWorld.getLightBrightness(MathHelper.floor(var3.posX), MathHelper.floor(var3.posY), MathHelper.floor(var3.posZ));
@@ -2920,7 +3036,7 @@
  			var8 = (float)(var7 >> 16 & 255) / 255.0F;
  			var9 = (float)(var7 >> 8 & 255) / 255.0F;
  			var10 = (float)(var7 & 255) / 255.0F;
-@@ -163,7 +165,7 @@
+@@ -163,7 +178,7 @@
  		}
  
  		float var14;
@@ -2929,7 +3045,7 @@
  			GL11.glPushMatrix();
  			var14 = 0.8F;
  			var8 = var3.getSwingProgress(var1);
-@@ -198,7 +200,7 @@
+@@ -198,7 +213,7 @@
  				RenderPlayer var12 = (RenderPlayer)var11;
  				float var13 = 1.0F;
  				GL11.glScalef(var13, var13, var13);
@@ -2938,7 +3054,7 @@
  				GL11.glPopMatrix();
  			}
  
-@@ -231,16 +233,40 @@
+@@ -231,16 +246,40 @@
  		} else if(var5 != null) {
  			GL11.glPushMatrix();
  			var14 = 0.8F;
@@ -2983,7 +3099,7 @@
  			GL11.glRotatef(-var9 * 20.0F, 0.0F, 1.0F, 0.0F);
  			GL11.glRotatef(-var10 * 20.0F, 0.0F, 0.0F, 1.0F);
  			GL11.glRotatef(-var10 * 80.0F, 1.0F, 0.0F, 0.0F);
-@@ -278,7 +304,7 @@
+@@ -278,12 +317,18 @@
  			RenderPlayer var16 = (RenderPlayer)var15;
  			var10 = 1.0F;
  			GL11.glScalef(var10, var10, var10);
@@ -2992,7 +3108,18 @@
  			GL11.glPopMatrix();
  		}
  
-@@ -295,14 +321,14 @@
+ 		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+ 		RenderHelper.disableStandardItemLighting();
++
++		if (leftHanded) {
++			GL11.glPopMatrix();
++			GL11.glDisable(GL12.GL_RESCALE_NORMAL);
++			GL11.glCullFace(GL11.GL_BACK);
++		}
+ 	}
+ 
+ 	public void renderOverlays(float var1) {
+@@ -295,14 +340,14 @@
  			this.renderFireInFirstPerson(var1);
  		}
  
@@ -3009,7 +3136,7 @@
  				this.renderInsideOfBlock(var1, Block.blocksList[var6].getBlockTextureFromSide(2));
  			} else {
  				for(int var7 = 0; var7 < 8; ++var7) {
-@@ -312,7 +338,7 @@
+@@ -312,7 +357,7 @@
  					int var11 = MathHelper.floor((float)var2 + var8);
  					int var12 = MathHelper.floor((float)var3 + var9);
  					int var13 = MathHelper.floor((float)var4 + var10);
@@ -3018,7 +3145,7 @@
  						var6 = this.mc.theWorld.getBlockId(var11, var12, var13);
  					}
  				}
-@@ -334,7 +360,7 @@
+@@ -334,7 +379,7 @@
  
  	private void renderInsideOfBlock(float var1, int var2) {
  		Tessellator var3 = Tessellator.instance;
@@ -3027,7 +3154,7 @@
  		float var4 = 0.1F;
  		GL11.glColor4f(var4, var4, var4, 0.5F);
  		GL11.glPushMatrix();
-@@ -344,10 +370,10 @@
+@@ -344,10 +389,10 @@
  		float var8 = 1.0F;
  		float var9 = -0.5F;
  		float var10 = 0.0078125F;
@@ -3042,7 +3169,7 @@
  		var3.startDrawingQuads();
  		var3.addVertexWithUV((double)var5, (double)var7, (double)var9, (double)var12, (double)var14);
  		var3.addVertexWithUV((double)var6, (double)var7, (double)var9, (double)var11, (double)var14);
-@@ -360,7 +386,7 @@
+@@ -360,7 +405,7 @@
  
  	private void renderWarpedTextureOverlay(float var1) {
  		Tessellator var2 = Tessellator.instance;
@@ -3051,7 +3178,7 @@
  		GL11.glColor4f(var3, var3, var3, 0.5F);
  		GL11.glEnable(GL11.GL_BLEND);
  		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-@@ -393,13 +419,13 @@
+@@ -393,13 +438,13 @@
  
  		for(int var4 = 0; var4 < 2; ++var4) {
  			GL11.glPushMatrix();
@@ -3555,7 +3682,7 @@
  
 --- net/minecraft/client/GameSettings.java
 +++ net/minecraft/client/GameSettings.java
-@@ -5,26 +5,57 @@
+@@ -5,26 +5,58 @@
  import java.io.FileReader;
  import java.io.FileWriter;
  import java.io.PrintWriter;
@@ -3615,11 +3742,12 @@
 +	public boolean panorama = !POJAV;
 +	public boolean hudBars = false;
 +	public boolean alphaEnvironment = false;
++	public boolean leftHanded = false;
 +	public float brightness = 0.0F;
  	public String skin = "Default";
  	public KeyBinding keyBindForward = new KeyBinding("key.forward", 17);
  	public KeyBinding keyBindLeft = new KeyBinding("key.left", 30);
-@@ -32,16 +63,18 @@
+@@ -32,16 +64,18 @@
  	public KeyBinding keyBindRight = new KeyBinding("key.right", 32);
  	public KeyBinding keyBindJump = new KeyBinding("key.jump", 57);
  	public KeyBinding keyBindInventory = new KeyBinding("key.inventory", 18);
@@ -3640,7 +3768,7 @@
  	public boolean showDebugInfo = false;
  	public String lastServer = "";
  	public boolean field_22275_C = false;
-@@ -51,10 +84,12 @@
+@@ -51,10 +85,12 @@
  	public float field_22271_G = 1.0F;
  	public int guiScale = 0;
  
@@ -3656,7 +3784,7 @@
  	}
  
  	public GameSettings() {
-@@ -85,10 +120,48 @@
+@@ -85,10 +121,48 @@
  			this.mc.sndManager.onSoundOptionsChanged();
  		}
  
@@ -3705,7 +3833,7 @@
  	}
  
  	public void setOptionValue(Option var1, int var2) {
-@@ -97,11 +170,15 @@
+@@ -97,11 +171,15 @@
  		}
  
  		if(var1 == Option.RENDER_DISTANCE) {
@@ -3722,7 +3850,7 @@
  		}
  
  		if(var1 == Option.VIEW_BOBBING) {
-@@ -119,44 +196,128 @@
+@@ -119,44 +197,133 @@
  		}
  
  		if(var1 == Option.FRAMERATE_LIMIT) {
@@ -3815,6 +3943,10 @@
 +
 +		if(var1 == Option.CREATIVE_MUSIC) {
 +			this.creativeMusic = !this.creativeMusic;
++		}
++
++		if(var1 == Option.LEFT_HANDED) {
++			this.leftHanded = !this.leftHanded;
  		}
  
  		this.saveOptions();
@@ -3869,11 +4001,12 @@
 +			case WEATHER: return this.fancyWeather;
 +			case DROP_SHADOWS: return this.dropShadows;
 +			case CREATIVE_MUSIC: return this.creativeMusic;
++			case LEFT_HANDED: return this.leftHanded;
 +			default: return false;
  		}
  	}
  
-@@ -165,12 +326,42 @@
+@@ -165,12 +332,42 @@
  		String var3 = var2.translateKey(var1.getName()) + ": ";
  		if(var1.isSlider()) {
  			float var5 = this.getOptionFloatValue(var1);
@@ -3918,7 +4051,7 @@
  		}
  	}
  
-@@ -200,6 +391,10 @@
+@@ -200,6 +397,10 @@
  						this.soundVolume = this.parseFloat(var3[1]);
  					}
  
@@ -3929,7 +4062,7 @@
  					if(var3[0].equals("mouseSensitivity")) {
  						this.mouseSensitivity = this.parseFloat(var3[1]);
  					}
-@@ -208,10 +403,26 @@
+@@ -208,10 +409,26 @@
  						this.invertMouse = var3[1].equals("true");
  					}
  
@@ -3957,7 +4090,7 @@
  					if(var3[0].equals("guiScale")) {
  						this.guiScale = Integer.parseInt(var3[1]);
  					}
-@@ -220,6 +431,10 @@
+@@ -220,6 +437,10 @@
  						this.viewBobbing = var3[1].equals("true");
  					}
  
@@ -3968,7 +4101,7 @@
  					if(var3[0].equals("anaglyph3d")) {
  						this.anaglyph = var3[1].equals("true");
  					}
-@@ -232,16 +447,82 @@
+@@ -232,16 +453,86 @@
  						this.limitFramerate = Integer.parseInt(var3[1]);
  					}
  
@@ -4053,10 +4186,14 @@
 +
 +					if(var3[0].equals("creativeMusic")) {
 +						this.creativeMusic = var3[1].equals("true");
++					}
++
++					if(var3[0].equals("leftHanded")) {
++						this.leftHanded = var3[1].equals("true");
  					}
  
  					if(var3[0].equals("skin")) {
-@@ -265,7 +546,6 @@
+@@ -265,7 +556,6 @@
  			System.out.println("Failed to load options");
  			var6.printStackTrace();
  		}
@@ -4064,7 +4201,7 @@
  	}
  
  	private float parseFloat(String var1) {
-@@ -279,15 +559,36 @@
+@@ -279,15 +569,37 @@
  			var1.println("sound:" + this.soundVolume);
  			var1.println("invertYMouse:" + this.invertMouse);
  			var1.println("mouseSensitivity:" + this.mouseSensitivity);
@@ -4100,6 +4237,7 @@
 +			var1.println("dropShadows:" + this.dropShadows);
 +			var1.println("brightness:" + this.brightness);
 +			var1.println("creativeMusic:" + this.creativeMusic);
++			var1.println("leftHanded:" + this.leftHanded);
  			var1.println("skin:" + this.skin);
  			var1.println("lastServer:" + this.lastServer);
  
@@ -5890,7 +6028,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/client/gui/CreativeMenu.java
-@@ -1,0 +1,202 @@
+@@ -1,0 +1,267 @@
 +package net.minecraft.client.gui;
 +
 +import net.minecraft.SharedConstants;
@@ -5898,13 +6036,17 @@
 +import net.minecraft.client.gui.component.GuiSliderGeneric;
 +import net.minecraft.client.gui.component.GuiTransparentButton;
 +import net.minecraft.client.gui.container.ContainerScreen;
++import net.minecraft.client.render.RenderHelper;
 +import net.minecraft.game.entity.player.InventoryPlayer;
 +import net.minecraft.game.item.ContainerCreative;
 +import net.minecraft.game.item.InventoryReadonly;
++import net.minecraft.game.item.ItemStack;
++import net.minecraft.game.item.slot.Slot;
 +import org.lwjgl.input.Keyboard;
 +import org.lwjgl.opengl.GL11;
 +
 +import net.minecraft.client.Minecraft;
++import org.lwjgl.opengl.GL12;
 +
 +import java.util.Comparator;
 +import java.util.Iterator;
@@ -5916,6 +6058,7 @@
 +	protected int row = 0;
 +	private int maxRow;
 +	private GuiSliderGeneric rowSlider;
++	private ItemStack[] iconList;
 +
 +	public CreativeMenu(InventoryPlayer inv, Minecraft minecraft) {
 +		super(new ContainerCreative(inv, minecraft.gameSettings.creativeDebug
@@ -5964,11 +6107,70 @@
 +	protected void drawGuiContainerForegroundLayer() {
 +		this.fontRenderer.drawString(this.mc.gameSettings.creativeDebug ? "Cheats" : this.title, 8, 6, 4210752);
 +		for (int i = 1; i < 9; i++) {
-+			String label = this.inventory.getLabel(i + row);
++			InventoryReadonly.Label label = this.inventory.getLabel(i + row);
 +			if (label != null) {
-+				this.fontRenderer.drawStringWithShadow(label, 12, i * 18 + 4, 0xFFFFFF);
++				if (label.icon != null) {
++					label.icon.count = 0;
++					GL11.glEnable(GL11.GL_CULL_FACE);
++					if (label.icon.isBlock) {
++						GL11.glEnable(GL12.GL_RESCALE_NORMAL);
++						GL11.glPushMatrix();
++						GL11.glRotatef(120.0F, 1.0F, 0.0F, 0.0F);
++						RenderHelper.enableStandardItemLighting();
++						GL11.glPopMatrix();
++					}
++					itemRenderer.renderItemIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, label.icon, 8, i * 18);
++					if (label.icon.isBlock) {
++						RenderHelper.disableStandardItemLighting();
++						GL11.glDisable(GL12.GL_RESCALE_NORMAL);
++					}
++					GL11.glDisable(GL11.GL_LIGHTING);
++					GL11.glDisable(GL11.GL_CULL_FACE);
++					GL11.glDisable(GL11.GL_DEPTH_TEST);
++					label.icon.count = 1;
++				}
++				this.fontRenderer.drawStringWithShadow(label.name, 16, i * 18 + 4, 0xFFFFFF);
 +			}
 +		}
++
++		if (this.inventory.labels != null) {
++			GL11.glEnable(GL11.GL_CULL_FACE);
++			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
++			GL11.glDisable(GL11.GL_DEPTH_TEST);
++			GL11.glPushMatrix();
++			GL11.glRotatef(120.0F, 1.0F, 0.0F, 0.0F);
++			RenderHelper.enableStandardItemLighting();
++			GL11.glPopMatrix();
++
++			int row = this.row + 1;
++			int height = 16;
++			int y = -(this.inventory.labels.size() * height - this.ySize) / 2;
++			for (InventoryReadonly.Label label : this.inventory.labels) {
++//				int nextLabelY = y + 1 < this.inventory.labels.size() ? this.inventory.labels.get(y + 1).y : Integer.MAX_VALUE;
++//				label.icon.count = 1;
++//				if (row <= label.y - 8 || row >= nextLabelY) {
++//					label.icon.count = 0;
++//				}
++
++				itemRenderer.renderItemIntoGUI(this.mc.smallOutlineFontRenderer, this.mc.textureRegistry, label.icon,
++						-20, y);
++				label.icon.count = 1;
++				y += height;
++			}
++
++			RenderHelper.disableStandardItemLighting();
++			GL11.glDisable(GL12.GL_RESCALE_NORMAL);
++			GL11.glDisable(GL11.GL_LIGHTING);
++			GL11.glDisable(GL11.GL_CULL_FACE);
++			GL11.glEnable(GL11.GL_DEPTH_TEST);
++		}
++	}
++
++	protected boolean getIsMouseOverSlot(Slot var1, int var2, int var3) {
++		if (var1.isHere(this.inventory, var1.slotIndex)
++				&& this.inventory.getLabel(var1.slotIndex / 8 + 1) != null)
++			return false;
++		return super.getIsMouseOverSlot(var1, var2, var3);
 +	}
 +
 +	protected void setupItems() {
@@ -5993,16 +6195,17 @@
 +		this.rowSlider.displayString = this.rowSlider.getDisplayString();
 +		this.controlList.add(this.rowSlider);
 +
++		this.iconList = null;
 +		if (this.inventory.labels != null) {
-+			int y = posY;
-+			for (Iterator<Map.Entry<Integer, String>> it = this.inventory.labels
-+					.entrySet()
-+					.stream()
-+					.sorted(Comparator.comparingInt(Map.Entry::getKey))
-+					.iterator(); it.hasNext(); ) {
-+				Map.Entry<Integer, String> label = it.next();
-+				this.controlList.add(new GuiTransparentButton(200 + label.getKey(), 8, y, (this.width - this.xSize) / 2, 12, label.getValue()));
-+				y += 12;
++			this.iconList = new ItemStack[this.inventory.labels.size()];
++			int height = 16;
++			int y = -(this.inventory.labels.size() * height) / 2;
++			for (InventoryReadonly.Label label : this.inventory.labels) {
++				this.controlList.add(new GuiTransparentButton(200 + label.y, 0, y, -this.xSize / 2 - 24, height, label.name)
++						.alignedAt(0.0F, 0.5F)
++						.alignedSize(0.5F, 0.0F)
++						.textAlignedAt(1.0F, 0.5F));
++				y += height;
 +			}
 +		}
 +	}
@@ -6194,7 +6397,7 @@
 +}
 --- net/minecraft/game/world/Explosion.java
 +++ net/minecraft/game/world/Explosion.java
-@@ -7,7 +7,7 @@
+@@ -7,13 +7,14 @@
  import java.util.Set;
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.physics.AxisAlignedBB;
@@ -6203,7 +6406,14 @@
  import net.minecraft.game.world.block.Block;
  import net.minecraft.game.world.chunk.ChunkPosition;
  import net.minecraft.util.MathHelper;
-@@ -88,7 +88,7 @@
+ 
+ public class Explosion {
+ 	public boolean isFlaming = false;
++	public boolean breakBlocks = false;
+ 	private Random rand = new Random();
+ 	private World worldObj;
+ 	public double explosionX;
+@@ -88,7 +89,7 @@
  		int var7 = MathHelper.floor(this.explosionZ - (double)this.explosionSize - 1.0D);
  		int var30 = MathHelper.floor(this.explosionZ + (double)this.explosionSize + 1.0D);
  		List var9 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this.exploder, AxisAlignedBB.getBoundingBoxFromPool((double)var3, (double)var5, (double)var7, (double)var4, (double)var29, (double)var30));
@@ -6212,17 +6422,19 @@
  
  		for(int var11 = 0; var11 < var9.size(); ++var11) {
  			Entity var33 = (Entity)var9.get(var11);
-@@ -111,8 +111,7 @@
+@@ -111,9 +112,8 @@
  		}
  
  		this.explosionSize = var1;
 -		ArrayList var32 = new ArrayList();
 -		var32.addAll(this.destroyedBlockPositions);
+-		if(this.isFlaming) {
 +		ArrayList var32 = new ArrayList(this.destroyedBlockPositions);
- 		if(this.isFlaming) {
++		if(this.isFlaming && this.breakBlocks) {
  			for(int var34 = var32.size() - 1; var34 >= 0; --var34) {
  				ChunkPosition var35 = (ChunkPosition)var32.get(var34);
-@@ -131,8 +130,7 @@
+ 				int var36 = var35.x;
+@@ -131,8 +131,7 @@
  
  	public void doExplosionB(boolean var1) {
  		this.worldObj.playSoundEffect(this.explosionX, this.explosionY, this.explosionZ, "random.explode", 4.0F, (1.0F + (this.worldObj.rand.nextFloat() - this.worldObj.rand.nextFloat()) * 0.2F) * 0.7F);
@@ -6232,7 +6444,16 @@
  
  		for(int var3 = var2.size() - 1; var3 >= 0; --var3) {
  			ChunkPosition var4 = (ChunkPosition)var2.get(var3);
-@@ -225,7 +223,7 @@
+@@ -160,7 +159,7 @@
+ 				this.worldObj.spawnParticle("smoke", var9, var11, var13, var15, var17, var19);
+ 			}
+ 
+-			if(var8 > 0) {
++			if(var8 > 0 && this.breakBlocks) {
+ 				Block.blocksList[var8].dropBlockAsItemWithChance(this.worldObj, var5, var6, var7, this.worldObj.getBlockMetadata(var5, var6, var7), 0.3F);
+ 				this.worldObj.setBlockWithNotify(var5, var6, var7, 0);
+ 				Block.blocksList[var8].onBlockDestroyedByExplosion(this.worldObj, var5, var6, var7);
+@@ -225,7 +224,7 @@
  		int var7 = MathHelper.floor(this.explosionZ - (double)this.explosionSize - 1.0D);
  		int var30 = MathHelper.floor(this.explosionZ + (double)this.explosionSize + 1.0D);
  		List var9 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this.exploder, AxisAlignedBB.getBoundingBoxFromPool((double)var3, (double)var5, (double)var7, (double)var4, (double)var29, (double)var30));
@@ -6241,17 +6462,19 @@
  
  		for(int var11 = 0; var11 < var9.size(); ++var11) {
  			Entity var33 = (Entity)var9.get(var11);
-@@ -248,8 +246,7 @@
+@@ -248,9 +247,8 @@
  		}
  
  		this.explosionSize = var1;
 -		ArrayList var32 = new ArrayList();
 -		var32.addAll(this.destroyedBlockPositions);
+-		if(this.isFlaming) {
 +		ArrayList var32 = new ArrayList(this.destroyedBlockPositions);
- 		if(this.isFlaming) {
++		if(this.isFlaming && this.breakBlocks) {
  			for(int var34 = var32.size() - 1; var34 >= 0; --var34) {
  				ChunkPosition var35 = (ChunkPosition)var32.get(var34);
-@@ -268,8 +265,7 @@
+ 				int var36 = var35.x;
+@@ -268,8 +266,7 @@
  
  	public void doEffects(boolean var1) {
  		this.worldObj.playSoundEffect(this.explosionX, this.explosionY, this.explosionZ, "random.explode", 4.0F, (1.0F + (this.worldObj.rand.nextFloat() - this.worldObj.rand.nextFloat()) * 0.2F) * 0.7F);
@@ -6261,6 +6484,15 @@
  
  		for(int var3 = var2.size() - 1; var3 >= 0; --var3) {
  			ChunkPosition var4 = (ChunkPosition)var2.get(var3);
+@@ -297,7 +294,7 @@
+ 				this.worldObj.spawnParticle("smoke", var9, var11, var13, var15, var17, var19);
+ 			}
+ 
+-			if(var8 > 0) {
++			if(var8 > 0 && this.breakBlocks) {
+ 				Block.blocksList[var8].dropBlockAsItemWithChance(this.worldObj, var5, var6, var7, this.worldObj.getBlockMetadata(var5, var6, var7), 0.3F);
+ 				this.worldObj.setBlockWithNotify(var5, var6, var7, 0);
+ 				Block.blocksList[var8].onBlockDestroyedByExplosion(this.worldObj, var5, var6, var7);
 --- net/minecraft/client/gui/IngameMenuScreen.java
 +++ net/minecraft/client/gui/IngameMenuScreen.java
 @@ -15,15 +15,13 @@
@@ -6425,7 +6657,7 @@
 +}
 --- net/minecraft/game/item/ToolItem.java
 +++ net/minecraft/game/item/ToolItem.java
-@@ -3,31 +3,34 @@
+@@ -3,30 +3,40 @@
  import net.minecraft.game.entity.Entity;
  import net.minecraft.game.entity.LivingEntity;
  import net.minecraft.game.world.block.Block;
@@ -6472,13 +6704,17 @@
 -				return this.efficiencyOnProperMaterial;
 -			}
 -		}
--
--		return 1.0F;
-+		return (var2.effectiveTools & this.toolType.getToolBit()) != 0 ? this.efficiencyOnProperMaterial : 1.0F;
++		return (var2.effectiveTools & this.toolType.getToolBit()) != 0 ? this.efficiencyOnProperMaterial * this.getEfficiencyModifier(var2) : 1.0F;
++	}
+ 
++	protected float getEfficiencyModifier(Block block) {
++		if ((block.effectiveTools & ToolType.SHOVEL.getToolBit()) != 0) {
++			return 2.0F / 3.0F;
++		}
+ 		return 1.0F;
  	}
  
- 	public boolean hitEntity(ItemStack var1, LivingEntity var2, LivingEntity var3) {
-@@ -36,15 +39,41 @@
+@@ -36,15 +46,41 @@
  	}
  
  	public boolean onBlockDestroyed(ItemStack var1, int var2, int var3, int var4, int var5, LivingEntity var6) {
@@ -11870,7 +12106,15 @@
 +}
 --- net/minecraft/client/render/entity/RenderBiped.java
 +++ net/minecraft/client/render/entity/RenderBiped.java
-@@ -23,14 +23,14 @@
+@@ -3,6 +3,7 @@
+ import net.minecraft.client.model.BipedModel;
+ import net.minecraft.client.render.RenderBlocks;
+ import net.minecraft.game.entity.LivingEntity;
++import net.minecraft.game.item.BowItem;
+ import net.minecraft.game.item.Item;
+ import net.minecraft.game.item.ItemStack;
+ import net.minecraft.game.world.block.Block;
+@@ -23,14 +24,20 @@
  			this.modelBipedMain.bipedRightArm.postRender(1.0F / 16.0F);
  			GL11.glTranslatef(-(1.0F / 16.0F), 7.0F / 16.0F, 1.0F / 16.0F);
  			float var4;
@@ -11883,6 +12127,12 @@
  				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
  				GL11.glScalef(var4, -var4, var4);
 -			} else if(Item.itemsList[var3.id].hasToolGrip()) {
++			} else if(var3.getItem() instanceof BowItem) {
++				var4 = 10.0F / 16.0F;
++				GL11.glTranslatef(2.0F / 16.0F, 2.0F / 16.0F, 5.0F / 16.0F);
++				GL11.glScalef(var4, -var4, var4);
++				GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
++				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
 +			} else if(var3.getItem().hasToolGrip()) {
  				var4 = 10.0F / 16.0F;
  				GL11.glTranslatef(0.0F, 3.0F / 16.0F, 0.0F);
@@ -12375,7 +12625,7 @@
 +		for (int i = 0; i < Option.CATEGORIES.size(); i++) {
 +			String text = i18n(Option.CATEGORIES.get(i));
 +			if (this.page == i) text = "> " + text;
-+			this.controlList.add(new GuiTransparentButton(i - 100, 10, y, 100, 20, text));
++			this.controlList.add(new GuiTransparentButton(i - 100, 10, y, 100, 20, text).textAlignedAt(0.0F, 0.5F));
 +			y += 20;
 +		}
  	}
@@ -13150,6 +13400,15 @@
  	}
  
  	public boolean addWeatherEffect(Entity var1) {
+@@ -107,7 +110,7 @@
+ 		this.mcServer.getEntityTracker(this.dimension.worldType).sendPacketToTrackedPlayersAndTrackedEntity(var1, var3);
+ 	}
+ 
+-	public Explosion newExplosion(Entity var1, double var2, double var4, double var6, float var8, boolean var9) {
++	public Explosion newExplosion(Entity var1, double var2, double var4, double var6, float var8, boolean var9, boolean breakBlocks) {
+ 		Explosion var10 = new Explosion(this, var1, var2, var4, var6, var8);
+ 		var10.isFlaming = var9;
+ 		var10.doExplosion();
 --- net/minecraft/game/entity/animal/WolfEntity.java
 +++ net/minecraft/game/entity/animal/WolfEntity.java
 @@ -29,14 +29,17 @@
@@ -14018,7 +14277,7 @@
 -	public static final Block lapisOre = (new OreBlock(21, 160)).setHardness(3.0F).setResistance(5.0F).setStepSound(soundStoneFootstep).setName("oreLapis");
 -	public static final Block lapisBlock = (new Block(22, 144, Material.stone)).setHardness(3.0F).setResistance(5.0F).setStepSound(soundStoneFootstep).setName("blockLapis");
 +	public static final Block glass = (new GlassBlock(20, texCoord("glass"), Material.glass, false)).setHardness(0.3F).setStepSound(soundGlassFootstep).setName("glass");
-+	public static final Block copperOre = (new OreBlock(21, "copper_ore", "ore")).setHardness(2.0F).setResistance(5.0F).setHarvestLevel(0).setStepSound(soundStoneFootstep).setName("oreCopper");
++	public static final Block copperOre = (new OreBlock(21, "copper_ore", "ore")).setHardness(1.5F).setResistance(5.0F).setHarvestLevel(0).setStepSound(soundStoneFootstep).setName("oreCopper");
 +	public static final Block copperBlock = (new MineralBlock(22, "copper_block")).setHardness(3.0F).setResistance(10.0F).setHarvestLevel(0).setStepSound(soundStoneFootstep).setName("blockCopper");
  	public static final Block dispenser = (new DispenserBlock(23)).setHardness(3.5F).setStepSound(soundStoneFootstep).setName("dispenser").setRequiresSelfNotify();
  	public static final Block sandstone = (new SandstoneBlock(24)).setStepSound(soundStoneFootstep).setHardness(0.8F).setName("sandStone");
@@ -15208,7 +15467,21 @@
  
  			for(int var12 = var4; var12 < var5; ++var12) {
  				for(int var13 = var6; var13 < var7; ++var13) {
-@@ -1611,7 +1610,7 @@
+@@ -1600,18 +1599,19 @@
+ 	}
+ 
+ 	public Explosion createExplosion(Entity var1, double var2, double var4, double var6, float var8) {
+-		return this.newExplosion(var1, var2, var4, var6, var8, false);
++		return this.newExplosion(var1, var2, var4, var6, var8, false, true);
+ 	}
+ 
+-	public Explosion newExplosion(Entity var1, double var2, double var4, double var6, float var8, boolean var9) {
++	public Explosion newExplosion(Entity var1, double var2, double var4, double var6, float var8, boolean var9, boolean breakBlocks) {
+ 		Explosion var10 = new Explosion(this, var1, var2, var4, var6, var8);
+ 		var10.isFlaming = var9;
++		var10.breakBlocks = breakBlocks;
+ 		var10.doExplosionA();
+ 		var10.doExplosionB(true);
  		return var10;
  	}
  
@@ -15217,7 +15490,7 @@
  		double var3 = 1.0D / ((var2.maxX - var2.minX) * 2.0D + 1.0D);
  		double var5 = 1.0D / ((var2.maxY - var2.minY) * 2.0D + 1.0D);
  		double var7 = 1.0D / ((var2.maxZ - var2.minZ) * 2.0D + 1.0D);
-@@ -1624,7 +1623,7 @@
+@@ -1624,7 +1624,7 @@
  					double var14 = var2.minX + (var2.maxX - var2.minX) * (double)var11;
  					double var16 = var2.minY + (var2.maxY - var2.minY) * (double)var12;
  					double var18 = var2.minZ + (var2.maxZ - var2.minZ) * (double)var13;
@@ -15226,7 +15499,7 @@
  						++var9;
  					}
  
-@@ -1685,6 +1684,16 @@
+@@ -1685,6 +1685,16 @@
  		return var4 != null ? var4.getChunkBlockTileEntity(var1 & 15, var2, var3 & 15) : null;
  	}
  
@@ -15243,7 +15516,7 @@
  	public void setBlockTileEntity(int var1, int var2, int var3, TileEntity var4) {
  		if(!var4.isInvalid()) {
  			if(this.unloadTileEntities) {
-@@ -1720,16 +1729,6 @@
+@@ -1720,16 +1730,6 @@
  
  	}
  
@@ -15260,7 +15533,7 @@
  	public void saveWorldIndirectly(ProgressUpdate var1) {
  		this.saveWorld(true, var1);
  	}
-@@ -1771,46 +1770,40 @@
+@@ -1771,46 +1771,40 @@
  			++lightingUpdatesScheduled;
  
  			try {
@@ -15337,7 +15610,7 @@
  		}
  	}
  
-@@ -1828,22 +1821,19 @@
+@@ -1828,22 +1822,19 @@
  	}
  
  	public void tick() {
@@ -15371,7 +15644,7 @@
  		this.chunkProvider.unload100OldestChunks();
  		int var4 = this.calculateSkylightSubtracted(1.0F);
  		if(var4 != this.skylightSubtracted) {
-@@ -1961,11 +1951,13 @@
+@@ -1961,11 +1952,13 @@
  			PlayerEntity var2 = (PlayerEntity)this.playerEntities.get(var1);
  			var3 = MathHelper.floor(var2.posX / 16.0D);
  			var4 = MathHelper.floor(var2.posZ / 16.0D);
@@ -15387,7 +15660,7 @@
  				}
  			}
  		}
-@@ -1974,33 +1966,19 @@
+@@ -1974,33 +1967,19 @@
  			--this.soundCounter;
  		}
  
@@ -15429,7 +15702,7 @@
  
  			if(this.rand.nextInt(100000) == 0 && this.canRain() && this.canThunder()) {
  				this.distHashCounter = this.distHashCounter * 3 + 1013904223;
-@@ -2020,29 +1998,35 @@
+@@ -2020,29 +1999,35 @@
  				var6 = this.distHashCounter >> 2;
  				var7 = var6 & 15;
  				var8 = var6 >> 8 & 15;
@@ -15483,7 +15756,7 @@
  				}
  			}
  		}
-@@ -2054,8 +2038,8 @@
+@@ -2054,8 +2039,8 @@
  		if(var2 != this.scheduledTickSet.size()) {
  			throw new IllegalStateException("TickNextTick list out of synch");
  		} else {
@@ -15494,7 +15767,7 @@
  			}
  
  			for(int var3 = 0; var3 < var2; ++var3) {
-@@ -2159,16 +2143,40 @@
+@@ -2159,16 +2144,40 @@
  		return var2;
  	}
  
@@ -15539,7 +15812,7 @@
  		this.unloadedEntityList.addAll(var1);
  	}
  
-@@ -2190,7 +2198,9 @@
+@@ -2190,7 +2199,9 @@
  		if(var10 != null && !this.checkIfAABBIsClear(var10)) {
  			return false;
  		} else {
@@ -15550,7 +15823,7 @@
  				var8 = null;
  			}
  
-@@ -2238,7 +2248,7 @@
+@@ -2238,7 +2249,7 @@
  	}
  
  	public boolean isBlockIndirectlyProvidingPowerTo(int var1, int var2, int var3, int var4) {
@@ -15559,7 +15832,7 @@
  			return this.isBlockGettingPowered(var1, var2, var3);
  		} else {
  			int var5 = this.getBlockId(var1, var2, var3);
-@@ -2270,6 +2280,22 @@
+@@ -2270,6 +2281,22 @@
  		return var11;
  	}
  
@@ -15582,7 +15855,7 @@
  	public PlayerEntity getPlayerEntityByName(String var1) {
  		for(int var2 = 0; var2 < this.playerEntities.size(); ++var2) {
  			if(var1.equals(((PlayerEntity)this.playerEntities.get(var2)).username)) {
-@@ -2281,94 +2307,10 @@
+@@ -2281,94 +2308,10 @@
  	}
  
  	public byte[] getChunkData(int var1, int var2, int var3, int var4, int var5, int var6) {
@@ -15678,7 +15951,7 @@
  	}
  
  	public void sendQuittingDisconnectingPacket() {
-@@ -2576,7 +2518,7 @@
+@@ -2576,7 +2519,7 @@
  		} else if(this.getTopSolidOrLiquidBlock(var1, var3) > var2) {
  			return false;
  		} else {
@@ -15687,7 +15960,7 @@
  			return var4.getEnableSnow() ? false : var4.canSpawnLightningBolt();
  		}
  	}
-@@ -2602,5 +2544,208 @@
+@@ -2602,5 +2545,208 @@
  			((WorldAccess)this.worldAccesses.get(var7)).playAuxEffect(var1, var2, var3, var4, var5, var6);
  		}
  
@@ -16101,7 +16374,7 @@
  	public final String title;
 --- /dev/null
 +++ net/minecraft/game/world/block/AnvilContainer.java
-@@ -1,0 +1,117 @@
+@@ -1,0 +1,111 @@
 +package net.minecraft.game.world.block;
 +
 +import net.minecraft.game.entity.player.*;
@@ -16182,9 +16455,9 @@
 +			ItemStack var4 = var3.getStack();
 +			var2 = var4.copy();
 +			if (var1 >= 0 && var1 <= 1) {
-+				this.putStack(var4, 3, 39, false);
++				this.putStack(var4, 3, 39, true);
 +			} else if (var1 >= 3 && var1 <= 38) {
-+				this.putStack(var4, 0, 6, false);
++				this.putStack(var4, 0, 2, false);
 +			} else {
 +				this.putStack(var4, 3, 39, false);
 +			}
@@ -16194,12 +16467,6 @@
 +			} else {
 +				var3.onSlotChanged();
 +			}
-+
-+			if(var4.count == var2.count) {
-+				return null;
-+			}
-+
-+			var3.onPickupFromSlot(var4);
 +		}
 +
 +		return var2;
@@ -16318,8 +16585,12 @@
  				if(var1.getBlockId(var2, var3, var4) == this.blockID) {
  					var1.setBlockWithNotify(var2, var3, var4, 0);
  					var16 = (var16 + (double)var2 + 0.5D) / 2.0D;
-@@ -52,7 +66,7 @@
- 				var1.newExplosion((Entity)null, (double)((float)var2 + 0.5F), (double)((float)var3 + 0.5F), (double)((float)var4 + 0.5F), 5.0F, true);
+@@ -49,10 +63,10 @@
+ 					var11 = (var11 + (double)var4 + 0.5D) / 2.0D;
+ 				}
+ 
+-				var1.newExplosion((Entity)null, (double)((float)var2 + 0.5F), (double)((float)var3 + 0.5F), (double)((float)var4 + 0.5F), 5.0F, true);
++				var1.newExplosion((Entity)null, (double)((float)var2 + 0.5F), (double)((float)var3 + 0.5F), (double)((float)var4 + 0.5F), 5.0F, true, true);
  				return true;
  			} else {
 -				if(isBedOccupied(var6)) {
@@ -17167,7 +17438,7 @@
 +	public boolean isSkinFound = false;
 +	private ItemStack itemInUse;
 +	private int itemUseTime;
-+	public float mana = 0.0F;
++	public float mana = 20.0F;
 +	public float sprintCharge = 1.0F;
 +	public float sprintRechargeRate;
 +	public float sprintBoostRate;
@@ -17442,18 +17713,16 @@
  			return false;
  		} else {
  			if(this.isPlayerSleeping() && !this.worldObj.remoteWorld) {
-@@ -422,7 +592,9 @@
+@@ -422,7 +592,7 @@
  					this.alertWolves((LivingEntity)var3, false);
  				}
  
 -				this.addStat(StatList.damageTakenStat, var2);
 +				this.addStat(StatList.damageTakenStat, (int)var2);
-+				this.sprintCharge = 0.0F;
-+				this.regen = 0.0F;
  				return super.hurt(var1, var2);
  			}
  		}
-@@ -469,16 +641,13 @@
+@@ -469,16 +639,15 @@
  		}
  	}
  
@@ -17466,6 +17735,8 @@
 +	protected void damageEntity(float var1) {
 +		this.inventory.damageArmor(1);
 +		var1 *= 1.0F - Math.min(this.damageReduction, 1.0F);
++		this.regen = 0.0F;
++		this.sprintCharge *= 1.0F - MathHelper.clamp(var1 / this.getMaxHealth() * 4.0F, 0.0F, 1.0F);
  		super.damageEntity(var1);
  	}
  
@@ -17516,7 +17787,7 @@
  			ItemStack var3 = this.getCurrentEquippedItem();
 +			int attackSpeed = var3 != null && var3.getItem().isMeleeWeapon() ? var3.getAttackSpeed() : 10;
 +			float knockbackStrength = var3 != null && var3.getItem().isMeleeWeapon() ? var3.getKnockbackStrength() : 1.0F;
-+			this.sprintCharge /= 1.5F;
++			this.sprintCharge /= 1.2F;
 +			attackSpeed = Math.max(Math.round(attackSpeed * this.attackSpeed), 1);
 +			if (var1 instanceof LivingEntity) {
 +				((LivingEntity) var1).hurt(this, var2, attackSpeed, knockbackStrength);
@@ -17607,11 +17878,10 @@
  		this.addStat(StatList.jumpStat, 1);
  	}
  
-@@ -899,6 +1113,92 @@
- 			this.timeUntilPortal = 10;
+@@ -900,5 +1114,99 @@
  		} else {
  			this.inPortal = true;
-+		}
+ 		}
 +	}
 +
 +	public void setItemInUse(ItemStack var1, int var2) {
@@ -17697,7 +17967,15 @@
 +			this.onItemUseFinish();
 +		} else {
 +			super.handleHealthUpdate(var1);
- 		}
++		}
++	}
++
++	public boolean isLeftHanded() {
++		return this.getEntityFlag(4);
++	}
++
++	public void setLeftHanded(boolean value) {
++		this.setEntityFlag(4, value);
  	}
  }
 --- /dev/null
@@ -17725,7 +18003,7 @@
 +}
 --- net/minecraft/client/Option.java
 +++ net/minecraft/client/Option.java
-@@ -1,23 +1,74 @@
+@@ -1,23 +1,75 @@
  package net.minecraft.client;
  
 +import java.util.*;
@@ -17772,6 +18050,7 @@
 +	FOG_DENSITY         ("options.fogDensity",          "options.category.style",       true,  false),
 +	FOG_DISTANCE        ("options.fogDistance",         "options.category.style",       true,  false),
 +	ALPHA_ENVIRONMENT   ("options.alphaEnvironment",    "options.category.style",       false, true ),
++	LEFT_HANDED         ("options.leftHanded",          "options.category.style",       false, true ),
 +	MUSIC               ("options.music",               "options.category.audio",       true,  false),
 +	SOUND               ("options.sound",               "options.category.audio",       true,  false),
 +	AMBIENCE            ("options.ambience",            "options.category.audio",       true,  false),
@@ -17813,7 +18092,7 @@
  
  	public static Option getOptionFromId(int var0) {
  		Option[] var1 = values();
-@@ -33,8 +84,9 @@
+@@ -33,8 +85,9 @@
  		return null;
  	}
  
@@ -17824,7 +18103,7 @@
  		this.isSlider = var4;
  		this.isToggle = var5;
  	}
-@@ -53,5 +105,9 @@
+@@ -53,5 +106,9 @@
  
  	public String getName() {
  		return this.name;
@@ -20253,7 +20532,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/client/gui/component/GuiTransparentButton.java
-@@ -1,0 +1,37 @@
+@@ -1,0 +1,25 @@
 +package net.minecraft.client.gui.component;
 +
 +import net.minecraft.client.Minecraft;
@@ -20271,23 +20550,11 @@
 +
 +	public void drawButton(Minecraft var1, int var2, int var3) {
 +		if(this.visible) {
-+			int sx = this.getScaledX();
-+			int sy = this.getScaledY();
-+			int sw = this.getScaledWidth();
-+			int sh = this.getScaledHeight();
-+
-+			FontRenderer fontRenderer4 = var1.fontRenderer;
++			FontRenderer var4 = var1.fontRenderer;
 +			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-+			boolean var5 = var2 >= sx && var3 >= sy && var2 < sx + sw && var3 < sy + sh;
++			boolean var5 = this.intersects(var2, var3);
 +			this.mouseDragged(var1, var2, var3);
-+			if(!this.enabled) {
-+				this.drawString(fontRenderer4, this.displayString, sx, sy + (this.buttonHeight - 8) / 2, -6250336);
-+			} else if(var5) {
-+				this.drawString(fontRenderer4, this.displayString, sx, sy + (this.buttonHeight - 8) / 2, 16777120);
-+			} else {
-+				this.drawString(fontRenderer4, this.displayString, sx, sy + (this.buttonHeight - 8) / 2, 14737632);
-+			}
-+
++			this.drawDisplayString(var4, !this.enabled ? -6250336 : var5 ? 16777120 : 14737632, 0);
 +		}
 +	}
 +}
@@ -21049,7 +21316,61 @@
  }
 --- net/minecraft/client/model/BipedModel.java
 +++ net/minecraft/client/model/BipedModel.java
-@@ -132,6 +132,7 @@
+@@ -15,6 +15,7 @@
+ 	public boolean field_1279_h;
+ 	public boolean field_1278_i;
+ 	public boolean isSneak;
++	public boolean leftHanded;
+ 
+ 	public BipedModel() {
+ 		this(0.0F);
+@@ -69,6 +70,9 @@
+ 	}
+ 
+ 	public void setRotationAngles(float var1, float var2, float var3, float var4, float var5, float var6) {
++		ModelRenderer mainArm = this.leftHanded ? this.bipedLeftArm : this.bipedRightArm;
++		ModelRenderer otherArm = this.leftHanded ? this.bipedRightArm : this.bipedLeftArm;
++
+ 		this.bipedHead.rotateAngleY = var4 / (180.0F / (float)Math.PI);
+ 		this.bipedHead.rotateAngleX = var5 / (180.0F / (float)Math.PI);
+ 		this.bipedHeadwear.rotateAngleY = this.bipedHead.rotateAngleY;
+@@ -91,18 +95,19 @@
+ 		}
+ 
+ 		if(this.field_1279_h) {
+-			this.bipedLeftArm.rotateAngleX = this.bipedLeftArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F;
++			otherArm.rotateAngleX = otherArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F;
+ 		}
+ 
+ 		if(this.field_1278_i) {
+-			this.bipedRightArm.rotateAngleX = this.bipedRightArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F;
++			mainArm.rotateAngleX = mainArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F;
+ 		}
+ 
+ 		this.bipedRightArm.rotateAngleY = 0.0F;
+ 		this.bipedLeftArm.rotateAngleY = 0.0F;
+ 		if(this.onGround > -9990.0F) {
++			float handDir = leftHanded ? -1.0F : 1.0F;
+ 			float var7 = this.onGround;
+-			this.bipedBody.rotateAngleY = MathHelper.sin(MathHelper.sqrt(var7) * (float)Math.PI * 2.0F) * 0.2F;
++			this.bipedBody.rotateAngleY = MathHelper.sin(MathHelper.sqrt(var7) * (float)Math.PI * 2.0F) * 0.2F * handDir;
+ 			this.bipedRightArm.rotationPointZ = MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
+ 			this.bipedRightArm.rotationPointX = -MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
+ 			this.bipedLeftArm.rotationPointZ = -MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
+@@ -116,9 +121,9 @@
+ 			var7 = 1.0F - var7;
+ 			float var8 = MathHelper.sin(var7 * (float)Math.PI);
+ 			float var9 = MathHelper.sin(this.onGround * (float)Math.PI) * -(this.bipedHead.rotateAngleX - 0.7F) * (12.0F / 16.0F);
+-			this.bipedRightArm.rotateAngleX = (float)((double)this.bipedRightArm.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
+-			this.bipedRightArm.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
+-			this.bipedRightArm.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F;
++			mainArm.rotateAngleX = (float)((double)mainArm.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
++			mainArm.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
++			mainArm.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F * handDir;
+ 		}
+ 
+ 		if(this.isSneak) {
+@@ -132,6 +137,7 @@
  			this.bipedRightLeg.rotationPointY = 9.0F;
  			this.bipedLeftLeg.rotationPointY = 9.0F;
  			this.bipedHead.rotationPointY = 1.0F;
@@ -21057,7 +21378,7 @@
  		} else {
  			this.bipedBody.rotateAngleX = 0.0F;
  			this.bipedRightLeg.rotationPointZ = 0.0F;
-@@ -139,6 +140,7 @@
+@@ -139,6 +145,7 @@
  			this.bipedRightLeg.rotationPointY = 12.0F;
  			this.bipedLeftLeg.rotationPointY = 12.0F;
  			this.bipedHead.rotationPointY = 0.0F;
@@ -21377,9 +21698,9 @@
 +						mixedVolume /= 1.5F;
 +					} else if (channel == AmbienceChannel.OCEAN && entity.isInsideOfMaterial(Material.water)) {
 +						mixedPitch /= 2.0F;
-+						mixedVolume /= 2.0F;
++//						mixedVolume /= 2.0F;
 +					} else if (channel == AmbienceChannel.CAVECHIMES) {
-+						mixedVolume /= 3.5F;
++						mixedVolume /= 3.0F;
 +					}
 +				}
 +
@@ -22069,6 +22390,15 @@
  		}
  
  		Entity var4 = null;
+@@ -132,7 +132,7 @@
+ 				if(var3.entityHit != null && var3.entityHit.hurt(this.owner, 0)) {
+ 				}
+ 
+-				this.worldObj.newExplosion((Entity)null, this.posX, this.posY, this.posZ, 1.0F, true);
++				this.worldObj.newExplosion((Entity)null, this.posX, this.posY, this.posZ, 1.0F, true, true);
+ 			}
+ 
+ 			this.setEntityDead();
 @@ -185,7 +185,7 @@
  		var1.setShort("xTile", (short)this.xTile);
  		var1.setShort("yTile", (short)this.yTile);
@@ -23108,7 +23438,7 @@
 -
  	public void sendChatMessage(String var1) {
 +		this.mc.ingameGUI.addChatMessage("<" + this.username + "> " + var1);
-+		if (SharedConstants.DEV_MODE && !this.worldObj.remoteWorld) {
++		if (SharedConstants.DEBUG_MODE && !this.worldObj.remoteWorld && this.worldObj.getWorldInfo().isCreative()) {
 +			String[] params = var1.split(" ");
 +			if (params.length < 1) return;
 +			String cmd = params[0];
@@ -28653,7 +28983,26 @@
  				}
  			}
  		} else {
-@@ -490,7 +474,7 @@
+@@ -478,19 +462,22 @@
+ 	}
+ 
+ 	public void handleEntityAction(Packet19EntityAction var1) {
+-		if(var1.state == 1) {
++		if (var1.state == 1) {
+ 			this.playerEntity.setSneaking(true);
+-		} else if(var1.state == 2) {
++		} else if (var1.state == 2) {
+ 			this.playerEntity.setSneaking(false);
+-		} else if(var1.state == 3) {
++		} else if (var1.state == 3) {
+ 			this.playerEntity.wakeUpPlayer(false, true, true);
+ 			this.hasMoved = false;
++		} else if (var1.state == 4) {
++			this.playerEntity.setLeftHanded(true);
++		} else if (var1.state == 5) {
++			this.playerEntity.setLeftHanded(false);
+ 		}
+-
  	}
  
  	public void handleKickDisconnect(Packet255KickDisconnect var1) {
@@ -28662,7 +29011,7 @@
  	}
  
  	public int getNumChunkDataPackets() {
-@@ -498,7 +482,7 @@
+@@ -498,7 +485,7 @@
  	}
  
  	public void log(String var1) {
@@ -28671,7 +29020,7 @@
  	}
  
  	public String getUsername() {
-@@ -524,6 +508,12 @@
+@@ -524,6 +511,12 @@
  		}
  	}
  
@@ -28684,7 +29033,7 @@
  	public void handleCloseWindow(Packet101CloseWindow var1) {
  		this.playerEntity.closeCraftingGui();
  	}
-@@ -538,7 +528,7 @@
+@@ -538,7 +531,7 @@
  				this.playerEntity.updateHeldItem();
  				this.playerEntity.isChangingQuantityOnly = false;
  			} else {
@@ -28693,7 +29042,7 @@
  				this.playerEntity.playerNetServerHandler.sendPacket(new Packet106Transaction(var1.windowId, var1.action, false));
  				this.playerEntity.craftingInventory.setCanCraft(this.playerEntity, false);
  				ArrayList var3 = new ArrayList();
-@@ -547,15 +537,15 @@
+@@ -547,15 +540,15 @@
  					var3.add(((Slot)this.playerEntity.craftingInventory.inventorySlots.get(var4)).getStack());
  				}
  
@@ -28712,7 +29061,7 @@
  			this.playerEntity.craftingInventory.setCanCraft(this.playerEntity, true);
  		}
  
-@@ -598,14 +588,20 @@
+@@ -598,14 +591,20 @@
  				var6 = var1.zPosition;
  				SignTileEntity var7 = (SignTileEntity)var3;
  
@@ -35444,7 +35793,7 @@
  	}
 --- net/minecraft/client/gui/component/GuiButton.java
 +++ net/minecraft/client/gui/component/GuiButton.java
-@@ -5,33 +5,123 @@
+@@ -5,33 +5,131 @@
  import net.minecraft.client.gui.Gui;
  import org.lwjgl.opengl.GL11;
  
@@ -35469,6 +35818,8 @@
 -	public int id;
 -	public boolean enabled;
 -	public boolean visible;
++	public float displayAlignX = 0.5F;
++	public float displayAlignY = 0.5F;
 +	public boolean enabled = true;
 +	public boolean visible = true;
 +	public boolean translucent;
@@ -35534,6 +35885,12 @@
 +		return this;
 +	}
 +
++	public GuiButton textAlignedAt(float alignX, float alignY) {
++		this.displayAlignX = alignX;
++		this.displayAlignY = alignY;
++		return this;
++	}
++
 +	public int getScaledX() {
 +		float offsetX = container != null ? container.getScaledX() : 0.0f;
 +		float parentWidth = container != null ? container.getScaledWidth() : Minecraft.getScaledResolution().getScaledWidth();
@@ -35579,7 +35936,7 @@
  	protected int getHoverState(boolean var1) {
  		byte var2 = 1;
  		if(!this.enabled) {
-@@ -43,22 +133,43 @@
+@@ -43,34 +141,75 @@
  		return var2;
  	}
  
@@ -35605,31 +35962,47 @@
  			int var6 = this.getHoverState(var5);
 -			this.drawTexturedRect(this.xPosition, this.yPosition, 0, 46 + var6 * 20, this.width / 2, this.height);
 -			this.drawTexturedRect(this.xPosition + this.width / 2, this.yPosition, 200 - this.width / 2, 46 + var6 * 20, this.width / 2, this.height);
+-			this.mouseDragged(var1, var2, var3);
+-			if(!this.enabled) {
+-				this.drawCenteredString(var4, this.displayString, this.xPosition + this.width / 2, this.yPosition + (this.height - 8) / 2, -6250336);
+-			} else if(var5) {
+-				this.drawCenteredString(var4, this.displayString, this.xPosition + this.width / 2, this.yPosition + (this.height - 8) / 2, 16777120);
 +
-+			if (!this.translucent) {
-+				this.drawTexturedRect(sx, sy, 0, 46 + var6 * 20, sw / 2, sh);
-+				this.drawTexturedRect(sx + sw / 2, sy, 200 - sw / 2, 46 + var6 * 20, sw / 2, sh);
-+			} else {
++			if (this.translucent) {
 +				this.drawRect(sx, sy, sx + sw, sy + sh,
 +						var6 == 2 ? 0x9930396E
 +						: var6 == 3 ? 0x99FFFFFF
 +						: 0x99000000);
-+			}
-+
- 			this.mouseDragged(var1, var2, var3);
- 			if(!this.enabled) {
--				this.drawCenteredString(var4, this.displayString, this.xPosition + this.width / 2, this.yPosition + (this.height - 8) / 2, -6250336);
-+				this.drawCenteredString(var4, this.displayString, sx + sw / 2, sy + (sh - 8) / 2, -6250336);
- 			} else if(var5) {
--				this.drawCenteredString(var4, this.displayString, this.xPosition + this.width / 2, this.yPosition + (this.height - 8) / 2, 16777120);
-+				this.drawCenteredString(var4, this.displayString, sx + sw / 2, sy + (sh - 8) / 2, 16777120);
  			} else {
 -				this.drawCenteredString(var4, this.displayString, this.xPosition + this.width / 2, this.yPosition + (this.height - 8) / 2, 14737632);
-+				this.drawCenteredString(var4, this.displayString, sx + sw / 2, sy + (sh - 8) / 2, 14737632);
++				this.drawTexturedRect(sx, sy, 0, 46 + var6 * 20, sw / 2, sh);
++				this.drawTexturedRect(sx + sw / 2, sy, 200 - sw / 2, 46 + var6 * 20, sw / 2, sh);
  			}
  
++			this.mouseDragged(var1, var2, var3);
++			this.drawDisplayString(var4, !this.enabled ? -6250336 : var5 ? 16777120 : 14737632, 4);
  		}
-@@ -70,7 +181,18 @@
+ 	}
+ 
+ 	protected void mouseDragged(Minecraft var1, int var2, int var3) {
+ 	}
+ 
++	protected void drawDisplayString(FontRenderer font, int color, int padding) {
++		int sx = this.getScaledX();
++		int sy = this.getScaledY();
++		int sw = this.getScaledWidth();
++		int sh = this.getScaledHeight();
++
++		int tx = sx + padding;
++		int ty = sy + padding;
++		tx += (int)((sw - padding * 2) * this.displayAlignX);
++		ty += (int)((sh - padding * 2) * this.displayAlignY);
++		tx -= (int)(font.getStringWidth(this.displayString) * this.displayAlignX);
++		ty -= (int)(8.0F * this.displayAlignY);
++
++		this.drawString(font, this.displayString, tx, ty, color);
++	}
++
  	public void mouseReleased(int var1, int var2) {
  	}
  
@@ -35714,15 +36087,15 @@
 -	DIAMOND(3, 1561, 8.0F, 3),
 -	GOLD(0, 32, 12.0F, 0);
 +	FLINT(0, 0, 2.0F, 0.0F),
-+	COPPER(2, 250, 4.0F, 2.0F),
++	COPPER(2, 400, 4.0F, 2.0F),
 +	IRON(2, 500, 5.0F, 3.0F),
-+	GOLD(3, 800, 8.0F, 4.0F),
++	GOLD(3, 800, 8.0F, 3.0F),
 +	PLATINUM(3, 1000, 6.5F, 6.0F);
 +
 +	static {
 +		GOLD.attackSpeed = 8;
 +		GOLD.attackReach = -0.25F;
-+		PLATINUM.attackSpeed = 12;
++		PLATINUM.attackSpeed = 13;
 +		PLATINUM.attackReach = 0.5F;
 +	}
  
@@ -35942,15 +36315,22 @@
 +		this.controlList.add(new GuiButton(3, -100, 96, var2.translateKey("menu.mods")).alignedAt(0.5F, 0.3F));
 +		this.controlList.add(new GuiButton(0, -100, 132, 98, 20, var2.translateKey("menu.options")).alignedAt(0.5F, 0.3F));
 +		this.controlList.add(new GuiButton(4, 2, 132, 98, 20, var2.translateKey("menu.quit")).alignedAt(0.5F, 0.3F));
-+		this.controlList.add(new GuiTransparentButton(5, 2, -12, 100, 12, var2.translateKey("menu.credits")).alignedAt(0.0F, 1.0F));
++		this.controlList.add(new GuiTransparentButton(5, 2, -12, 100, 12, var2.translateKey("menu.credits")).alignedAt(0.0F, 1.0F).textAlignedAt(0.0F, 0.5F));
  
  		if(this.mc.session == null) {
  			this.multiplayerButton.enabled = false;
-@@ -86,7 +91,11 @@
+@@ -81,38 +86,48 @@
+ 	}
+ 
+ 	protected void actionPerformed(GuiButton var1) {
+-		if(var1.id == 0) {
++		if (var1.id == 0) {
+ 			this.mc.displayGuiScreen(new OptionsScreen(this, this.mc.gameSettings));
  		}
  
- 		if(var1.id == 1) {
+-		if(var1.id == 1) {
 -			this.mc.displayGuiScreen(new SelectWorldScreen(this));
++		if (var1.id == 1) {
 +			if (SharedConstants.FLIGHT_MODE) {
 +				this.mc.generateFlyby();
 +			} else {
@@ -35958,15 +36338,28 @@
 +			}
  		}
  
- 		if(var1.id == 2) {
-@@ -101,18 +110,21 @@
+-		if(var1.id == 2) {
++		if (var1.id == 2) {
+ 			this.mc.displayGuiScreen(new MultiplayerScreen(this));
+ 		}
+ 
+-		if(var1.id == 3) {
++		if (var1.id == 3) {
+ 			this.mc.displayGuiScreen(new TexturePacksScreen(this));
+ 		}
+ 
+-		if(var1.id == 4) {
++		if (var1.id == 4) {
  			this.mc.shutdown();
  		}
  
-+		if(var1.id == 5) {
++		if (var1.id == 5) {
 +			this.mc.displayGuiScreen(new CreditsScreen());
 +		}
 +
++		if (var1.id == 6) {
++			this.mc.displayGuiScreen(new CreditsScreen());
++		}
  	}
  
  	public void drawScreen(int var1, int var2, float var3) {
@@ -35985,7 +36378,7 @@
  		var4.setColorOpaque_I(16777215);
  		GL11.glPushMatrix();
  		GL11.glTranslatef((float)(this.width / 2 + 90), 70.0F, 0.0F);
-@@ -122,7 +134,7 @@
+@@ -122,7 +137,7 @@
  		GL11.glScalef(var8, var8, var8);
  		this.drawCenteredString(this.fontRenderer, this.splashText, 0, -8, 16776960);
  		GL11.glPopMatrix();
@@ -36561,7 +36954,7 @@
 +}
 --- net/minecraft/game/item/Item.java
 +++ net/minecraft/game/item/Item.java
-@@ -1,18 +1,32 @@
+@@ -1,42 +1,54 @@
  package net.minecraft.game.item;
  
 +import java.util.List;
@@ -36595,8 +36988,10 @@
  	public static Item ironShovel = (new ShovelItem(0, ToolMaterial.IRON)).setTextureCoord(2, 5).setName("shovelIron");
  	public static Item ironPickaxe = (new PickaxeItem(1, ToolMaterial.IRON)).setTextureCoord(2, 6).setName("pickaxeIron");
  	public static Item ironAxe = (new AxeItem(2, ToolMaterial.IRON)).setTextureCoord(2, 7).setName("hatchetIron");
-@@ -21,22 +35,20 @@
- 	public static Item bow = (new BowItem(5)).setTextureCoord(5, 1).setName("bow");
+ 	public static Item flintAndSteel = (new FlintAndSteelItem(3)).setTextureCoord(5, 0).setName("flintAndSteel");
+ 	public static Item apple = (new FoodItem(4, 4, false)).setTextureCoord(10, 0).setName("apple");
+-	public static Item bow = (new BowItem(5)).setTextureCoord(5, 1).setName("bow");
++	public static Item bow = (new BowItem(5)).setTextureCoord(5, 1).setName("bow").setToolGrip();
  	public static Item arrow = (new Item(6)).setTextureCoord(5, 2).setName("arrow");
  	public static Item coal = (new CoalItem(7)).setTextureCoord(7, 0).setName("coal");
 -	public static Item diamond = (new Item(8)).setTextureCoord(7, 3).setName("emerald");
@@ -38549,7 +38944,7 @@
  	private void resize(int var1, int var2) {
  		if(var1 <= 0) {
  			var1 = 1;
-@@ -879,61 +1009,36 @@
+@@ -879,61 +1009,40 @@
  
  		this.displayWidth = var1;
  		this.displayHeight = var2;
@@ -38596,7 +38991,11 @@
 -		if(this.ticksRan == 6000) {
 -			this.func_28001_B();
 +		if (SharedConstants.DEBUG_MODE) {
-+			this.timer.timerSpeed = (this.theWorld == null || !this.theWorld.remoteWorld) && Keyboard.isKeyDown(Keyboard.KEY_TAB) ? 5.0F : 1.0F;
++			this.timer.timerSpeed = this.theWorld != null
++					&& !this.theWorld.remoteWorld
++					&& this.theWorld.getWorldInfo().isCreative()
++					&& Keyboard.isKeyDown(Keyboard.KEY_TAB)
++					? 5.0F : 1.0F;
  		}
  
  		this.statFileWriter.func_27178_d();
@@ -38620,7 +39019,7 @@
  
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureRegistry.getTexture("/terrain.png"));
  		if(!this.isGamePaused) {
-@@ -958,11 +1063,13 @@
+@@ -958,11 +1067,13 @@
  		if(this.currentScreen != null) {
  			this.currentScreen.handleInput();
  			if(this.currentScreen != null) {
@@ -38634,7 +39033,7 @@
  		if(this.currentScreen == null || this.currentScreen.field_948_f) {
  			label301:
  			while(true) {
-@@ -980,12 +1087,12 @@
+@@ -980,12 +1091,12 @@
  										do {
  											if(!Keyboard.next()) {
  												if(this.currentScreen == null) {
@@ -38649,7 +39048,7 @@
  														this.clickMouse(1);
  														this.mouseTicksRan = this.ticksRan;
  													}
-@@ -1012,6 +1119,10 @@
+@@ -1012,6 +1123,10 @@
  													this.forceReload();
  												}
  
@@ -38660,7 +39059,7 @@
  												if(Keyboard.getEventKey() == Keyboard.KEY_F1) {
  													this.gameSettings.hideGUI = !this.gameSettings.hideGUI;
  												}
-@@ -1021,7 +1132,7 @@
+@@ -1021,7 +1136,7 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F5) {
@@ -38669,12 +39068,12 @@
  												}
  
  												if(Keyboard.getEventKey() == Keyboard.KEY_F8) {
-@@ -1032,18 +1143,49 @@
+@@ -1032,18 +1147,49 @@
  													this.displayGuiScreen(new InventoryScreen(this.thePlayer));
  												}
  
 +												if(Keyboard.getEventKey() == this.gameSettings.keyBindCreative.keyCode) {
-+													if (this.playerController instanceof CreativePlayerController || SharedConstants.DEBUG_MODE && Keyboard.isKeyDown(Keyboard.KEY_LMENU)) {
++													if (this.playerController instanceof CreativePlayerController) {
 +														this.displayGuiScreen(new CreativeMenu(this.thePlayer.inventory, this));
 +													} else {
 +														this.thePlayer.openCraftingGUI();
@@ -38721,7 +39120,7 @@
  												}
  											}
  
-@@ -1107,6 +1249,10 @@
+@@ -1107,6 +1253,12 @@
  					this.joinPlayerCounter = 0;
  					this.theWorld.joinEntityInSurroundings(this.thePlayer);
  				}
@@ -38729,10 +39128,12 @@
 +				if (this.thePlayer.isUsingItem() && (!this.inGameHasFocus || !Mouse.isButtonDown(1))) {
 +					this.playerController.onStoppedUsingItem(this.thePlayer);
 +				}
++
++				this.thePlayer.setLeftHanded(this.gameSettings.leftHanded);
  			}
  
  			this.theWorld.difficultySetting = this.gameSettings.difficulty;
-@@ -1158,15 +1304,15 @@
+@@ -1158,15 +1310,15 @@
  		return this.theWorld != null && this.theWorld.remoteWorld;
  	}
  
@@ -38751,7 +39152,7 @@
  			if(var6.isNewWorld) {
  				this.statFileWriter.readStat(StatList.createWorldStat, 1);
  				this.statFileWriter.readStat(StatList.startGameStat, 1);
-@@ -1271,6 +1417,7 @@
+@@ -1271,6 +1423,7 @@
  			}
  
  			this.thePlayer.movementInput = new MovementInputFromOptions(this.gameSettings);
@@ -38759,7 +39160,7 @@
  			if(this.worldRenderer != null) {
  				this.worldRenderer.changeWorld(var1);
  			}
-@@ -1284,20 +1431,18 @@
+@@ -1284,20 +1437,18 @@
  				var1.emptyMethod1();
  			}
  
@@ -38786,7 +39187,7 @@
  		} else {
  			this.thePlayer = null;
  		}
-@@ -1310,7 +1455,7 @@
+@@ -1310,7 +1461,7 @@
  		this.loadingScreen.printText("Converting World to " + this.saveLoader.getFormatName());
  		this.loadingScreen.displayLoadingString("This may take a while :)");
  		this.saveLoader.convertMapFormat(var1, this.loadingScreen);
@@ -38795,7 +39196,7 @@
  	}
  
  	private void func_6255_d(String var1) {
-@@ -1320,18 +1465,12 @@
+@@ -1320,18 +1471,12 @@
  		int var3 = 0;
  		int var4 = var2 * 2 / 16 + 1;
  		var4 *= var4;
@@ -38814,7 +39215,7 @@
  		for(int var10 = -var2; var10 <= var2; var10 += 16) {
  			for(int var8 = -var2; var8 <= var2; var8 += 16) {
  				this.loadingScreen.setLoadingProgress(var3++ * 100 / var4);
-@@ -1349,18 +1488,34 @@
+@@ -1349,18 +1494,34 @@
  
  	public void installResource(String var1, File var2) {
  		int var3 = var1.indexOf("/");
@@ -38851,7 +39252,7 @@
  		}
  
  	}
-@@ -1369,19 +1524,19 @@
+@@ -1369,19 +1530,19 @@
  		return this.glCapabilities;
  	}
  
@@ -38875,7 +39276,7 @@
  		return "P: " + this.effectRenderer.getStatistics() + ". T: " + this.theWorld.getEntityDebugInfo();
  	}
  
-@@ -1408,12 +1563,6 @@
+@@ -1408,12 +1569,6 @@
  			var5 = false;
  		}
  
@@ -38888,7 +39289,7 @@
  		this.theWorld.setSpawnLocation();
  		this.theWorld.updateEntityList();
  		int var8 = 0;
-@@ -1450,15 +1599,17 @@
+@@ -1450,15 +1605,17 @@
  	}
  
  	public static void startMainThread(String var0, String var1, String var2) {
@@ -38908,7 +39309,7 @@
  		Thread var8 = new Thread(var7, "Minecraft main thread");
  		var8.setPriority(10);
  		var7.minecraftUri = "www.minecraft.net";
-@@ -1482,6 +1633,21 @@
+@@ -1482,6 +1639,21 @@
  		return this.thePlayer instanceof ClientNetPlayerEntity ? ((ClientNetPlayerEntity)this.thePlayer).sendQueue : null;
  	}
  
@@ -38930,7 +39331,7 @@
  	public static void main(String[] var0) {
  		String var1 = null;
  		String var2 = null;
-@@ -1495,6 +1661,12 @@
+@@ -1495,6 +1667,12 @@
  			var2 = var0[1];
  		}
  
@@ -38943,7 +39344,7 @@
  		func_6269_a(var1, var2);
  	}
  
-@@ -1502,16 +1674,16 @@
+@@ -1502,16 +1680,16 @@
  		return theMinecraft == null || !theMinecraft.gameSettings.hideGUI;
  	}
  
@@ -40294,7 +40695,7 @@
  }
 --- /dev/null
 +++ net/minecraft/game/world/block/ChairBlock.java
-@@ -1,0 +1,139 @@
+@@ -1,0 +1,144 @@
 +package net.minecraft.game.world.block;
 +
 +import net.minecraft.game.entity.LivingEntity;
@@ -40408,6 +40809,9 @@
 +    public boolean blockActivated(World var1, int var2, int var3, int var4, PlayerEntity var5) {
 +        if (var1.remoteWorld) return true;
 +
++        double dist = var5.getDistanceSq(var2 + 0.5D, var3 + 0.5D, var4 + 0.5D);
++        if (dist > 2.5D * 2.5D) return false;
++
 +        this.setBlockBoundsForItemRender(var1.getBlockMetadata(var2, var3, var4));
 +        List<SeatEntity> entities = (List<SeatEntity>) var1.getEntitiesWithinAABB(SeatEntity.class, this.getCollisionBoundingBoxFromPool(var1, var2, var3, var4));
 +
@@ -40427,6 +40831,8 @@
 +            }
 +            return false;
 +        }
++
++        if (var5.ridingEntity != null) return false;
 +
 +        SeatEntity seatEntity = new SeatEntity(var1, var2 + 0.5D, var3 + 0.5D, var4 + 0.5D);
 +        var1.entityJoinedWorld(seatEntity);
@@ -43380,7 +43786,8 @@
 +import java.util.List;
 +
  public abstract class ContainerScreen extends GuiScreen {
- 	private static RenderItem itemRenderer = new RenderItem();
+-	private static RenderItem itemRenderer = new RenderItem();
++	protected static final RenderItem itemRenderer = new RenderItem();
  	protected int xSize = 176;
  	protected int ySize = 166;
  	public Container inventorySlots;
@@ -47553,9 +47960,11 @@
 +}
 --- /dev/null
 +++ net/minecraft/game/item/InventoryReadonly.java
-@@ -1,0 +1,154 @@
+@@ -1,0 +1,192 @@
 +package net.minecraft.game.item;
 +
++import it.unimi.dsi.fastutil.ints.AbstractInt2ObjectMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 +import net.minecraft.SharedConstants;
 +import net.minecraft.game.entity.player.PlayerEntity;
 +import net.minecraft.game.world.block.Block;
@@ -47563,21 +47972,30 @@
 +import java.io.BufferedReader;
 +import java.io.InputStreamReader;
 +import java.util.*;
++import java.util.function.Function;
++import java.util.stream.Collectors;
 +
 +public class InventoryReadonly implements Inventory {
 +	private final ItemStack[] items;
 +	private final boolean pickable;
-+	public final Map<Integer, String> labels;
++	public final List<Label> labels;
++	public final Map<Integer, Label> labelMap;
 +	public boolean pickOne;
 +
-+	public InventoryReadonly(ItemStack[] items, boolean pickable, Map<Integer, String> labels) {
++	public InventoryReadonly(ItemStack[] items, boolean pickable, List<Label> labels) {
 +		this.items = items;
 +		this.pickable = pickable;
 +		this.labels = labels;
++		if (labels != null) {
++			this.labelMap = labels.stream()
++					.collect(Collectors.toMap(label -> label.y, Function.identity()));
++		} else {
++			this.labelMap = null;
++		}
 +	}
 +
-+	public String getLabel(int row) {
-+		return labels != null ? labels.get(row) : null;
++	public Label getLabel(int row) {
++		return this.labels != null ? this.labelMap.get(row) : null;
 +	}
 +
 +	public static InventoryReadonly generateCreativeInventory() {
@@ -47625,7 +48043,11 @@
 +			CreativeInventoryBuilder inv = new CreativeInventoryBuilder();
 +			for (String id : ids) {
 +				if (id.startsWith(": ")) {
-+					inv.addLabel(id.substring(2));
++					int lastSpace = id.lastIndexOf(' ');
++					String name = id.substring(2, lastSpace);
++					String icon = id.substring(lastSpace + 1);
++					ItemStack iconItem = parseItemStack(icon);
++					inv.addLabel(name, iconItem);
 +					continue;
 +				}
 +
@@ -47639,24 +48061,14 @@
 +					continue;
 +				}
 +
-+				int hyphenIndex = id.indexOf("-");
-+				String[] idSplit = hyphenIndex == -1 ? new String[] { id } : new String[] {
-+						id.substring(0, hyphenIndex),
-+						id.substring(hyphenIndex + 1)
-+				};
-+				boolean isItem = idSplit[0].startsWith("i");
-+				if (isItem) {
-+					idSplit[0] = idSplit[0].substring(1);
++				ItemStack item = parseItemStack(id);
++				if (item != null) {
++					inv.addItem(item);
 +				}
-+
-+				int itemID = Integer.parseInt(idSplit[0]);
-+				int itemMetadata = idSplit.length == 2 ? Integer.parseInt(idSplit[1]) : 0;
-+
-+				inv.addItem(itemID, itemMetadata, !isItem);
 +			}
 +
 +			if (SharedConstants.DEV_MODE) {
-+				inv.addLabel("Developer Tools");
++				inv.addLabel("Developer Tools", new ItemStack(Item.structureDrawerWand));
 +				inv.addItem(Block.lootChest.blockID, 0, true);
 +				inv.addItem(Block.structureVoid.blockID, 0, true);
 +				inv.addItem(Item.structurePlacerWand.itemID, 0, false);
@@ -47706,6 +48118,39 @@
 +
 +	public boolean canInteractWith(PlayerEntity var1) {
 +		return true;
++	}
++
++	private static ItemStack parseItemStack(String id) {
++		int hyphenIndex = id.indexOf("-");
++		String[] idSplit = hyphenIndex == -1 ? new String[] { id } : new String[] {
++				id.substring(0, hyphenIndex),
++				id.substring(hyphenIndex + 1)
++		};
++		boolean isBlock = !idSplit[0].startsWith("i");
++		if (!isBlock) {
++			idSplit[0] = idSplit[0].substring(1);
++		}
++
++		int itemID = Integer.parseInt(idSplit[0]);
++		int itemMetadata = idSplit.length == 2 ? Integer.parseInt(idSplit[1]) : 0;
++
++		if (itemID < 0 || Item.fromID(itemID, isBlock) == null) {
++			return null;
++		}
++
++		return new ItemStack(itemID, 1, itemMetadata, isBlock);
++	}
++
++	public static class Label {
++		public final String name;
++		public final ItemStack icon;
++		public final int y;
++
++		public Label(String name, ItemStack icon, int y) {
++			this.name = name;
++			this.icon = icon;
++			this.y = y;
++		}
 +	}
 +}
 --- /dev/null
@@ -48578,6 +49023,42 @@
  				GL11.glCallLists(this.field_1236_g);
  				GL11.glPopMatrix();
  			}
+--- net/minecraft/client/effect/EffectRenderer.java
++++ net/minecraft/client/effect/EffectRenderer.java
+@@ -3,6 +3,8 @@
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Random;
++
++import net.minecraft.client.Minecraft;
+ import net.minecraft.client.render.Tessellator;
+ import net.minecraft.client.render.TextureRegistry;
+ import net.minecraft.game.entity.Entity;
+@@ -53,11 +55,19 @@
+ 	}
+ 
+ 	public void renderParticles(Entity var1, float var2) {
+-		float var3 = MathHelper.cos(var1.rotationYaw * (float)Math.PI / 180.0F);
+-		float var4 = MathHelper.sin(var1.rotationYaw * (float)Math.PI / 180.0F);
+-		float var5 = -var4 * MathHelper.sin(var1.rotationPitch * (float)Math.PI / 180.0F);
+-		float var6 = var3 * MathHelper.sin(var1.rotationPitch * (float)Math.PI / 180.0F);
+-		float var7 = MathHelper.cos(var1.rotationPitch * (float)Math.PI / 180.0F);
++		float yaw = MathHelper.lerp(var1.prevRotationYaw, var1.rotationYaw, var2);
++		float pitch = MathHelper.lerp(var1.prevRotationPitch, var1.rotationPitch, var2);
++
++		if (Minecraft.getInstance().gameSettings.thirdPersonView == 2) {
++			yaw += 180.0F;
++			pitch *= -1.0F;
++		}
++
++		float var3 = MathHelper.cos(yaw * (float)Math.PI / 180.0F);
++		float var4 = MathHelper.sin(yaw * (float)Math.PI / 180.0F);
++		float var5 = -var4 * MathHelper.sin(pitch * (float)Math.PI / 180.0F);
++		float var6 = var3 * MathHelper.sin(pitch * (float)Math.PI / 180.0F);
++		float var7 = MathHelper.cos(pitch * (float)Math.PI / 180.0F);
+ 		EntityFX.interpPosX = var1.lastTickPosX + (var1.posX - var1.lastTickPosX) * (double)var2;
+ 		EntityFX.interpPosY = var1.lastTickPosY + (var1.posY - var1.lastTickPosY) * (double)var2;
+ 		EntityFX.interpPosZ = var1.lastTickPosZ + (var1.posZ - var1.lastTickPosZ) * (double)var2;
 --- /dev/null
 +++ net/minecraft/SharedConstants.java
 @@ -1,0 +1,34 @@
@@ -48586,7 +49067,7 @@
 +import net.minecraft.client.GameProvider;
 +
 +public class SharedConstants {
-+    public static final String SHORT_VERSION = "1.0-a9.3";
++    public static final String SHORT_VERSION = "1.0-a9.4";
 +    public static final String VERSION = "Minecraft Diverge " + SHORT_VERSION;
 +    public static final int PROTOCOL_VERSION = 810300005;
 +    public static final boolean DEBUG_MODE = true;
@@ -51505,10 +51986,30 @@
  	public static IntBuffer createDirectIntBuffer(int var0) {
 --- net/minecraft/game/entity/monster/SkeletonEntity.java
 +++ net/minecraft/game/entity/monster/SkeletonEntity.java
-@@ -68,26 +68,6 @@
- 		super.readEntityFromNBT(var1);
- 	}
+@@ -45,13 +45,13 @@
+ 			double var5 = var1.posZ - this.posZ;
+ 			if(this.attackTime == 0) {
+ 				ArrowEntity var7 = new ArrowEntity(this.worldObj, this);
+-				var7.posY += (double)1.4F;
+-				double var8 = var1.posY + (double)var1.getEyeHeight() - (double)0.2F - var7.posY;
++//				var7.posY += (double)1.4F;
++				double var8 = var1.posY + (double)var1.getEyeHeight() - (double)0.7F - var7.posY;
+ 				float var10 = MathHelper.sqrt(var3 * var3 + var5 * var5) * 0.2F;
+ 				this.worldObj.playSoundAtEntity(this, "random.bow", 1.0F, 1.0F / (this.rand.nextFloat() * 0.4F + 0.8F));
+ 				this.worldObj.entityJoinedWorld(var7);
+-				var7.setArrowHeading(var3, var8 + (double)var10, var5, 0.6F, 12.0F);
+-				this.attackTime = 30;
++				var7.setArrowHeading(var3, var8 + (double)var10, var5, 1.2F, 12.0F);
++				this.attackTime = 50;
+ 			}
  
+ 			this.rotationYaw = (float)(Math.atan2(var5, var3) * 180.0D / (double)((float)Math.PI)) - 90.0F;
+@@ -66,26 +66,6 @@
+ 
+ 	public void readEntityFromNBT(CompoundTag var1) {
+ 		super.readEntityFromNBT(var1);
+-	}
+-
 -	protected int getDropItemId() {
 -		return Item.arrow.itemID;
 -	}
@@ -51527,11 +52028,9 @@
 -			this.dropItem(Item.bone.itemID, 1);
 -		}
 -
--	}
--
- 	public ItemStack getHeldItem() {
- 		return defaultHeldItem;
  	}
+ 
+ 	public ItemStack getHeldItem() {
 --- com/mojang/nbt/DoubleTag.java
 +++ com/mojang/nbt/DoubleTag.java
 @@ -4,7 +4,7 @@
@@ -51824,7 +52323,14 @@
  			this.renderPumpkinBlur(var6, var7);
  		}
  
-@@ -64,82 +80,140 @@
+@@ -59,87 +75,145 @@
+ 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/gui/gui.png"));
+ 		InventoryPlayer var11 = this.mc.thePlayer.inventory;
+ 		this.zLevel = -90.0F;
+-		this.drawTexturedRect(var6 / 2 - 91, var7 - 22, 0, 0, 182, 22);
+-		this.drawTexturedRect(var6 / 2 - 91 - 1 + var11.currentItem * 20, var7 - 22 - 1, 0, 22, 24, 22);
++		this.drawTexturedRect(var6 / 2 - 91, var7 - 26, 0, 0, 182, 22);
++		this.drawTexturedRect(var6 / 2 - 91 - 1 + var11.currentItem * 20, var7 - 26 - 1, 0, 22, 24, 24);
  		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.textureRegistry.getTexture("/gui/icons.png"));
  		GL11.glEnable(GL11.GL_BLEND);
  		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
@@ -51858,11 +52364,7 @@
 -
 -			int var18;
 -			for(var16 = 0; var16 < 10; ++var16) {
-+			var15 = (int)(this.mc.thePlayer.damageReduction * 20.0F);
-+			boolean armor = var15 > 0;
-+			boolean air = this.mc.thePlayer.isInsideOfMaterial(Material.water);
-+			if (this.mc.gameSettings.hudBars) {
- 				var17 = var7 - 32;
+-				var17 = var7 - 32;
 -				if(var15 > 0) {
 -					var18 = var6 / 2 + 91 - var16 * 8 - 9;
 -					if(var16 * 2 + 1 < var15) {
@@ -51920,6 +52422,11 @@
 -					}
 -				}
 -			}
++			var15 = (int)(this.mc.thePlayer.damageReduction * 20.0F);
++			boolean armor = var15 > 0;
++			boolean air = this.mc.thePlayer.isInsideOfMaterial(Material.water);
++			if (this.mc.gameSettings.hudBars) {
++				var17 = var7 - 36;
 +				this.drawTexturedRect(var6 / 2 - 91, var17, 9, 36, 90, 9);
 +				this.drawTexturedRect(var6 / 2 + 1, var17, 99, 36, 90, 9);
 +				if (armor) this.drawTexturedRect(var6 / 2 - 91, var17 - 10, 9, 36, 90, 9);
@@ -51963,7 +52470,7 @@
 +			} else {
 +				int var18;
 +				for(var16 = 0; var16 < 10; ++var16) {
-+					var17 = var7 - 32;
++					var17 = var7 - 36;
 +					if(var15 > 0) {
 +						var18 = var6 / 2 - 91 + var16 * 8;
 +						if(var16 * 2 + 1 < var15) {
@@ -52018,9 +52525,9 @@
 +
 +					for(var18 = 0; var18 < var16 + var17; ++var18) {
 +						if(var18 < var16) {
-+							this.drawTexturedRect(var6 / 2 - 91 + var18 * 8, var7 - 32 - (armor ? 20 : 9), 16, 18, 9, 9);
++							this.drawTexturedRect(var6 / 2 + 82 - var18 * 8, var7 - 36 - 9, 16, 18, 9, 9);
 +						} else {
-+							this.drawTexturedRect(var6 / 2 - 91 + var18 * 8, var7 - 32 - (armor ? 20 : 9), 25, 18, 9, 9);
++							this.drawTexturedRect(var6 / 2 + 82 - var18 * 8, var7 - 36 - 9, 25, 18, 9, 9);
 +						}
 +					}
 +				}
@@ -52029,6 +52536,15 @@
  		}
  
  		GL11.glDisable(GL11.GL_BLEND);
+@@ -151,7 +225,7 @@
+ 
+ 		for(var15 = 0; var15 < 9; ++var15) {
+ 			var16 = var6 / 2 - 90 + var15 * 20 + 2;
+-			var17 = var7 - 16 - 3;
++			var17 = var7 - 23;
+ 			this.renderInventorySlot(var15, var16, var17, var1);
+ 		}
+ 
 @@ -173,29 +247,94 @@
  		}
  
