@@ -16374,7 +16374,7 @@
  	public final String title;
 --- /dev/null
 +++ net/minecraft/game/world/block/AnvilContainer.java
-@@ -1,0 +1,111 @@
+@@ -1,0 +1,115 @@
 +package net.minecraft.game.world.block;
 +
 +import net.minecraft.game.entity.player.*;
@@ -16454,12 +16454,10 @@
 +		if(var3 != null && var3.hasStack()) {
 +			ItemStack var4 = var3.getStack();
 +			var2 = var4.copy();
-+			if (var1 >= 0 && var1 <= 1) {
-+				this.putStack(var4, 3, 39, true);
-+			} else if (var1 >= 3 && var1 <= 38) {
++			if (var1 >= 3 && var1 <= 38) {
 +				this.putStack(var4, 0, 2, false);
 +			} else {
-+				this.putStack(var4, 3, 39, false);
++				this.putStack(var4, 3, 39, true);
 +			}
 +
 +			if(var4.count == 0) {
@@ -16467,6 +16465,12 @@
 +			} else {
 +				var3.onSlotChanged();
 +			}
++
++			if(var4.count == var2.count) {
++				return null;
++			}
++
++			var3.onPickupFromSlot(var4);
 +		}
 +
 +		return var2;
