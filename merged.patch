@@ -18829,7 +18829,7 @@
  }
 --- /dev/null
 +++ net/mine_diver/smoothbeta/client/render/Shaders.java
-@@ -1,0 +1,86 @@
+@@ -1,0 +1,85 @@
 +package net.mine_diver.smoothbeta.client.render;
 +
 +import net.mine_diver.smoothbeta.client.render.gl.GlBlendState;
@@ -18863,7 +18863,6 @@
 +
 +        Supplier<Shader> shaderFactory = () -> {
 +            try {
-+                if (true) throw new RuntimeException("WHAT THE HELL??? SHADERS ARE BEING INITIALIZED!?!? MY SYSTEM DOES NOT SUPPORT THIS!!!");
 +                return new Shader("terrain", new ShaderInfo(
 +                        "terrain",
 +                        "terrain",
