@@ -2161,7 +2161,7 @@
 +
 +    public boolean generateAt(World world, int x, int z) {
 +        if (!this.generateOnGrid(x, z, 16, 8, SALT)) return false;
-+        Biome biome = world.getBiomeSource().getBiomeGenAt(x * 16 + 8, z * 16 + 8);
++        Biome biome = world.getBiomeSource().getBiome(x * 16 + 8, z * 16 + 8);
 +        return VALID_BIOMES.contains(biome) && this.rand.nextInt(5) == 0;
 +    }
 +
@@ -4349,7 +4349,7 @@
 +                            new RandomReplaceTarget(
 +                                    Block.web.blockID, -1,
 +                                    0, 0,
-+                                    1.0F / 4.0F
++                                    2.0F / 3.0F
 +                            )
 +                    ));
 +
@@ -7334,7 +7334,7 @@
 +						MapColor mapColor;
 +						int depth = 2;
 +						if (!(biomeSource instanceof LayeredBiomeSource)) {
-+							Biome biome = biomeSource.getBiomeGenAt(wx, wz);
++							Biome biome = biomeSource.getBiome(wx, wz);
 +							mapColor = (
 +									biome == Biome.ocean ? MapColor.waterColor
 +											: biome == Biome.beach ? MapColor.sandColor
@@ -8037,7 +8037,7 @@
 +	public final Array2D<Biome> biomes = new Array2D<>(Biome[]::new, 16, 16);
 +
 +	public CachedBiomeRegion(BiomeSource biomeSource, int x, int z) {
-+		biomeSource.loadBlockGeneratorData(this.biomes.getArray(), x << 4, z << 4, 16, 16);
++		biomeSource.generateBiomes(this.biomes.getArray(), x << 4, z << 4, 16, 16);
 +		if (biomeSource instanceof ClimaticBiomeSource) {
 +			((ClimaticBiomeSource) biomeSource).blockGeneratorData = this.biomes.getArray();
 +		}
@@ -13504,7 +13504,7 @@
  	public void onNeighborBlockChange(World var1, int var2, int var3, int var4, int var5) {
 --- /dev/null
 +++ net/minecraft/game/world/terrain/generate/structure/AbandonedShackStructure.java
-@@ -1,0 +1,37 @@
+@@ -1,0 +1,34 @@
 +package net.minecraft.game.world.terrain.generate.structure;
 +
 +import net.minecraft.game.world.World;
@@ -13525,10 +13525,7 @@
 +    }
 +
 +    public List<StructurePlacement> buildStructure(int x, int z) {
-+        int y = 48 + this.rand.nextInt(32);
-+        if (this.worldObj.getBiomeAt(x, z) == Biome.ocean) {
-+            y -= 16;
-+        }
++        int y = 32 + this.rand.nextInt(32);
 +
 +        StructurePlacement start = new StructurePlacement(
 +                Structure.STRUCTURE_LIST.get("abandoned_shack.room_" + this.rand.nextInt(6)),
@@ -16741,7 +16738,7 @@
 +		if (chunk != null) {
 +			return chunk.getBiome(x & 15, z & 15, this.dimension.biomeSource);
 +		}
-+		return this.dimension.biomeSource.getBiomeGenAt(x, z);
++		return this.dimension.biomeSource.getBiome(x, z);
 +	}
 +
 +	public BiomeSource getBiomeSource() {
@@ -21692,7 +21689,7 @@
 +		this.climateLayer = layers[5];
 +	}
 +
-+	public NoiseSettings[] loadNoiseSettingsData(NoiseSettings[] noiseSettings, int x, int z, int width, int length) {
++	public NoiseSettings[] generateNoiseSettings(NoiseSettings[] noiseSettings, int x, int z, int width, int length) {
 +		if (noiseSettings == null || noiseSettings.length < width * length) {
 +			noiseSettings = new NoiseSettings[width * length];
 +		}
@@ -21704,7 +21701,7 @@
 +		double noiseRes = LayerPerlinNoise.RESOLUTION;
 +		double edgeRes = LayerFillEdge.RESOLUTION;
 +
-+		this.noiseBiomeData = this.loadBlockGeneratorData(this.noiseBiomeData, bx, bz, bwidth, blength);
++		this.noiseBiomeData = this.generateBiomes(this.noiseBiomeData, bx, bz, bwidth, blength);
 +
 +		for (int xx = 0; xx < width; xx++) {
 +			for (int zz = 0; zz < length; zz++) {
@@ -21726,7 +21723,7 @@
 +		return noiseSettings;
 +	}
 +
-+	public Biome[] loadBlockGeneratorData(Biome[] biomes, int x, int z, int width, int length) {
++	public Biome[] generateBiomes(Biome[] biomes, int x, int z, int width, int length) {
 +		if(biomes == null || biomes.length < width * length) {
 +			biomes = new Biome[width * length];
 +		}
@@ -28920,7 +28917,7 @@
  	}
  
  	public TileEntity getChunkBlockTileEntity(int var1, int var2, int var3) {
-@@ -443,45 +557,58 @@
+@@ -443,45 +557,56 @@
  		var4.yCoord = var2;
  		var4.zCoord = this.zPosition * 16 + var3;
  		if(this.getBlockID(var1, var2, var3) != 0 && Block.blocksList[this.getBlockID(var1, var2, var3)] instanceof ContainerBlock) {
@@ -28944,8 +28941,6 @@
 -			if(var5 != null) {
 -				var5.invalidate();
 -			}
--		}
--
 +		TileEntity var5 = this.chunkTileEntityMap.remove(var4);
 +		if (var5 == null) return;
 +
@@ -28960,10 +28955,9 @@
 +
 +		if (var5 == tileEntity) {
 +			this.chunkTileEntityMap.remove(var4);
-+		}
-+		if (var5 != null) {
 +			var5.invalidate();
-+		}
+ 		}
+-
  	}
  
  	public void onChunkLoad() {
@@ -28999,7 +28993,7 @@
  		}
  
  	}
-@@ -493,21 +620,14 @@
+@@ -493,21 +618,14 @@
  	public void getEntitiesWithinAABBForEntity(Entity var1, AxisAlignedBB var2, List var3) {
  		int var4 = MathHelper.floor((var2.minY - 2.0D) / 16.0D);
  		int var5 = MathHelper.floor((var2.maxY + 2.0D) / 16.0D);
@@ -29027,7 +29021,7 @@
  				}
  			}
  		}
-@@ -517,21 +637,14 @@
+@@ -517,21 +635,14 @@
  	public void getEntitiesOfTypeWithinAABB(Class var1, AxisAlignedBB var2, List var3) {
  		int var4 = MathHelper.floor((var2.minY - 2.0D) / 16.0D);
  		int var5 = MathHelper.floor((var2.maxY + 2.0D) / 16.0D);
@@ -29055,7 +29049,7 @@
  				}
  			}
  		}
-@@ -664,10 +777,46 @@
+@@ -664,10 +775,46 @@
  	}
  
  	public boolean isEmpty() {
@@ -29074,13 +29068,13 @@
 +
 +	public Biome getBiome(int x, int z, BiomeSource biomeSource) {
 +		if (x < 0 || x > 15 || z < 0 || z > 15) {
-+			return biomeSource.getBiomeGenAt((xPosition << 4) + x, (zPosition << 4) + z);
++			return biomeSource.getBiome((xPosition << 4) + x, (zPosition << 4) + z);
 +		}
 +
 +		int i = blockBiomeArray[x << 4 | z] & 0xff;
 +
 +		if (i == 255) {
-+			Biome biomegenbase = biomeSource.getBiomeGenAt((xPosition << 4) + x, (zPosition << 4) + z);
++			Biome biomegenbase = biomeSource.getBiome((xPosition << 4) + x, (zPosition << 4) + z);
 +			i = biomegenbase.id;
 +			blockBiomeArray[x << 4 | z] = (byte)(i & 0xff);
 +		}
@@ -33986,9 +33980,10 @@
  		this.rand.setSeed((long)var1 * 341873128712L + (long)var2 * 132897987541L);
  		byte[] var3 = new byte[-Short.MIN_VALUE];
 -		Chunk var4 = new Chunk(this.worldObj, var3, var1, var2);
- 		this.biomesForGeneration = this.worldObj.getBiomeSource().loadBlockGeneratorData(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
+-		this.biomesForGeneration = this.worldObj.getBiomeSource().loadBlockGeneratorData(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
 -		double[] var5 = this.worldObj.getBiomeSource().temperature;
 -		this.generateTerrain(var1, var2, var3, this.biomesForGeneration, var5);
++		this.biomesForGeneration = this.worldObj.getBiomeSource().generateBiomes(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
 +		this.generateTerrain(var1, var2, var3, this.biomesForGeneration, null);
  		this.generateSurface(var1, var2, var3, this.biomesForGeneration);
  		this.caves.generate(this, this.worldObj, var1, var2, var3);
@@ -35694,8 +35689,8 @@
 +            new LootItem<>(Item.bread, 0, 1, 3, 0.5F),
 +            new LootItem<>(Block.cobblestone.getItem(), 0, 1, 20, 0.5F),
 +            new LootChoice<>(
-+                    0.5F,
-+                new LootItem<>(Item.flimsyPacers),
++                    1.0F / 3.0F,
++                    new LootItem<>(Item.flimsyPacers),
 +                    new LootItem<>(Item.knightsGrip)
 +            )
 +    );
@@ -44883,7 +44878,7 @@
 +					if (chunk.worldObj.dimension.worldType != 0) return;
 +
 +					IntList sectionKeys = new IntArrayList(chunk.sections.keySet());
-+					sectionKeys.sort((a, b) -> -Integer.compare(a, b));
++					sectionKeys.sort((a, b) -> Integer.compare(a, b));
 +
 +					for (int sectionKey : sectionKeys) {
 +						ChunkSection section = chunk.sections.remove(sectionKey);
@@ -53152,20 +53147,20 @@
 +		return region;
 +	}
 +
-+	public Biome getBiomeGenAt(int x, int z) {
++	public Biome getBiome(int x, int z) {
 +		return this.getCachedBiomeRegion(x >> 4, z >> 4).getBiome(x & 15, z & 15);
 +	}
 +
-+	public Biome[] getBlockGeneratorData(int var1, int var2, int var3, int var4) {
-+		this.blockGeneratorData = this.loadBlockGeneratorData(this.blockGeneratorData, var1, var2, var3, var4);
++	public Biome[] getBiomes(int var1, int var2, int var3, int var4) {
++		this.blockGeneratorData = this.generateBiomes(this.blockGeneratorData, var1, var2, var3, var4);
 +		return this.blockGeneratorData;
 +	}
 +
-+	public NoiseSettings[] loadNoiseSettingsData(NoiseSettings[] noiseSettings, int x, int z, int width, int length) {
++	public NoiseSettings[] generateNoiseSettings(NoiseSettings[] noiseSettings, int x, int z, int width, int length) {
 +		return noiseSettings;
 +	}
 +
-+	public abstract Biome[] loadBlockGeneratorData(Biome[] biomes, int x, int z, int width, int length);
++	public abstract Biome[] generateBiomes(Biome[] biomes, int x, int z, int width, int length);
 +}
 --- net/minecraft/server/cli/ConsoleLogFormatter.java
 +++ net/minecraft/server/cli/ConsoleLogFormatter.java
@@ -54591,8 +54586,8 @@
 +		final int NSR = NOISE_SAMPLE_RANGE;
 +		final int NSA = NOISE_SAMPLE_AREA;
 +
-+		this.biomesForGeneration = this.worldObj.getBiomeSource().loadBlockGeneratorData(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
-+		this.noiseSettingsForGeneration = this.worldObj.getBiomeSource().loadNoiseSettingsData(this.noiseSettingsForGeneration, var1 * 4 - NSR, var2 * 4 - NSR, NSA, NSA);
++		this.biomesForGeneration = this.worldObj.getBiomeSource().generateBiomes(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
++		this.noiseSettingsForGeneration = this.worldObj.getBiomeSource().generateNoiseSettings(this.noiseSettingsForGeneration, var1 * 4 - NSR, var2 * 4 - NSR, NSA, NSA);
 +		Arrays.fill(this.maxHeights, Integer.MIN_VALUE);
 +		this.generate2DInfo();
 +		this.generateSurfaceTerrain(var3);
@@ -57890,7 +57885,7 @@
 +import java.util.stream.Stream;
 +
 +public class SharedConstants {
-+    public static final String SHORT_VERSION = "1.0-a10.1";
++    public static final String SHORT_VERSION = "1.0-a10.2";
 +    public static final String VERSION = "Minecraft Diverge " + SHORT_VERSION;
 +    public static final int PROTOCOL_VERSION = 810300006;
 +
@@ -58509,7 +58504,7 @@
  				}
  			}
  
-@@ -674,7 +758,7 @@
+@@ -674,11 +758,11 @@
  			double var13 = var3.lastTickPosZ + (var3.posZ - var3.lastTickPosZ) * (double)var1;
  			int var15 = MathHelper.floor(var11);
  			byte var16 = 5;
@@ -58518,6 +58513,11 @@
  				var16 = 10;
  			}
  
+-			Biome[] var17 = var4.getBiomeSource().getBlockGeneratorData(var5 - var16, var7 - var16, var16 * 2 + 1, var16 * 2 + 1);
++			Biome[] var17 = var4.getBiomeSource().getBiomes(var5 - var16, var7 - var16, var16 * 2 + 1, var16 * 2 + 1);
+ 			int var18 = 0;
+ 
+ 			int var19;
 @@ -742,7 +826,7 @@
  			}
  
@@ -59846,7 +59846,7 @@
 +}
 --- net/minecraft/game/world/biome/ClimaticBiomeSource.java
 +++ net/minecraft/game/world/biome/ClimaticBiomeSource.java
-@@ -2,38 +2,68 @@
+@@ -2,42 +2,72 @@
  
  import java.util.Random;
  import net.minecraft.game.world.World;
@@ -59929,7 +59929,13 @@
 +		return this.remapTemperature(this.temperature[0] * this.temperatureRange + this.temperatureOffset);
  	}
  
- 	public Biome[] getBlockGeneratorData(int var1, int var2, int var3, int var4) {
+-	public Biome[] getBlockGeneratorData(int var1, int var2, int var3, int var4) {
+-		this.blockGeneratorData = this.loadBlockGeneratorData(this.blockGeneratorData, var1, var2, var3, var4);
++	public Biome[] getBiomes(int var1, int var2, int var3, int var4) {
++		this.blockGeneratorData = this.generateBiomes(this.blockGeneratorData, var1, var2, var3, var4);
+ 		return this.blockGeneratorData;
+ 	}
+ 
 @@ -46,17 +76,17 @@
  			var1 = new double[var4 * var5];
  		}
@@ -59954,10 +59960,12 @@
  				if(var15 < 0.0D) {
  					var15 = 0.0D;
  				}
-@@ -74,25 +104,53 @@
+@@ -73,26 +103,54 @@
+ 		return var1;
  	}
  
- 	public Biome[] loadBlockGeneratorData(Biome[] var1, int var2, int var3, int var4, int var5) {
+-	public Biome[] loadBlockGeneratorData(Biome[] var1, int var2, int var3, int var4, int var5) {
++	public Biome[] generateBiomes(Biome[] var1, int var2, int var3, int var4, int var5) {
 +		return this.loadBlockGeneratorData(var1, var2, var3, var4, var5, 1.0D);
 +	}
 +
@@ -63350,6 +63358,37 @@
 +		return super.getName() + "." + var1.getItemDamage();
  	}
  }
+--- net/minecraft/game/world/biome/SingleBiomeSource.java
++++ net/minecraft/game/world/biome/SingleBiomeSource.java
+@@ -18,7 +18,7 @@
+ 		return this.biome;
+ 	}
+ 
+-	public Biome getBiomeGenAt(int var1, int var2) {
++	public Biome getBiome(int var1, int var2) {
+ 		return this.biome;
+ 	}
+ 
+@@ -26,8 +26,8 @@
+ 		return this.singleTemperature;
+ 	}
+ 
+-	public Biome[] getBlockGeneratorData(int var1, int var2, int var3, int var4) {
+-		this.blockGeneratorData = this.loadBlockGeneratorData(this.blockGeneratorData, var1, var2, var3, var4);
++	public Biome[] getBiomes(int var1, int var2, int var3, int var4) {
++		this.blockGeneratorData = this.generateBiomes(this.blockGeneratorData, var1, var2, var3, var4);
+ 		return this.blockGeneratorData;
+ 	}
+ 
+@@ -40,7 +40,7 @@
+ 		return var1;
+ 	}
+ 
+-	public Biome[] loadBlockGeneratorData(Biome[] var1, int var2, int var3, int var4, int var5) {
++	public Biome[] generateBiomes(Biome[] var1, int var2, int var3, int var4, int var5) {
+ 		if(var1 == null || var1.length < var4 * var5) {
+ 			var1 = new Biome[var4 * var5];
+ 		}
 --- /dev/null
 +++ net/minecraft/game/item/loot/LootItem.java
 @@ -1,0 +1,66 @@
