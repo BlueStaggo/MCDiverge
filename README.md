@@ -2,6 +2,8 @@
     <img src="mcdiverge-logo.png">
 </p>
 
+*Looking for the latest work-in-progress beta rework version of the mod for Beta 1.7.3? Find information in the [beta-rework branch](https://github.com/BlueStaggo/MCDiverge/tree/beta-rework) and check [the full releases page](https://github.com/BlueStaggo/MCDiverge/releases).* 
+
 Minecraft Diverge is a Minecraft Alpha v1.1.2_01 mod that takes the game towards a different direction. Explore the new biomes, experiment with magic items and explore in a version of Minecraft, diverged! It provides fresh new world generation, extra content for the late game and plenty of tweaks.
 
 For guidance with installing this mod, check out the [INSTALLATION](INSTALLATION.md) document. If you want to create mods for Diverge, check out the [MODDING](MODDING.md) guide.
